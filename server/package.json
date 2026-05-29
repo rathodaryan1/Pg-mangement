@@ -4,7 +4,7 @@
   "description": "Backend API for PG Management System",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "npx prisma generate && tsc",
     "start": "node dist/index.js",
     "dev": "nodemon src/index.ts",
     "prisma:generate": "prisma generate",
