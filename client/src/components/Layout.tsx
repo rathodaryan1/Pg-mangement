@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -38,16 +38,160 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(3);
-  const [notifications, setNotifications] = useState([
-    { id: 1, type: 'issue', title: 'New AC Leak Complaint', desc: 'AC water leakage reported in Room 101 Gurgaon.', time: '10m ago', read: false },
-    { id: 2, type: 'payment', title: 'Rent Invoice Pending', desc: 'Aakash Verma\'s rent of ₹18,000 for June is generated.', time: '1h ago', read: false },
-    { id: 3, type: 'visitor', title: 'Active Visitor Checked-in', desc: 'Ramesh Patel (Courier) is currently checked in.', time: '2h ago', read: false },
-  ]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notifications, setNotifications] = useState<any[]>([]);
+
+  // Helper for mock property mapping
+  const getMockPropertyId = (obj: any) => {
+    if (obj.propertyId) return obj.propertyId;
+    const memberName = obj.member?.fullName || obj.hostMember || '';
+    if (memberName.includes('Sneha') || memberName.includes('Riya') || memberName.includes('Noida') || (obj.desc && obj.desc.includes('Noida'))) {
+      return '71c32f62-6821-4613-976e-d6d020d2cbcd'; // Noida ID
+    }
+    return 'c9284cdd-f556-4d74-af01-611da1397c0d'; // Gurgaon ID
+  };
+
+  // Helper to format relative time
+  const formatRelativeTime = (dateInput: any) => {
+    if (!dateInput) return '';
+    const date = new Date(dateInput);
+    if (isNaN(date.getTime())) return '';
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  };
+
+  const loadAlerts = async () => {
+    const token = localStorage.getItem('token');
+    const propId = activeProperty?.id;
+    let rawAlerts: any[] = [];
+
+    try {
+      const url = propId 
+        ? `${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/alerts?propertyId=${propId}` 
+        : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/alerts`;
+      
+      const res = await fetch(url, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+
+      if (res.ok) {
+        rawAlerts = await res.json();
+      } else {
+        throw new Error('API failed');
+      }
+    } catch (err) {
+      console.warn('Backend alerts API failed. Assembling local storage alerts.');
+      const savedPay = localStorage.getItem('mock_payments');
+      const savedIssues = localStorage.getItem('mock_issues');
+      const savedVisitors = localStorage.getItem('mock_visitors');
+
+      const payments = savedPay ? JSON.parse(savedPay) : [];
+      const issues = savedIssues ? JSON.parse(savedIssues) : [];
+      const visitors = savedVisitors ? JSON.parse(savedVisitors) : [];
+
+      const mockAlerts: any[] = [];
+
+      payments.forEach((p: any) => {
+        let title = '';
+        let desc = '';
+        let timeVal = p.createdAt;
+        if (p.status === 'PAID') {
+          title = 'Rent Collected';
+          desc = `Rent of ₹${p.amount.toLocaleString()} collected from ${p.member?.fullName || 'Resident'} (${p.period}).`;
+          timeVal = p.paidDate || p.createdAt;
+        } else if (p.status === 'APPROVAL_PENDING') {
+          title = 'Verification Required';
+          desc = `${p.member?.fullName || 'Resident'} submitted ₹${p.amount.toLocaleString()} online payment reference.`;
+        } else {
+          title = 'Rent Due Pending';
+          desc = `Rent of ₹${p.amount.toLocaleString()} is pending for ${p.member?.fullName || 'Resident'} (${p.period}).`;
+        }
+        mockAlerts.push({
+          id: `pay-${p.id}`,
+          type: 'payment',
+          title,
+          desc,
+          time: timeVal,
+          createdAt: timeVal,
+          propertyId: getMockPropertyId(p)
+        });
+      });
+
+      issues.forEach((i: any) => {
+        if (i.status === 'OPEN' || i.status === 'IN_PROGRESS') {
+          mockAlerts.push({
+            id: `issue-${i.id}`,
+            type: 'issue',
+            title: `Complaint: ${i.title}`,
+            desc: `Maintenance issue reported by ${i.member?.fullName || 'Resident'}: "${i.description.substring(0, 50)}..."`,
+            time: i.createdAt,
+            createdAt: i.createdAt,
+            propertyId: getMockPropertyId(i)
+          });
+        }
+      });
+
+      visitors.forEach((v: any) => {
+        if (!v.checkOutTime) {
+          mockAlerts.push({
+            id: `visitor-${v.id}`,
+            type: 'visitor',
+            title: 'Active Visitor Checked-In',
+            desc: `${v.fullName} is visiting ${v.hostMember || 'resident'} (Purpose: ${v.purpose}).`,
+            time: v.checkInTime,
+            createdAt: v.checkInTime,
+            propertyId: getMockPropertyId(v)
+          });
+        }
+      });
+
+      rawAlerts = propId 
+        ? mockAlerts.filter(a => a.propertyId === propId)
+        : mockAlerts;
+    }
+
+    // Sort chronologically
+    rawAlerts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    const savedReadIds = localStorage.getItem('read_alerts') 
+      ? JSON.parse(localStorage.getItem('read_alerts')!) 
+      : [];
+
+    const processed = rawAlerts.map(alert => ({
+      ...alert,
+      read: savedReadIds.includes(alert.id),
+      timeAgo: formatRelativeTime(alert.time)
+    }));
+
+    setNotifications(processed);
+    setUnreadCount(processed.filter(a => !a.read).length);
+  };
+
+  useEffect(() => {
+    if (user) {
+      loadAlerts();
+      const interval = setInterval(loadAlerts, 10000); // refresh every 10 seconds
+      return () => clearInterval(interval);
+    }
+  }, [activeProperty, user]);
 
   const handleMarkAllRead = () => {
-    setUnreadCount(0);
+    const savedReadIds = localStorage.getItem('read_alerts') 
+      ? JSON.parse(localStorage.getItem('read_alerts')!) 
+      : [];
+    const newReadIds = Array.from(new Set([...savedReadIds, ...notifications.map(n => n.id)]));
+    localStorage.setItem('read_alerts', JSON.stringify(newReadIds));
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    setUnreadCount(0);
   };
 
   if (!user) return <>{children}</>;
@@ -269,23 +413,29 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
                   {/* Notification List */}
                   <div className="max-h-[300px] overflow-y-auto divide-y divide-slate-500/5">
-                    {notifications.map((n) => (
-                      <div 
-                        key={n.id} 
-                        className={`p-3 hover:bg-slate-500/5 transition-all text-left space-y-1 relative ${
-                          !n.read ? 'bg-purple-500/[0.02]' : ''
-                        }`}
-                      >
-                        {!n.read && (
-                          <div className="absolute top-3.5 right-3 w-1.5 h-1.5 rounded-full bg-pink-500" />
-                        )}
-                        <div className="flex justify-between pr-4">
-                          <h4 className="font-extrabold text-slate-800 dark:text-slate-200 text-[11px]">{n.title}</h4>
-                          <span className="text-[9px] text-slate-400 font-mono">{n.time}</span>
-                        </div>
-                        <p className="text-[10px] text-slate-400 font-semibold leading-relaxed pr-2">{n.desc}</p>
+                    {notifications.length === 0 ? (
+                      <div className="py-8 text-center text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+                        No active alerts
                       </div>
-                    ))}
+                    ) : (
+                      notifications.map((n) => (
+                        <div 
+                          key={n.id} 
+                          className={`p-3 hover:bg-slate-500/5 transition-all text-left space-y-1 relative ${
+                            !n.read ? 'bg-purple-500/[0.02]' : ''
+                          }`}
+                        >
+                          {!n.read && (
+                            <div className="absolute top-3.5 right-3 w-1.5 h-1.5 rounded-full bg-pink-500" />
+                          )}
+                          <div className="flex justify-between pr-4">
+                            <h4 className="font-extrabold text-slate-800 dark:text-slate-200 text-[11px]">{n.title}</h4>
+                            <span className="text-[9px] text-slate-400 font-mono">{n.timeAgo || n.time}</span>
+                          </div>
+                          <p className="text-[10px] text-slate-400 font-semibold leading-relaxed pr-2">{n.desc}</p>
+                        </div>
+                      ))
+                    )}
                   </div>
 
                   {/* Footer link to notices page */}

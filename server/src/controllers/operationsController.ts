@@ -364,3 +364,111 @@ export const updateSettings = async (req: Request, res: Response) => {
     return res.status(500).json({ error: 'Failed to update settings.' });
   }
 };
+
+export const getSystemAlerts = async (req: any, res: Response) => {
+  const { propertyId } = req.query;
+
+  try {
+    const filters: any = {};
+    if (propertyId) {
+      filters.propertyId = propertyId;
+    } else if (req.user && req.user.role !== 'OWNER' && req.user.role !== 'SUPER_ADMIN') {
+      filters.propertyId = req.user.propertyId;
+    }
+
+    // 1. Fetch payments scoped to the property
+    const payments = await prisma.payment.findMany({
+      where: {
+        status: { in: ['PENDING', 'APPROVAL_PENDING', 'PAID'] },
+        member: filters.propertyId ? { propertyId: filters.propertyId } : undefined,
+      },
+      include: {
+        member: { select: { fullName: true } }
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 15
+    });
+
+    // 2. Fetch open/in-progress maintenance issues scoped to the property
+    const issues = await prisma.issue.findMany({
+      where: {
+        status: { in: ['OPEN', 'IN_PROGRESS'] },
+        member: filters.propertyId ? { propertyId: filters.propertyId } : undefined,
+      },
+      include: {
+        member: { select: { fullName: true } }
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 15
+    });
+
+    // 3. Fetch active visitors scoped to the property
+    const visitors = await prisma.visitor.findMany({
+      where: {
+        checkOutTime: null,
+        propertyId: filters.propertyId ? filters.propertyId : undefined,
+      },
+      orderBy: { checkInTime: 'desc' },
+      take: 15
+    });
+
+    // 4. Map to chronological notifications list
+    const alerts: any[] = [];
+
+    payments.forEach(p => {
+      let title = '';
+      let desc = '';
+      let timeVal = p.createdAt;
+      if (p.status === 'PAID') {
+        title = 'Rent Collected';
+        desc = `Rent of ₹${p.amount.toLocaleString()} collected from ${p.member?.fullName || 'Resident'} (${p.period}).`;
+        timeVal = p.paidDate || p.createdAt;
+      } else if (p.status === 'APPROVAL_PENDING') {
+        title = 'Verification Required';
+        desc = `${p.member?.fullName || 'Resident'} submitted ₹${p.amount.toLocaleString()} online payment reference.`;
+      } else {
+        title = 'Rent Due Pending';
+        desc = `Rent of ₹${p.amount.toLocaleString()} is pending for ${p.member?.fullName || 'Resident'} (${p.period}).`;
+      }
+      alerts.push({
+        id: `pay-${p.id}`,
+        type: 'payment',
+        title,
+        desc,
+        time: timeVal,
+        createdAt: timeVal,
+      });
+    });
+
+    issues.forEach(i => {
+      alerts.push({
+        id: `issue-${i.id}`,
+        type: 'issue',
+        title: `Complaint: ${i.title}`,
+        desc: `Maintenance issue reported by ${i.member?.fullName || 'Resident'}: "${i.description.substring(0, 50)}..."`,
+        time: i.createdAt,
+        createdAt: i.createdAt,
+      });
+    });
+
+    visitors.forEach(v => {
+      alerts.push({
+        id: `visitor-${v.id}`,
+        type: 'visitor',
+        title: 'Active Visitor Checked-In',
+        desc: `${v.fullName} is visiting ${v.hostMember || 'resident'} (Purpose: ${v.purpose}).`,
+        time: v.checkInTime,
+        createdAt: v.checkInTime,
+      });
+    });
+
+    // Sort chronologically (latest first)
+    alerts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    return res.json(alerts.slice(0, 20));
+  } catch (error) {
+    console.error('Fetch alerts error:', error);
+    return res.status(500).json({ error: 'Failed to retrieve system alerts.' });
+  }
+};
+

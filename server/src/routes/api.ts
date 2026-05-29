@@ -67,6 +67,7 @@ import {
   createInventoryItem,
   updateInventoryItem,
   deleteInventoryItem,
+  getSystemAlerts,
 } from '../controllers/operationsController';
 
 import {
@@ -200,6 +201,7 @@ router.delete('/inventory/:id', authenticateToken as any, requireRole(['ADMIN', 
 // ==========================================
 router.get('/settings', authenticateToken as any, getSettings);
 router.put('/settings', authenticateToken as any, requireRole(['ADMIN', 'OWNER']) as any, updateSettings);
+router.get('/alerts', authenticateToken as any, getSystemAlerts);
 
 // ==========================================
 // 13. METRICS & REPORTS
