@@ -21,9 +21,9 @@ export const BookingsPage: React.FC = () => {
     const propId = activeProperty?.id;
 
     try {
-      const bookUrl = 'http://localhost:5000/api/bookings';
-      const roomUrl = propId ? `http://localhost:5000/api/rooms?propertyId=${propId}` : 'http://localhost:5000/api/rooms';
-      const memUrl = propId ? `http://localhost:5000/api/members?propertyId=${propId}` : 'http://localhost:5000/api/members';
+      const bookUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/bookings`;
+      const roomUrl = propId ? `${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/rooms?propertyId=${propId}` : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/rooms`;
+      const memUrl = propId ? `${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/members?propertyId=${propId}` : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/members`;
 
       const [bookRes, roomRes, memRes] = await Promise.all([
         fetch(bookUrl, { headers: token ? { Authorization: `Bearer ${token}` } : {} }),
@@ -77,7 +77,7 @@ export const BookingsPage: React.FC = () => {
     const token = localStorage.getItem('token');
 
     try {
-      const res = await fetch(`http://localhost:5000/api/bookings`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/bookings`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -118,7 +118,7 @@ export const BookingsPage: React.FC = () => {
     const token = localStorage.getItem('token');
 
     try {
-      const res = await fetch(`http://localhost:5000/api/bookings/${bookId}/confirm`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/bookings/${bookId}/confirm`, {
         method: 'POST',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
@@ -144,7 +144,7 @@ export const BookingsPage: React.FC = () => {
     const token = localStorage.getItem('token');
 
     try {
-      const res = await fetch(`http://localhost:5000/api/bookings/${bookId}/cancel`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/bookings/${bookId}/cancel`, {
         method: 'POST',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });

@@ -20,7 +20,7 @@ export const InventoryPage: React.FC = () => {
     const propId = activeProperty?.id;
 
     try {
-      const url = propId ? `http://localhost:5000/api/inventory?propertyId=${propId}` : 'http://localhost:5000/api/inventory';
+      const url = propId ? `${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/inventory?propertyId=${propId}` : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/inventory`;
       const res = await fetch(url, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
@@ -71,7 +71,7 @@ export const InventoryPage: React.FC = () => {
     const token = localStorage.getItem('token');
 
     try {
-      const res = await fetch(`http://localhost:5000/api/inventory`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/inventory`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -105,7 +105,7 @@ export const InventoryPage: React.FC = () => {
     const token = localStorage.getItem('token');
 
     try {
-      const res = await fetch(`http://localhost:5000/api/inventory/${itemId}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/inventory/${itemId}`, {
         method: 'DELETE',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });

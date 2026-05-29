@@ -22,7 +22,7 @@ export const RoomsPage: React.FC = () => {
     const propId = activeProperty?.id;
 
     try {
-      const url = propId ? `http://localhost:5000/api/rooms?propertyId=${propId}` : 'http://localhost:5000/api/rooms';
+      const url = propId ? `${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/rooms?propertyId=${propId}` : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/rooms`;
       const res = await fetch(url, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
@@ -77,7 +77,7 @@ export const RoomsPage: React.FC = () => {
     const token = localStorage.getItem('token');
 
     try {
-      const res = await fetch(`http://localhost:5000/api/rooms`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/rooms`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -121,7 +121,7 @@ export const RoomsPage: React.FC = () => {
     const token = localStorage.getItem('token');
 
     try {
-      const res = await fetch(`http://localhost:5000/api/rooms/${roomId}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/rooms/${roomId}`, {
         method: 'DELETE',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });

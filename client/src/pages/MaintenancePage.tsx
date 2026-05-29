@@ -22,8 +22,8 @@ export const MaintenancePage: React.FC = () => {
     const propId = activeProperty?.id;
 
     try {
-      const issueUrl = propId ? `http://localhost:5000/api/issues?propertyId=${propId}` : 'http://localhost:5000/api/issues';
-      const memUrl = propId ? `http://localhost:5000/api/members?propertyId=${propId}` : 'http://localhost:5000/api/members';
+      const issueUrl = propId ? `${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/issues?propertyId=${propId}` : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/issues`;
+      const memUrl = propId ? `${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/members?propertyId=${propId}` : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/members`;
 
       const [issueRes, memRes] = await Promise.all([
         fetch(issueUrl, { headers: token ? { Authorization: `Bearer ${token}` } : {} }),
@@ -71,7 +71,7 @@ export const MaintenancePage: React.FC = () => {
     const token = localStorage.getItem('token');
 
     try {
-      const res = await fetch(`http://localhost:5000/api/issues`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/issues`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -111,7 +111,7 @@ export const MaintenancePage: React.FC = () => {
     const token = localStorage.getItem('token');
 
     try {
-      const res = await fetch(`http://localhost:5000/api/issues/${issueId}/assign`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/issues/${issueId}/assign`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -140,7 +140,7 @@ export const MaintenancePage: React.FC = () => {
     const token = localStorage.getItem('token');
 
     try {
-      const res = await fetch(`http://localhost:5000/api/issues/${issueId}/resolve`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/issues/${issueId}/resolve`, {
         method: 'POST',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });

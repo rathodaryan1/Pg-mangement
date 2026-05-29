@@ -18,7 +18,7 @@ export const ReportsPage: React.FC = () => {
     const token = localStorage.getItem('token');
     const propId = activeProperty?.id;
 
-    let url = `http://localhost:5000/api/reports?type=${reportType}`;
+    let url = `${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/reports?type=${reportType}`;
     if (startDate) url += `&startDate=${startDate}`;
     if (endDate) url += `&endDate=${endDate}`;
     if (propId) url += `&propertyId=${propId}`;

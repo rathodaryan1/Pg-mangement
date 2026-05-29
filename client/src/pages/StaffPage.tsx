@@ -21,7 +21,7 @@ export const StaffPage: React.FC = () => {
     const propId = activeProperty?.id;
 
     try {
-      const url = propId ? `http://localhost:5000/api/staff?propertyId=${propId}` : 'http://localhost:5000/api/staff';
+      const url = propId ? `${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/staff?propertyId=${propId}` : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/staff`;
       const res = await fetch(url, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
@@ -73,7 +73,7 @@ export const StaffPage: React.FC = () => {
     const token = localStorage.getItem('token');
 
     try {
-      const res = await fetch(`http://localhost:5000/api/auth/register-request`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/auth/register-request`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -84,7 +84,7 @@ export const StaffPage: React.FC = () => {
       if (res.ok) {
         const data = await res.json();
         // Since it returns OTP, we bypass verification in mock flow or hit verify-otp
-        await fetch(`http://localhost:5000/api/auth/verify-otp`, {
+        await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/auth/verify-otp`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ phone, otp: data.otp || '123456' }),
@@ -116,7 +116,7 @@ export const StaffPage: React.FC = () => {
     const token = localStorage.getItem('token');
 
     try {
-      const res = await fetch(`http://localhost:5000/api/staff/${staffId}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/staff/${staffId}`, {
         method: 'DELETE',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });

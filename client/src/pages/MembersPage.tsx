@@ -53,8 +53,8 @@ export const MembersPage: React.FC = () => {
     const propId = activeProperty?.id;
 
     try {
-      const memUrl = propId ? `http://localhost:5000/api/members?propertyId=${propId}` : 'http://localhost:5000/api/members';
-      const roomUrl = propId ? `http://localhost:5000/api/rooms?propertyId=${propId}` : 'http://localhost:5000/api/rooms';
+      const memUrl = propId ? `${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/members?propertyId=${propId}` : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/members`;
+      const roomUrl = propId ? `${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/rooms?propertyId=${propId}` : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/rooms`;
 
       const [memRes, roomRes] = await Promise.all([
         fetch(memUrl, { headers: token ? { Authorization: `Bearer ${token}` } : {} }),
@@ -128,7 +128,7 @@ export const MembersPage: React.FC = () => {
     const token = localStorage.getItem('token');
 
     try {
-      const res = await fetch(`http://localhost:5000/api/members`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/members`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -166,7 +166,7 @@ export const MembersPage: React.FC = () => {
     const token = localStorage.getItem('token');
 
     try {
-      const res = await fetch(`http://localhost:5000/api/members/${memberId}/checkout`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/members/${memberId}/checkout`, {
         method: 'POST',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
@@ -192,7 +192,7 @@ export const MembersPage: React.FC = () => {
     const token = localStorage.getItem('token');
 
     try {
-      const res = await fetch(`http://localhost:5000/api/members/${memberId}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/members/${memberId}`, {
         method: 'DELETE',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });

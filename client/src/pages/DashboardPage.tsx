@@ -37,8 +37,8 @@ export const DashboardPage: React.FC = () => {
       setIsLoading(true);
       const token = localStorage.getItem('token');
       const url = activeProperty 
-        ? `http://localhost:5000/api/dashboard/stats?propertyId=${activeProperty.id}`
-        : 'http://localhost:5000/api/dashboard/stats';
+        ? `${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/dashboard/stats?propertyId=${activeProperty.id}`
+        : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/dashboard/stats`;
 
       try {
         const res = await fetch(url, {

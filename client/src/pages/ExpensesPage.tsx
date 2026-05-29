@@ -21,7 +21,7 @@ export const ExpensesPage: React.FC = () => {
     const propId = activeProperty?.id;
 
     try {
-      const url = propId ? `http://localhost:5000/api/expenses?propertyId=${propId}` : 'http://localhost:5000/api/expenses';
+      const url = propId ? `${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/expenses?propertyId=${propId}` : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/expenses`;
       const res = await fetch(url, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
@@ -72,7 +72,7 @@ export const ExpensesPage: React.FC = () => {
     const token = localStorage.getItem('token');
 
     try {
-      const res = await fetch(`http://localhost:5000/api/expenses`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/expenses`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

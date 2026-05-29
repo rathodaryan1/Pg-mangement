@@ -71,8 +71,8 @@ export const PaymentsPage: React.FC = () => {
     const propId = activeProperty?.id;
 
     try {
-      const payUrl = propId ? `http://localhost:5000/api/payments?propertyId=${propId}` : 'http://localhost:5000/api/payments';
-      const memUrl = propId ? `http://localhost:5000/api/members?propertyId=${propId}` : 'http://localhost:5000/api/members';
+      const payUrl = propId ? `${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/payments?propertyId=${propId}` : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/payments`;
+      const memUrl = propId ? `${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/members?propertyId=${propId}` : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/members`;
 
       const [payRes, memRes] = await Promise.all([
         fetch(payUrl, { headers: token ? { Authorization: `Bearer ${token}` } : {} }),
@@ -206,7 +206,7 @@ export const PaymentsPage: React.FC = () => {
     const token = localStorage.getItem('token');
 
     try {
-      const res = await fetch(`http://localhost:5000/api/payments`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/payments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -253,8 +253,8 @@ export const PaymentsPage: React.FC = () => {
     const cleanMethod = checkoutMethod.replace('_APPROVAL', '').replace('_PAID', '');
 
     const endpoint = isApprovalRequired 
-      ? `http://localhost:5000/api/payments/${checkoutPayment.id}/request-approval`
-      : `http://localhost:5000/api/payments/${checkoutPayment.id}/manual`;
+      ? `${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/payments/${checkoutPayment.id}/request-approval`
+      : `${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/payments/${checkoutPayment.id}/manual`;
 
     try {
       const res = await fetch(endpoint, {
@@ -304,7 +304,7 @@ export const PaymentsPage: React.FC = () => {
     const token = localStorage.getItem('token');
 
     try {
-      const res = await fetch(`http://localhost:5000/api/payments/${payId}/approve`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/payments/${payId}/approve`, {
         method: 'POST',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
@@ -337,7 +337,7 @@ export const PaymentsPage: React.FC = () => {
     const token = localStorage.getItem('token');
 
     try {
-      const res = await fetch(`http://localhost:5000/api/payments/${pay.id}/razorpay`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/payments/${pay.id}/razorpay`, {
         method: 'POST',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
@@ -381,7 +381,7 @@ export const PaymentsPage: React.FC = () => {
     const token = localStorage.getItem('token');
 
     try {
-      const res = await fetch(`http://localhost:5000/api/payments/razorpay-verify`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/payments/razorpay-verify`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

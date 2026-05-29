@@ -20,7 +20,7 @@ export const VisitorsPage: React.FC = () => {
     const propId = activeProperty?.id;
 
     try {
-      const url = propId ? `http://localhost:5000/api/visitors?propertyId=${propId}` : 'http://localhost:5000/api/visitors';
+      const url = propId ? `${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/visitors?propertyId=${propId}` : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/visitors`;
       const res = await fetch(url, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
@@ -70,7 +70,7 @@ export const VisitorsPage: React.FC = () => {
     const token = localStorage.getItem('token');
 
     try {
-      const res = await fetch(`http://localhost:5000/api/visitors`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/visitors`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -104,7 +104,7 @@ export const VisitorsPage: React.FC = () => {
     const token = localStorage.getItem('token');
 
     try {
-      const res = await fetch(`http://localhost:5000/api/visitors/${visitorId}/checkout`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/visitors/${visitorId}/checkout`, {
         method: 'POST',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
