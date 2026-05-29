@@ -37,6 +37,18 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(3);
+  const [notifications, setNotifications] = useState([
+    { id: 1, type: 'issue', title: 'New AC Leak Complaint', desc: 'AC water leakage reported in Room 101 Gurgaon.', time: '10m ago', read: false },
+    { id: 2, type: 'payment', title: 'Rent Invoice Pending', desc: 'Aakash Verma\'s rent of ₹18,000 for June is generated.', time: '1h ago', read: false },
+    { id: 3, type: 'visitor', title: 'Active Visitor Checked-in', desc: 'Ramesh Patel (Courier) is currently checked in.', time: '2h ago', read: false },
+  ]);
+
+  const handleMarkAllRead = () => {
+    setUnreadCount(0);
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  };
 
   if (!user) return <>{children}</>;
 
@@ -226,12 +238,69 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
             </button>
 
-            {/* Notification placeholder */}
+            {/* Notification Dropdown */}
             <div className="relative">
-              <button className="p-2 rounded-xl bg-white/70 dark:bg-black/20 border border-[#e0e3eb] dark:border-white/5 hover:border-purple-500/20 text-slate-500 dark:text-slate-400 transition-all shadow-sm">
+              <button 
+                onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+                className="p-2 rounded-xl bg-white/70 dark:bg-black/20 border border-[#e0e3eb] dark:border-white/5 hover:border-purple-500/20 text-slate-500 dark:text-slate-400 transition-all shadow-sm relative"
+                title="Notifications"
+              >
                 <Bell size={16} />
-                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-slate-900" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-pink-500 ring-2 ring-white dark:ring-slate-900 animate-pulse" />
+                )}
               </button>
+
+              {isNotificationOpen && (
+                <div className="absolute right-0 mt-3 w-80 rounded-[24px] glass-panel border border-[#e0e3eb]/60 dark:border-white/5 shadow-2xl overflow-hidden py-1.5 animate-slide-up z-50 text-xs font-semibold">
+                  
+                  {/* Header */}
+                  <div className="flex justify-between items-center px-4 py-2 border-b border-[#e0e3eb]/40 dark:border-white/5 bg-slate-500/5">
+                    <span className="font-black text-slate-800 dark:text-white uppercase tracking-wider text-[10px]">Announcements & Alerts</span>
+                    {unreadCount > 0 && (
+                      <button 
+                        onClick={handleMarkAllRead}
+                        className="text-[9px] font-bold text-purple-500 hover:text-purple-600 transition-colors uppercase"
+                      >
+                        Clear Badge
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Notification List */}
+                  <div className="max-h-[300px] overflow-y-auto divide-y divide-slate-500/5">
+                    {notifications.map((n) => (
+                      <div 
+                        key={n.id} 
+                        className={`p-3 hover:bg-slate-500/5 transition-all text-left space-y-1 relative ${
+                          !n.read ? 'bg-purple-500/[0.02]' : ''
+                        }`}
+                      >
+                        {!n.read && (
+                          <div className="absolute top-3.5 right-3 w-1.5 h-1.5 rounded-full bg-pink-500" />
+                        )}
+                        <div className="flex justify-between pr-4">
+                          <h4 className="font-extrabold text-slate-800 dark:text-slate-200 text-[11px]">{n.title}</h4>
+                          <span className="text-[9px] text-slate-400 font-mono">{n.time}</span>
+                        </div>
+                        <p className="text-[10px] text-slate-400 font-semibold leading-relaxed pr-2">{n.desc}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Footer link to notices page */}
+                  <button 
+                    onClick={() => {
+                      setIsNotificationOpen(false);
+                      navigate('/notices');
+                    }}
+                    className="w-full text-center py-2 text-[10px] font-black text-purple-500 hover:text-purple-600 border-t border-[#e0e3eb]/40 dark:border-white/5 mt-1 bg-slate-500/5 uppercase tracking-wide"
+                  >
+                    View Notice Board
+                  </button>
+
+                </div>
+              )}
             </div>
 
             {/* User Name Badge */}
