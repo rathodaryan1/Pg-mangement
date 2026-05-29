@@ -1,0 +1,180 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String
+  name         String
+  role         String    @default("OWNER") // SUPER_ADMIN, OWNER, MANAGER, RECEPTIONIST, ACCOUNTANT, MAINTENANCE
+  propertyId   String?   // If staff, links to their assigned property
+  property     Property? @relation(fields: [propertyId], references: [id])
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Property {
+  id                String          @id @default(uuid())
+  name              String
+  address           String
+  phone             String?
+  email             String?
+  upiId             String?
+  gstNumber         String?
+  razorpayKeyId     String?
+  razorpayKeySecret String?
+  rooms             Room[]
+  members           Member[]
+  visitors          Visitor[]
+  inventoryItems    InventoryItem[]
+  expenses          Expense[]
+  notices           Notice[]
+  staff             User[]
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+}
+
+model Member {
+  id               String    @id @default(uuid())
+  fullName         String
+  mobile           String    @unique
+  email            String    @unique
+  address          String
+  emergencyContact String
+  joiningDate      DateTime
+  workLocation     String?
+  rentAmount       Float
+  depositAmount    Float
+  status           String    @default("ACTIVE") // ACTIVE, INACTIVE, RESERVED, CHECKED_OUT
+  photoUrl         String?
+  aadhaarUrl       String?
+  panUrl           String?
+  agreementUrl     String?
+  roomId           String?
+  room             Room?     @relation(fields: [roomId], references: [id])
+  propertyId       String
+  property         Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  bookings         Booking[]
+  payments         Payment[]
+  issues           Issue[]
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+model Room {
+  id         String    @id @default(uuid())
+  number     String
+  type       String    // Single, Double, Triple, Four-sharing
+  capacity   Int
+  rent       Float
+  status     String    @default("AVAILABLE") // AVAILABLE, OCCUPIED, MAINTENANCE
+  amenities  String    // Comma separated e.g. "AC, Wifi, Attach Bathroom"
+  propertyId String
+  property   Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  members    Member[]
+  bookings   Booking[]
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@unique([number, propertyId])
+}
+
+model Booking {
+  id          String   @id @default(uuid())
+  memberId    String
+  member      Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  roomId      String
+  room        Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  checkInDate DateTime
+  status      String   @default("CONFIRMED") // PENDING, CONFIRMED, CANCELLED, COMPLETED
+  notes       String?
+  createdAt   DateTime @default(now())
+}
+
+model Payment {
+  id            String    @id @default(uuid())
+  memberId      String
+  member        Member    @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  amount        Float
+  dueDate       DateTime
+  paidDate      DateTime?
+  period        String    // e.g. "May 2026"
+  method        String    // CASH, UPI, ONLINE
+  status        String    @default("PENDING") // PENDING, PAID, OVERDUE, APPROVAL_PENDING
+  transactionId String?
+  receiptUrl    String?
+  createdAt     DateTime  @default(now())
+}
+
+model Issue {
+  id          String    @id @default(uuid())
+  title       String
+  description String
+  category    String    // Plumbing, Electrical, Cleaning, Wifi, Others
+  status      String    @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED, CLOSED
+  priority    String    @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  memberId    String
+  member      Member    @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  assignedTo  String?   // Staff name/role
+  resolvedAt  DateTime?
+  createdAt   DateTime  @default(now())
+}
+
+model Expense {
+  id         String   @id @default(uuid())
+  title      String
+  amount     Float
+  category   String   // Rent, Electricity, Salaries, Maintenance, Food, Misc
+  date       DateTime
+  notes      String?
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+}
+
+model Notice {
+  id          String   @id @default(uuid())
+  title       String
+  content     String
+  category    String   // General, Event, Rules, Maintenance
+  isImportant Boolean  @default(false)
+  propertyId  String
+  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+}
+
+model Visitor {
+  id           String    @id @default(uuid())
+  fullName     String
+  mobile       String
+  purpose      String
+  hostMember   String?
+  checkInTime  DateTime  @default(now())
+  checkOutTime DateTime?
+  propertyId   String
+  property     Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  createdAt    DateTime  @default(now())
+}
+
+model InventoryItem {
+  id         String   @id @default(uuid())
+  name       String
+  quantity   Int
+  category   String   // e.g. Bed, Mattress, Fan, AC, Chair
+  status     String   @default("GOOD") // GOOD, DAMAGED, UNDER_REPAIR
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Setting {
+  key   String @id
+  value String
+}
