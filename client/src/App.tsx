@@ -43,13 +43,29 @@ import { ResidentEmergencyPage } from './pages/resident/ResidentEmergencyPage';
 
 // Route Guards
 const ProtectedOwnerRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center">
+        <div className="w-8 h-8 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin" />
+        <p className="text-xs text-slate-400 mt-2">Loading Urban Nest...</p>
+      </div>
+    );
+  }
   if (!user) return <Navigate to="/login" replace />;
   return <OwnerLayout>{children}</OwnerLayout>;
 };
 
 const ProtectedResidentRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center">
+        <div className="w-8 h-8 border-4 border-purple-600/20 border-t-purple-600 rounded-full animate-spin" />
+        <p className="text-xs text-slate-400 mt-2">Loading Resident Portal...</p>
+      </div>
+    );
+  }
   if (!user) return <Navigate to="/login" replace />;
   return <ResidentLayout>{children}</ResidentLayout>;
 };
