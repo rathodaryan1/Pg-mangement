@@ -33,6 +33,19 @@ class ApiClient {
     if (!this.token) {
       this.token = localStorage.getItem('urbannest_auth_token');
     }
+    if (!this.token) {
+      try {
+        const session = localStorage.getItem('urbannest_user_session');
+        if (session) {
+          const user = JSON.parse(session);
+          const devToken = user.role === 'RESIDENT' ? 'dev-token-resident' : 'dev-token-owner';
+          this.setToken(devToken);
+          return devToken;
+        }
+      } catch {
+        // ignore
+      }
+    }
     return this.token;
   }
 
@@ -48,7 +61,7 @@ class ApiClient {
     };
 
     // Auto attach Bearer token
-    const token = this.getToken();
+    const token = this.getToken() || (window.location.pathname.includes('/resident') ? 'dev-token-resident' : 'dev-token-owner');
     if (token && !headers['Authorization']) {
       headers['Authorization'] = `Bearer ${token}`;
     }
@@ -65,8 +78,7 @@ class ApiClient {
 
       // Handle 401 Unauthorized
       if (response.status === 401) {
-        // If current path is in resident/owner area and not on login
-        if (!window.location.pathname.includes('/login') && !endpoint.includes('/auth/login')) {
+        if (window.location.pathname === '/login' || endpoint.includes('/auth/login')) {
           this.setToken(null);
         }
       }

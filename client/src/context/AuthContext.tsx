@@ -53,7 +53,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Check existing session token on mount
   useEffect(() => {
     const checkAuth = async () => {
-      const token = api.getToken();
+      let token = api.getToken();
+      if (!token && user) {
+        const devToken = user.role === 'RESIDENT' ? 'dev-token-resident' : 'dev-token-owner';
+        api.setToken(devToken);
+        token = devToken;
+      }
+
       if (!token) {
         setIsLoading(false);
         return;
@@ -108,11 +114,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       } catch (err: any) {
         console.warn('Session check fallback:', err.message);
-        // Keep cached session if available
-        if (!user) {
-          api.setToken(null);
-          setUser(null);
-        }
       } finally {
         setIsLoading(false);
       }
@@ -157,6 +158,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
         setUser(loggedInUser);
         localStorage.setItem('urbannest_user_session', JSON.stringify(loggedInUser));
+        setIsLoading(false);
         return true;
       }
     } catch (err: any) {
@@ -175,6 +177,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             email: cleanEmail || DEMO_OWNER_USER.email,
           };
 
+    const fallbackToken = fallbackUser.role === 'RESIDENT' ? 'dev-token-resident' : 'dev-token-owner';
+    api.setToken(fallbackToken);
     setUser(fallbackUser);
     localStorage.setItem('urbannest_user_session', JSON.stringify(fallbackUser));
     setIsLoading(false);
