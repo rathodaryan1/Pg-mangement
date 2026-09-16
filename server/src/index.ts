@@ -48,6 +48,17 @@ app.use('/uploads', express.static(uploadsDir));
 app.use('/api', apiRouter);
 
 // Root / Health check fallback
+app.get('/', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: '🏢 Urban Nest — Smart PG Backend API Server is running.',
+    version: '1.0.0',
+    apiRoot: 'http://localhost:' + PORT + '/api',
+    health: 'http://localhost:' + PORT + '/api/health',
+    timestamp: new Date().toISOString()
+  });
+});
+
 app.get('/health', (req, res) => {
   res.status(200).json({
     success: true,
