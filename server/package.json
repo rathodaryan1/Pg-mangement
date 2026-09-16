@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Backend API for PG Management System",
   "main": "dist/index.js",
+  "packageManager": "npm@10.8.2",
   "scripts": {
     "build": "npx prisma generate && tsc",
     "start": "node dist/index.js",
@@ -37,5 +38,8 @@
     "prisma": "^5.14.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.5"
+  },
+  "overrides": {
+    "@types/express": "^4.17.21"
   }
 }

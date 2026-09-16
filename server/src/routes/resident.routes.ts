@@ -46,7 +46,7 @@ router.post('/complaints/:id/comments', ResidentController.addComplaintComment a
 
 // 7. Documents (KYC & Agreements)
 router.get('/documents', ResidentController.getDocuments as any);
-router.post('/documents', upload.single('file'), ResidentController.uploadDocument as any);
+router.post('/documents', upload.single('file') as any, ResidentController.uploadDocument as any);
 router.get('/documents/:id/download', ResidentController.downloadDocument as any);
 
 // 8. Leave Requests

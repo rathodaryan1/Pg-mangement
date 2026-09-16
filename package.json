@@ -2,12 +2,13 @@
   "name": "pg-management-system",
   "version": "1.0.0",
   "description": "Root workspace of PG Management System",
+  "packageManager": "npm@10.8.2",
   "scripts": {
     "install:all": "npm install --prefix server && npm install --prefix client --legacy-peer-deps",
     "dev:server": "npm run dev --prefix server",
     "dev:client": "npm run dev --prefix client",
     "dev": "npx concurrently -k -n \"backend,frontend\" -c \"purple,blue\" \"npm run dev:server\" \"npm run dev:client\"",
-    "build": "npm install --prefix server && npm run build --prefix server",
+    "build": "npm install --prefix server && npx --prefix server prisma generate && npm run build --prefix server",
     "start": "npm start --prefix server"
   }
 }
