@@ -17,8 +17,9 @@ import { ContactPage } from './pages/public/ContactPage';
 // Auth Pages
 import { LoginPage } from './pages/auth/LoginPage';
 
-// Owner Pages
+// Owner / Admin Pages
 import { OwnerDashboardPage } from './pages/owner/OwnerDashboardPage';
+import { PropertiesPage } from './pages/owner/PropertiesPage';
 import { RoomsPage } from './pages/owner/RoomsPage';
 import { ResidentsPage } from './pages/owner/ResidentsPage';
 import { ResidentLifecyclePage } from './pages/owner/ResidentLifecyclePage';
@@ -27,6 +28,10 @@ import { VisitorsPage } from './pages/owner/VisitorsPage';
 import { MaintenancePage } from './pages/owner/MaintenancePage';
 import { StaffPage } from './pages/owner/StaffPage';
 import { InventoryPage } from './pages/owner/InventoryPage';
+import { OwnerLeavePage } from './pages/owner/OwnerLeavePage';
+import { OwnerEmergencyPage } from './pages/owner/OwnerEmergencyPage';
+import { ReportsPage } from './pages/owner/ReportsPage';
+import { OwnerSettingsPage } from './pages/owner/OwnerSettingsPage';
 import { AuditLogsPage } from './pages/owner/AuditLogsPage';
 
 // Resident Pages
@@ -47,7 +52,7 @@ const ProtectedOwnerRoute: React.FC<{ children: React.ReactNode }> = ({ children
   if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center">
-        <div className="w-8 h-8 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-indigo-600/20 border-t-indigo-600 rounded-full animate-spin" />
         <p className="text-xs text-slate-400 mt-2">Loading Urban Nest...</p>
       </div>
     );
@@ -95,24 +100,34 @@ const AppRoutes: React.FC = () => {
           APPLICATION: OWNER PORTAL (/owner/*)
          ======================================================== */}
       <Route path="/owner/dashboard" element={<ProtectedOwnerRoute><OwnerDashboardPage /></ProtectedOwnerRoute>} />
-      <Route path="/owner/properties" element={<ProtectedOwnerRoute><RoomsPage /></ProtectedOwnerRoute>} />
+      <Route path="/owner/properties" element={<ProtectedOwnerRoute><PropertiesPage /></ProtectedOwnerRoute>} />
       <Route path="/owner/rooms" element={<ProtectedOwnerRoute><RoomsPage /></ProtectedOwnerRoute>} />
       <Route path="/owner/residents" element={<ProtectedOwnerRoute><ResidentsPage /></ProtectedOwnerRoute>} />
       <Route path="/owner/residents/lifecycle" element={<ProtectedOwnerRoute><ResidentLifecyclePage /></ProtectedOwnerRoute>} />
+      <Route path="/owner/staff" element={<ProtectedOwnerRoute><StaffPage /></ProtectedOwnerRoute>} />
+      <Route path="/owner/leave" element={<ProtectedOwnerRoute><OwnerLeavePage /></ProtectedOwnerRoute>} />
+      
+      {/* Finance */}
       <Route path="/owner/finance" element={<ProtectedOwnerRoute><PaymentsPage /></ProtectedOwnerRoute>} />
       <Route path="/owner/payments" element={<ProtectedOwnerRoute><PaymentsPage /></ProtectedOwnerRoute>} />
       <Route path="/owner/deposits" element={<ProtectedOwnerRoute><PaymentsPage /></ProtectedOwnerRoute>} />
       <Route path="/owner/expenses" element={<ProtectedOwnerRoute><PaymentsPage /></ProtectedOwnerRoute>} />
+      
+      {/* Operations & Assets */}
       <Route path="/owner/visitors" element={<ProtectedOwnerRoute><VisitorsPage /></ProtectedOwnerRoute>} />
       <Route path="/owner/maintenance" element={<ProtectedOwnerRoute><MaintenancePage /></ProtectedOwnerRoute>} />
       <Route path="/owner/tasks" element={<ProtectedOwnerRoute><MaintenancePage /></ProtectedOwnerRoute>} />
-      <Route path="/owner/staff" element={<ProtectedOwnerRoute><StaffPage /></ProtectedOwnerRoute>} />
       <Route path="/owner/inventory" element={<ProtectedOwnerRoute><InventoryPage /></ProtectedOwnerRoute>} />
       <Route path="/owner/vendors" element={<ProtectedOwnerRoute><InventoryPage /></ProtectedOwnerRoute>} />
       <Route path="/owner/documents" element={<ProtectedOwnerRoute><ResidentsPage /></ProtectedOwnerRoute>} />
       <Route path="/owner/notices" element={<ProtectedOwnerRoute><OwnerDashboardPage /></ProtectedOwnerRoute>} />
+      <Route path="/owner/emergency" element={<ProtectedOwnerRoute><OwnerEmergencyPage /></ProtectedOwnerRoute>} />
+      <Route path="/owner/sos" element={<ProtectedOwnerRoute><OwnerEmergencyPage /></ProtectedOwnerRoute>} />
+      
+      {/* Insights & Settings */}
+      <Route path="/owner/reports" element={<ProtectedOwnerRoute><ReportsPage /></ProtectedOwnerRoute>} />
       <Route path="/owner/audit-logs" element={<ProtectedOwnerRoute><AuditLogsPage /></ProtectedOwnerRoute>} />
-      <Route path="/owner/settings" element={<ProtectedOwnerRoute><AuditLogsPage /></ProtectedOwnerRoute>} />
+      <Route path="/owner/settings" element={<ProtectedOwnerRoute><OwnerSettingsPage /></ProtectedOwnerRoute>} />
 
       {/* ========================================================
           APPLICATION: RESIDENT PORTAL (/resident/*)

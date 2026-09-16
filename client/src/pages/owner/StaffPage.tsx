@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShieldCheck, Plus, Search, Phone, User, CheckSquare, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, Plus, Search, Phone, User, CheckSquare, CheckCircle2, Edit2, Trash2, AlertTriangle } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { StatusBadge, Badge } from '../../components/ui/Badge';
@@ -15,8 +15,10 @@ export const StaffPage: React.FC = () => {
   const { activeProperty } = useAuth();
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [addStaffModal, setAddStaffModal] = useState(false);
+  const [staffModalOpen, setStaffModalOpen] = useState(false);
+  const [editingStaff, setEditingStaff] = useState<any | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [archiveModal, setArchiveModal] = useState<{ id: string; name: string } | null>(null);
 
   const [staffForm, setStaffForm] = useState({
     name: '',
@@ -43,37 +45,56 @@ export const StaffPage: React.FC = () => {
     fetchStaff();
   }, [activeProperty]);
 
-  const handleCreateStaff = async (e: React.FormEvent) => {
+  const handleSaveStaff = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       if (!staffForm.name || !staffForm.mobile) {
         alert('Please fill name and mobile number');
         return;
       }
-      await ownerApi.createStaff({
-        propertyId: activeProperty.id,
-        name: staffForm.name,
-        email: staffForm.email || undefined,
-        mobile: staffForm.mobile,
-        role: staffForm.role,
-        shift: staffForm.shift,
-        salary: parseFloat(staffForm.salary) || 20000
-      });
 
-      setAddStaffModal(false);
-      setToastMessage(`Staff member ${staffForm.name} registered successfully!`);
+      if (editingStaff) {
+        await ownerApi.updateStaff(editingStaff.id, {
+          name: staffForm.name,
+          email: staffForm.email,
+          mobile: staffForm.mobile,
+          role: staffForm.role,
+          shift: staffForm.shift,
+          salary: parseFloat(staffForm.salary)
+        });
+        setToastMessage(`Staff profile for ${staffForm.name} updated!`);
+      } else {
+        await ownerApi.createStaff({
+          propertyId: activeProperty.id,
+          name: staffForm.name,
+          email: staffForm.email || undefined,
+          mobile: staffForm.mobile,
+          role: staffForm.role,
+          shift: staffForm.shift,
+          salary: parseFloat(staffForm.salary) || 20000
+        });
+        setToastMessage(`Staff member ${staffForm.name} registered successfully!`);
+      }
+
+      setStaffModalOpen(false);
+      setEditingStaff(null);
       setTimeout(() => setToastMessage(null), 4000);
-      setStaffForm({
-        name: '',
-        email: '',
-        mobile: '',
-        role: 'MAINTENANCE',
-        shift: 'Morning (8 AM - 4 PM)',
-        salary: '22000'
-      });
       fetchStaff();
     } catch (err: any) {
-      alert(err.message || 'Failed to add staff member');
+      alert(err.message || 'Failed to save staff member');
+    }
+  };
+
+  const handleConfirmArchive = async () => {
+    if (!archiveModal) return;
+    try {
+      await ownerApi.archiveStaff(archiveModal.id);
+      setToastMessage(`Staff member ${archiveModal.name} deactivated.`);
+      setArchiveModal(null);
+      setTimeout(() => setToastMessage(null), 3500);
+      fetchStaff();
+    } catch (err: any) {
+      alert(err.message || 'Failed to deactivate staff');
     }
   };
 
@@ -107,6 +128,38 @@ export const StaffPage: React.FC = () => {
     {
       header: 'Monthly Salary',
       cell: (row) => <span className="font-bold text-xs">₹{(row.salary || 0).toLocaleString('en-IN')}</span>
+    },
+    {
+      header: 'Actions',
+      cell: (row) => (
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => {
+              setEditingStaff(row);
+              setStaffForm({
+                name: row.name,
+                email: (row as any).email || '',
+                mobile: row.mobile,
+                role: row.role,
+                shift: row.shift || 'Morning (8 AM - 4 PM)',
+                salary: (row.salary || 22000).toString()
+              });
+              setStaffModalOpen(true);
+            }}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800"
+            title="Edit Staff Profile"
+          >
+            <Edit2 className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={() => setArchiveModal({ id: row.id, name: row.name })}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-slate-100 dark:hover:bg-slate-800"
+            title="Deactivate Staff"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )
     }
   ];
 
@@ -128,12 +181,23 @@ export const StaffPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Staff Management</h1>
-          <p className="text-xs text-slate-500">Manage property wardens, technicians, security personnel, shifts, and salaries</p>
+          <p className="text-xs text-slate-500">Manage property wardens, technicians, security personnel, shifts, and payroll</p>
         </div>
         <Button
           variant="primary"
           size="sm"
-          onClick={() => setAddStaffModal(true)}
+          onClick={() => {
+            setEditingStaff(null);
+            setStaffForm({
+              name: '',
+              email: '',
+              mobile: '',
+              role: 'MAINTENANCE',
+              shift: 'Morning (8 AM - 4 PM)',
+              salary: '22000'
+            });
+            setStaffModalOpen(true);
+          }}
           leftIcon={<Plus className="w-3.5 h-3.5" />}
         >
           Add Staff Member
@@ -142,9 +206,13 @@ export const StaffPage: React.FC = () => {
 
       <Table columns={columns} data={staff} keyExtractor={(item) => item.id} isLoading={isLoading} />
 
-      {/* Add Staff Modal */}
-      <Modal isOpen={addStaffModal} onClose={() => setAddStaffModal(false)} title="Register New Staff Member">
-        <form onSubmit={handleCreateStaff} className="space-y-4">
+      {/* Staff Modal (Create / Edit) */}
+      <Modal
+        isOpen={staffModalOpen}
+        onClose={() => setStaffModalOpen(false)}
+        title={editingStaff ? `Edit Staff: ${editingStaff.name}` : 'Register New Staff Member'}
+      >
+        <form onSubmit={handleSaveStaff} className="space-y-4">
           <Input
             label="Staff Full Name"
             placeholder="e.g. Ramesh Kumar"
@@ -161,9 +229,9 @@ export const StaffPage: React.FC = () => {
               required
             />
             <Input
-              label="Email Address (Optional)"
+              label="Email Address"
               type="email"
-              placeholder="ramesh@example.com"
+              placeholder="ramesh@pg.com"
               value={staffForm.email}
               onChange={(e) => setStaffForm({ ...staffForm, email: e.target.value })}
             />
@@ -176,8 +244,8 @@ export const StaffPage: React.FC = () => {
                 { label: 'Maintenance Technician', value: 'MAINTENANCE' },
                 { label: 'Security Guard', value: 'SECURITY' },
                 { label: 'Housekeeping', value: 'HOUSEKEEPING' },
-                { label: 'Receptionist', value: 'RECEPTION' },
-                { label: 'Other Staff', value: 'OTHER' }
+                { label: 'Receptionist', value: 'RECEPTIONIST' },
+                { label: 'Accountant', value: 'ACCOUNTANT' }
               ]}
               value={staffForm.role}
               onChange={(e) => setStaffForm({ ...staffForm, role: e.target.value })}
@@ -202,11 +270,37 @@ export const StaffPage: React.FC = () => {
             required
           />
           <div className="flex justify-end gap-3 pt-3 border-t">
-            <Button variant="outline" size="sm" type="button" onClick={() => setAddStaffModal(false)}>Cancel</Button>
-            <Button variant="primary" size="sm" type="submit">Register Staff</Button>
+            <Button variant="outline" size="sm" type="button" onClick={() => setStaffModalOpen(false)}>Cancel</Button>
+            <Button variant="primary" size="sm" type="submit">
+              {editingStaff ? 'Save Changes' : 'Register Staff'}
+            </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Deactivation Modal */}
+      <Modal
+        isOpen={!!archiveModal}
+        onClose={() => setArchiveModal(null)}
+        title="Deactivate Staff Member"
+      >
+        <div className="space-y-4">
+          <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-800 text-xs flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 shrink-0" />
+            <span>Are you sure you want to deactivate <strong>{archiveModal?.name}</strong>? They will be removed from active dispatch duty.</span>
+          </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="outline" size="sm" onClick={() => setArchiveModal(null)}>
+              Cancel
+            </Button>
+            <Button variant="danger" size="sm" onClick={handleConfirmArchive}>
+              Confirm Deactivation
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );
 };
+
+export default StaffPage;

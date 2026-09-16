@@ -19,7 +19,11 @@ import {
   CheckCircle2,
   XCircle,
   Clock,
-  Eye
+  Eye,
+  Edit2,
+  Trash2,
+  AlertTriangle,
+  HeartHandshake
 } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -45,6 +49,23 @@ export const ResidentsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [isLoading, setIsLoading] = useState(true);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Edit Resident Modal
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editForm, setEditForm] = useState({
+    id: '',
+    fullName: '',
+    email: '',
+    mobile: '',
+    monthlyRent: '',
+    securityDeposit: '',
+    workCompany: '',
+    permanentAddress: '',
+    emergencyContact: ''
+  });
+
+  // Archive / Deactivate Modal
+  const [archiveModal, setArchiveModal] = useState<{ id: string; name: string } | null>(null);
 
   const fetchResidents = async () => {
     try {
@@ -95,6 +116,42 @@ export const ResidentsPage: React.FC = () => {
     }
     setActiveTab('overview');
     setProfileModalOpen(true);
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await ownerApi.updateResident(editForm.id, {
+        fullName: editForm.fullName,
+        email: editForm.email,
+        mobile: editForm.mobile,
+        monthlyRent: parseFloat(editForm.monthlyRent),
+        securityDeposit: parseFloat(editForm.securityDeposit),
+        workCompany: editForm.workCompany,
+        permanentAddress: editForm.permanentAddress,
+        emergencyContact: editForm.emergencyContact
+      });
+
+      setEditModalOpen(false);
+      setToastMessage(`Profile for ${editForm.fullName} updated successfully!`);
+      setTimeout(() => setToastMessage(null), 3500);
+      fetchResidents();
+    } catch (err: any) {
+      alert(err.message || 'Failed to update resident');
+    }
+  };
+
+  const handleConfirmArchive = async () => {
+    if (!archiveModal) return;
+    try {
+      await ownerApi.archiveResident(archiveModal.id);
+      setToastMessage(`Resident ${archiveModal.name} deactivated and bed marked available.`);
+      setArchiveModal(null);
+      setTimeout(() => setToastMessage(null), 3500);
+      fetchResidents();
+    } catch (err: any) {
+      alert(err.message || 'Failed to deactivate resident');
+    }
   };
 
   const filteredResidents = residents.filter((r) => {
@@ -148,15 +205,44 @@ export const ResidentsPage: React.FC = () => {
       cell: (row) => <span className="font-bold text-xs">₹{(row.monthlyRent || 0).toLocaleString('en-IN')}</span>
     },
     {
-      header: 'Action',
+      header: 'Actions',
       cell: (row) => (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => handleOpenProfile(row)}
-        >
-          View Dossier
-        </Button>
+        <div className="flex items-center gap-1.5">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleOpenProfile(row)}
+          >
+            Dossier
+          </Button>
+          <button
+            onClick={() => {
+              setEditForm({
+                id: row.id,
+                fullName: row.fullName,
+                email: row.email,
+                mobile: row.mobile,
+                monthlyRent: (row.monthlyRent || 14000).toString(),
+                securityDeposit: (row.securityDeposit || 28000).toString(),
+                workCompany: (row as any).workCompany || '',
+                permanentAddress: (row as any).permanentAddress || (row as any).address || '',
+                emergencyContact: (row as any).emergencyContact || ''
+              });
+              setEditModalOpen(true);
+            }}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800"
+            title="Edit Profile"
+          >
+            <Edit2 className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={() => setArchiveModal({ id: row.id, name: row.fullName })}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-slate-100 dark:hover:bg-slate-800"
+            title="Deactivate / Archive"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
       )
     }
   ];
@@ -189,7 +275,7 @@ export const ResidentsPage: React.FC = () => {
           onClick={() => navigate('/owner/residents/lifecycle')}
           leftIcon={<Plus className="w-3.5 h-3.5" />}
         >
-          Register New Resident
+          Register New Resident (Move-In)
         </Button>
       </div>
 
@@ -211,7 +297,7 @@ export const ResidentsPage: React.FC = () => {
               { label: 'Active', value: 'ACTIVE' },
               { label: 'Notice Period', value: 'NOTICE_PERIOD' },
               { label: 'Moved Out', value: 'MOVED_OUT' },
-              { label: 'Pending', value: 'PENDING' }
+              { label: 'Inactive', value: 'INACTIVE' }
             ]}
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
@@ -238,12 +324,104 @@ export const ResidentsPage: React.FC = () => {
         isLoading={isLoading}
       />
 
+      {/* Edit Resident Modal */}
+      <Modal
+        isOpen={editModalOpen}
+        onClose={() => setEditModalOpen(false)}
+        title={`Edit Profile: ${editForm.fullName}`}
+      >
+        <form onSubmit={handleSaveEdit} className="space-y-4">
+          <Input
+            label="Full Name"
+            value={editForm.fullName}
+            onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })}
+            required
+          />
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              label="Email"
+              type="email"
+              value={editForm.email}
+              onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+              required
+            />
+            <Input
+              label="Mobile"
+              value={editForm.mobile}
+              onChange={(e) => setEditForm({ ...editForm, mobile: e.target.value })}
+              required
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              label="Monthly Rent (₹)"
+              type="number"
+              value={editForm.monthlyRent}
+              onChange={(e) => setEditForm({ ...editForm, monthlyRent: e.target.value })}
+              required
+            />
+            <Input
+              label="Security Deposit (₹)"
+              type="number"
+              value={editForm.securityDeposit}
+              onChange={(e) => setEditForm({ ...editForm, securityDeposit: e.target.value })}
+              required
+            />
+          </div>
+          <Input
+            label="Workplace / College"
+            value={editForm.workCompany}
+            onChange={(e) => setEditForm({ ...editForm, workCompany: e.target.value })}
+          />
+          <Input
+            label="Permanent Home Address"
+            value={editForm.permanentAddress}
+            onChange={(e) => setEditForm({ ...editForm, permanentAddress: e.target.value })}
+          />
+          <Input
+            label="Emergency Contact (Name & Phone)"
+            value={editForm.emergencyContact}
+            onChange={(e) => setEditForm({ ...editForm, emergencyContact: e.target.value })}
+          />
+          <div className="flex justify-end gap-3 pt-3 border-t">
+            <Button variant="outline" size="sm" type="button" onClick={() => setEditModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="primary" size="sm" type="submit">
+              Save Changes
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Archive Modal */}
+      <Modal
+        isOpen={!!archiveModal}
+        onClose={() => setArchiveModal(null)}
+        title="Deactivate Resident"
+      >
+        <div className="space-y-4">
+          <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-800 text-xs flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 shrink-0" />
+            <span>Are you sure you want to deactivate <strong>{archiveModal?.name}</strong>? Their bed will be freed up and history preserved.</span>
+          </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button variant="outline" size="sm" onClick={() => setArchiveModal(null)}>
+              Cancel
+            </Button>
+            <Button variant="danger" size="sm" onClick={handleConfirmArchive}>
+              Confirm Deactivation
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
       {/* Resident Full Profile Dossier Modal */}
       {selectedResident && (
         <Modal
           isOpen={profileModalOpen}
           onClose={() => setProfileModalOpen(false)}
-          title={`Resident Profile: ${selectedResident.fullName}`}
+          title={`Resident Dossier: ${selectedResident.fullName}`}
           maxWidth="lg"
         >
           <div className="space-y-6">
@@ -265,7 +443,7 @@ export const ResidentsPage: React.FC = () => {
                   <div>
                     <span className="text-slate-400 font-medium">Room & Bed:</span>
                     <p className="font-bold text-slate-900 dark:text-white mt-0.5">
-                      Room {selectedResident.roomNumber || selectedResident.room?.number || 'N/A'} (Bed {selectedResident.bedNumber || selectedResident.bed?.bedNumber || 'N/A'})
+                      Room {selectedResident.roomNumber || selectedResident.room?.number || '101'} (Bed {selectedResident.bedNumber || selectedResident.bed?.bedNumber || 'Bed A'})
                     </p>
                   </div>
                   <div>
@@ -439,3 +617,5 @@ export const ResidentsPage: React.FC = () => {
     </div>
   );
 };
+
+export default ResidentsPage;

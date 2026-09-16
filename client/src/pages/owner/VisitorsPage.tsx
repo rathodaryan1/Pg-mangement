@@ -9,7 +9,9 @@ import {
   ShieldCheck,
   AlertCircle,
   Scan,
-  Key
+  Key,
+  Plus,
+  RefreshCw
 } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -26,21 +28,38 @@ import type { VisitorRequest } from '../../types';
 export const VisitorsPage: React.FC = () => {
   const { activeProperty } = useAuth();
   const [visitors, setVisitors] = useState<VisitorRequest[]>([]);
+  const [residents, setResidents] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [selectedVisitor, setSelectedVisitor] = useState<VisitorRequest | null>(null);
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [gateScanModalOpen, setGateScanModalOpen] = useState(false);
+  const [createVisitorModalOpen, setCreateVisitorModalOpen] = useState(false);
   const [qrCodeInput, setQrCodeInput] = useState('');
   const [qrVerificationResult, setQrVerificationResult] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const fetchVisitors = async () => {
+  // Form for direct visitor logging
+  const [visitorForm, setVisitorForm] = useState({
+    residentId: '',
+    visitorName: '',
+    visitorMobile: '',
+    relation: 'Friend',
+    purpose: '',
+    visitDate: new Date().toISOString().split('T')[0],
+    expectedTime: '14:00'
+  });
+
+  const fetchData = async () => {
     try {
       setIsLoading(true);
-      const res = await ownerApi.getVisitors(activeProperty.id);
-      setVisitors(res.data || []);
+      const [resVisitors, resResidents] = await Promise.all([
+        ownerApi.getVisitors(activeProperty?.id),
+        ownerApi.getResidents({ propertyId: activeProperty?.id, status: 'ACTIVE' }).catch(() => ({ data: [] }))
+      ]);
+      setVisitors(resVisitors.data || []);
+      setResidents(resResidents.data || []);
     } catch (err: any) {
       console.error('Failed to fetch visitors:', err);
     } finally {
@@ -49,15 +68,54 @@ export const VisitorsPage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchVisitors();
+    fetchData();
   }, [activeProperty]);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  const handleCreateVisitor = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (!visitorForm.visitorName || !visitorForm.visitorMobile) {
+        alert('Please provide visitor name and mobile number.');
+        return;
+      }
+      await ownerApi.createVisitor({
+        propertyId: activeProperty?.id,
+        residentId: visitorForm.residentId || undefined,
+        visitorName: visitorForm.visitorName,
+        visitorMobile: visitorForm.visitorMobile,
+        relation: visitorForm.relation,
+        purpose: visitorForm.purpose || 'Visit',
+        visitDate: visitorForm.visitDate,
+        expectedTime: visitorForm.expectedTime
+      });
+
+      setCreateVisitorModalOpen(false);
+      showToast(`Visitor pass created for ${visitorForm.visitorName}!`);
+      setVisitorForm({
+        residentId: '',
+        visitorName: '',
+        visitorMobile: '',
+        relation: 'Friend',
+        purpose: '',
+        visitDate: new Date().toISOString().split('T')[0],
+        expectedTime: '14:00'
+      });
+      fetchData();
+    } catch (err: any) {
+      alert(err.message || 'Failed to create visitor pass');
+    }
+  };
 
   const handleApprove = async (id: string) => {
     try {
       await ownerApi.approveVisitor(id);
-      setToastMessage('Visitor request approved! QR pass generated.');
-      setTimeout(() => setToastMessage(null), 3000);
-      fetchVisitors();
+      showToast('Visitor request approved! QR pass generated.');
+      fetchData();
     } catch (err: any) {
       alert(err.message || 'Failed to approve visitor');
     }
@@ -66,9 +124,8 @@ export const VisitorsPage: React.FC = () => {
   const handleReject = async (id: string) => {
     try {
       await ownerApi.rejectVisitor(id);
-      setToastMessage('Visitor request rejected.');
-      setTimeout(() => setToastMessage(null), 3000);
-      fetchVisitors();
+      showToast('Visitor request rejected.');
+      fetchData();
     } catch (err: any) {
       alert(err.message || 'Failed to reject visitor');
     }
@@ -77,9 +134,8 @@ export const VisitorsPage: React.FC = () => {
   const handleCheckIn = async (id: string) => {
     try {
       await ownerApi.checkInVisitor(id);
-      setToastMessage('Visitor checked in at security gate.');
-      setTimeout(() => setToastMessage(null), 3000);
-      fetchVisitors();
+      showToast('Visitor checked in at security gate.');
+      fetchData();
     } catch (err: any) {
       alert(err.message || 'Failed to check in');
     }
@@ -88,9 +144,8 @@ export const VisitorsPage: React.FC = () => {
   const handleCheckOut = async (id: string) => {
     try {
       await ownerApi.checkOutVisitor(id);
-      setToastMessage('Visitor checked out.');
-      setTimeout(() => setToastMessage(null), 3000);
-      fetchVisitors();
+      showToast('Visitor marked as checked out.');
+      fetchData();
     } catch (err: any) {
       alert(err.message || 'Failed to check out');
     }
@@ -103,9 +158,8 @@ export const VisitorsPage: React.FC = () => {
       const res = await ownerApi.verifyVisitorQR(qrCodeInput.trim());
       setQrVerificationResult(res.data);
       if (res.data.valid) {
-        setToastMessage(`Valid pass verified for ${res.data.visitor.visitorName || res.data.visitor.name}!`);
-        setTimeout(() => setToastMessage(null), 4000);
-        fetchVisitors();
+        showToast(`Valid pass verified for ${res.data.visitor?.visitorName || res.data.visitor?.name}!`);
+        fetchData();
       }
     } catch (err: any) {
       setQrVerificationResult({ valid: false, message: err.message || 'Verification failed' });
@@ -114,8 +168,9 @@ export const VisitorsPage: React.FC = () => {
 
   const filteredVisitors = visitors.filter((v) => {
     const matchesSearch =
-      v.visitorName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      v.residentName.toLowerCase().includes(searchQuery.toLowerCase());
+      v.visitorName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      v.residentName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      v.visitorMobile?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'ALL' || v.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -126,7 +181,9 @@ export const VisitorsPage: React.FC = () => {
       cell: (row) => (
         <div>
           <p className="font-bold text-xs text-slate-900 dark:text-white">{row.visitorName}</p>
-          <p className="text-[11px] text-slate-400">{row.relation || 'Guest'} • {row.visitorMobile}</p>
+          <p className="text-[11px] text-slate-400">
+            {row.relation || 'Guest'} • {row.visitorMobile}
+          </p>
         </div>
       )
     },
@@ -134,15 +191,17 @@ export const VisitorsPage: React.FC = () => {
       header: 'Host Resident',
       cell: (row) => (
         <div>
-          <p className="font-bold text-xs text-blue-600 dark:text-blue-400">{row.residentName}</p>
-          <p className="text-[11px] text-slate-500">Room {row.roomNumber || 'N/A'}</p>
+          <p className="font-bold text-xs text-indigo-600 dark:text-indigo-400">{row.residentName || 'Walk-in / Gate Pass'}</p>
+          <p className="text-[11px] text-slate-500">{row.roomNumber ? `Room ${row.roomNumber}` : 'General Entry'}</p>
         </div>
       )
     },
     {
       header: 'Visit Schedule',
       cell: (row) => (
-        <span className="text-xs">{new Date(row.visitDate).toLocaleDateString()} ({row.expectedTime || 'Anytime'})</span>
+        <span className="text-xs">
+          {row.visitDate ? new Date(row.visitDate).toLocaleDateString() : 'Today'} ({row.expectedTime || 'Anytime'})
+        </span>
       )
     },
     {
@@ -215,29 +274,46 @@ export const VisitorsPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Visitor Approval & Security Gate Desk</h1>
-          <p className="text-xs text-slate-500">Approve resident guest entries, track cryptographically verified digital QR passes, and log gate entries</p>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+            Visitor Desk & Security Gate Pass
+          </h1>
+          <p className="text-xs text-slate-500">
+            Approve resident guest entries, track cryptographically verified digital QR passes, and log gate check-ins/outs
+          </p>
         </div>
 
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={() => {
-            setQrCodeInput('');
-            setQrVerificationResult(null);
-            setGateScanModalOpen(true);
-          }}
-          leftIcon={<Scan className="w-3.5 h-3.5" />}
-        >
-          Verify / Scan QR Pass
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={fetchData} leftIcon={<RefreshCw className="w-3.5 h-3.5" />}>
+            Refresh
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setQrCodeInput('');
+              setQrVerificationResult(null);
+              setGateScanModalOpen(true);
+            }}
+            leftIcon={<Scan className="w-3.5 h-3.5 text-indigo-600" />}
+          >
+            Verify / Scan QR
+          </Button>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => setCreateVisitorModalOpen(true)}
+            leftIcon={<Plus className="w-3.5 h-3.5" />}
+          >
+            Log Visitor Pass
+          </Button>
+        </div>
       </div>
 
       {/* Toolbar */}
       <Card className="p-4 flex flex-col md:flex-row items-center justify-between gap-3">
         <div className="w-full md:w-80">
           <Input
-            placeholder="Search visitor, host..."
+            placeholder="Search visitor, host, or phone..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             leftIcon={<Search className="w-4 h-4 text-slate-400" />}
@@ -250,7 +326,8 @@ export const VisitorsPage: React.FC = () => {
             { label: 'Pending Approval', value: 'PENDING' },
             { label: 'Approved', value: 'APPROVED' },
             { label: 'Checked In', value: 'CHECKED_IN' },
-            { label: 'Checked Out', value: 'CHECKED_OUT' }
+            { label: 'Checked Out', value: 'CHECKED_OUT' },
+            { label: 'Rejected', value: 'REJECTED' }
           ]}
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
@@ -258,20 +335,98 @@ export const VisitorsPage: React.FC = () => {
       </Card>
 
       {/* Table */}
-      <Table
-        columns={columns}
-        data={filteredVisitors}
-        keyExtractor={(item) => item.id}
-        isLoading={isLoading}
-      />
+      <Table columns={columns} data={filteredVisitors} keyExtractor={(item) => item.id} isLoading={isLoading} />
+
+      {/* Create Visitor Pass Modal */}
+      <Modal
+        isOpen={createVisitorModalOpen}
+        onClose={() => setCreateVisitorModalOpen(false)}
+        title="Log Visitor / Gate Pass"
+      >
+        <form onSubmit={handleCreateVisitor} className="space-y-4">
+          <Select
+            label="Host Resident (Optional for walk-ins)"
+            options={[
+              { label: 'None / Direct PG Guest / Delivery', value: '' },
+              ...residents.map((r) => ({
+                label: `${r.fullName} (Room ${r.room?.number || r.roomNumber || 'N/A'})`,
+                value: r.id
+              }))
+            ]}
+            value={visitorForm.residentId}
+            onChange={(e) => setVisitorForm({ ...visitorForm, residentId: e.target.value })}
+          />
+
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              label="Visitor Full Name"
+              placeholder="e.g. Rahul Sharma"
+              value={visitorForm.visitorName}
+              onChange={(e) => setVisitorForm({ ...visitorForm, visitorName: e.target.value })}
+              required
+            />
+            <Input
+              label="Visitor Mobile Number"
+              placeholder="e.g. +91 98765 43210"
+              value={visitorForm.visitorMobile}
+              onChange={(e) => setVisitorForm({ ...visitorForm, visitorMobile: e.target.value })}
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Select
+              label="Relation to Host"
+              options={[
+                { label: 'Friend', value: 'Friend' },
+                { label: 'Parent / Family', value: 'Parent' },
+                { label: 'Sibling', value: 'Sibling' },
+                { label: 'Colleague', value: 'Colleague' },
+                { label: 'Delivery / Courier', value: 'Delivery' },
+                { label: 'Maintenance Vendor', value: 'Vendor' },
+                { label: 'Other', value: 'Other' }
+              ]}
+              value={visitorForm.relation}
+              onChange={(e) => setVisitorForm({ ...visitorForm, relation: e.target.value })}
+            />
+            <Input
+              label="Purpose of Visit"
+              placeholder="e.g. Casual visit / parcel delivery"
+              value={visitorForm.purpose}
+              onChange={(e) => setVisitorForm({ ...visitorForm, purpose: e.target.value })}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              label="Visit Date"
+              type="date"
+              value={visitorForm.visitDate}
+              onChange={(e) => setVisitorForm({ ...visitorForm, visitDate: e.target.value })}
+              required
+            />
+            <Input
+              label="Expected Arrival Time"
+              type="time"
+              value={visitorForm.expectedTime}
+              onChange={(e) => setVisitorForm({ ...visitorForm, expectedTime: e.target.value })}
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-3 border-t">
+            <Button variant="outline" size="sm" type="button" onClick={() => setCreateVisitorModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="primary" size="sm" type="submit">
+              Generate & Approve Pass
+            </Button>
+          </div>
+        </form>
+      </Modal>
 
       {/* QR Pass Modal */}
       {selectedVisitor && (
-        <Modal
-          isOpen={qrModalOpen}
-          onClose={() => setQrModalOpen(false)}
-          maxWidth="sm"
-        >
+        <Modal isOpen={qrModalOpen} onClose={() => setQrModalOpen(false)} maxWidth="sm">
           <div className="py-2">
             <QRPassCard visitor={selectedVisitor} />
             <div className="mt-4 flex justify-center">
@@ -292,7 +447,8 @@ export const VisitorsPage: React.FC = () => {
       >
         <div className="space-y-4">
           <p className="text-xs text-slate-500">
-            Enter the visitor's secure QR pass code or paste cryptographic verification payload to validate entry permissions.
+            Enter the visitor's secure QR pass code or paste cryptographic verification payload to validate entry
+            permissions.
           </p>
 
           <form onSubmit={handleVerifyQR} className="space-y-3">
@@ -319,16 +475,34 @@ export const VisitorsPage: React.FC = () => {
               }`}
             >
               <div className="flex items-center gap-2 font-bold text-sm">
-                {qrVerificationResult.valid ? <CheckCircle2 className="w-5 h-5 text-emerald-600" /> : <XCircle className="w-5 h-5 text-rose-600" />}
+                {qrVerificationResult.valid ? (
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                ) : (
+                  <XCircle className="w-5 h-5 text-rose-600" />
+                )}
                 <span>{qrVerificationResult.valid ? 'VALID PASS VERIFIED' : 'INVALID / EXPIRED PASS'}</span>
               </div>
 
               {qrVerificationResult.visitor && (
                 <div className="space-y-1 pt-1 border-t border-emerald-200/60 dark:border-emerald-800/40">
-                  <p><strong>Visitor:</strong> {qrVerificationResult.visitor.visitorName || qrVerificationResult.visitor.name}</p>
-                  <p><strong>Host Resident:</strong> {qrVerificationResult.visitor.residentName || qrVerificationResult.visitor.resident?.fullName} (Room {qrVerificationResult.visitor.roomNumber || qrVerificationResult.visitor.resident?.room?.number || 'N/A'})</p>
-                  <p><strong>Purpose:</strong> {qrVerificationResult.visitor.purpose}</p>
-                  <p><strong>Status:</strong> {qrVerificationResult.visitor.status}</p>
+                  <p>
+                    <strong>Visitor:</strong>{' '}
+                    {qrVerificationResult.visitor.visitorName || qrVerificationResult.visitor.name}
+                  </p>
+                  <p>
+                    <strong>Host Resident:</strong>{' '}
+                    {qrVerificationResult.visitor.residentName || qrVerificationResult.visitor.resident?.fullName} (Room{' '}
+                    {qrVerificationResult.visitor.roomNumber ||
+                      qrVerificationResult.visitor.resident?.room?.number ||
+                      'N/A'}
+                    )
+                  </p>
+                  <p>
+                    <strong>Purpose:</strong> {qrVerificationResult.visitor.purpose}
+                  </p>
+                  <p>
+                    <strong>Status:</strong> {qrVerificationResult.visitor.status}
+                  </p>
                 </div>
               )}
             </div>
@@ -338,3 +512,5 @@ export const VisitorsPage: React.FC = () => {
     </div>
   );
 };
+
+export default VisitorsPage;
