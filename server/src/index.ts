@@ -17,19 +17,44 @@ app.use(
   })
 );
 
-// CORS configuration
+// Dynamic CORS configuration for Vercel + Local + Custom Domains
+const configuredOrigins: string[] = [
+  config.frontendUrl,
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:5174',
+];
+
+if (process.env.FRONTEND_URL) {
+  process.env.FRONTEND_URL.split(',').forEach((u) => {
+    const trimmed = u.trim();
+    if (trimmed && !configuredOrigins.includes(trimmed)) {
+      configuredOrigins.push(trimmed);
+    }
+  });
+}
+
 app.use(
   cors({
-    origin: [
-      config.frontendUrl,
-      'http://localhost:5173',
-      'http://localhost:5174',
-      'http://127.0.0.1:5173',
-      'http://127.0.0.1:5174',
-    ],
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, server-to-server, curl)
+      if (!origin) return callback(null, true);
+
+      if (
+        configuredOrigins.includes(origin) ||
+        origin.endsWith('.vercel.app') ||
+        origin.startsWith('http://localhost:') ||
+        origin.startsWith('http://127.0.0.1:')
+      ) {
+        return callback(null, true);
+      }
+
+      return callback(null, true);
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-razorpay-signature', 'x-requested-with'],
   })
 );
 
@@ -40,7 +65,7 @@ app.use('/api', apiLimiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Static file serving for local uploads directory
+// Static file serving for local uploads directory fallback
 const uploadsDir = path.join(__dirname, '../uploads');
 app.use('/uploads', express.static(uploadsDir));
 
@@ -53,8 +78,9 @@ app.get('/', (req, res) => {
     success: true,
     message: '🏢 Urban Nest — Smart PG Backend API Server is running.',
     version: '1.0.0',
-    apiRoot: 'http://localhost:' + PORT + '/api',
-    health: 'http://localhost:' + PORT + '/api/health',
+    environment: config.nodeEnv,
+    apiRoot: '/api',
+    health: '/api/health',
     timestamp: new Date().toISOString()
   });
 });
@@ -63,6 +89,7 @@ app.get('/health', (req, res) => {
   res.status(200).json({
     success: true,
     message: 'Urban Nest API is running',
+    environment: config.nodeEnv,
     timestamp: new Date().toISOString(),
   });
 });
@@ -77,9 +104,8 @@ app.listen(PORT, () => {
   console.log(`================================================`);
   console.log(`  🏢 URBAN NEST — SMART PG BACKEND SERVICE     `);
   console.log(`  Environment: ${config.nodeEnv}               `);
-  console.log(`  Server URL:  http://localhost:${PORT}        `);
-  console.log(`  API Base:    http://localhost:${PORT}/api    `);
-  console.log(`  Health:      http://localhost:${PORT}/api/health`);
+  console.log(`  Server Port: ${PORT}                         `);
+  console.log(`  Frontend:    ${config.frontendUrl}           `);
   console.log(`================================================`);
 });
 

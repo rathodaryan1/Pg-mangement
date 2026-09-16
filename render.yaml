@@ -1,15 +1,26 @@
 services:
-  # Node.js Express Backend Service
+  # Urban Nest — Express Backend API Service (Render)
   - type: web
-    name: pg-management-backend
+    name: urbannest-backend
     env: node
     plan: free
-    buildCommand: npm run build
-    startCommand: npm run start
+    rootDir: server
+    buildCommand: npm install && npx prisma generate && npm run build
+    startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
-        sync: false # You will connect this to your Supabase/PostgreSQL connection string
+        sync: false # Set to your Supabase PostgreSQL connection pooler URL
+      - key: DIRECT_URL
+        sync: false # Set to your Supabase PostgreSQL direct connection URL
       - key: JWT_SECRET
-        generateValue: true # Generates a secure random JWT secret automatically
+        generateValue: true # Generates secure 32-character secret automatically
+      - key: FRONTEND_URL
+        sync: false # Set to your deployed Vercel URL (e.g. https://urbannest.vercel.app)
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false

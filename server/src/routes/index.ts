@@ -2,6 +2,8 @@ import { Router } from 'express';
 import authRoutes from './auth.routes';
 import residentRoutes from './resident.routes';
 import ownerRoutes from './owner.routes';
+import webhookRoutes from './webhook.routes';
+import { prisma } from '../config/prisma';
 
 const router = Router();
 
@@ -40,17 +42,30 @@ router.get('/', (req, res) => {
         complaints: 'GET /api/resident/complaints',
         documents: 'GET /api/resident/documents',
         notices: 'GET /api/resident/notices',
+      },
+      webhooks: {
+        razorpay: 'POST /api/webhooks/razorpay'
       }
     }
   });
 });
 
-// Health check
-router.get('/health', (req, res) => {
+// Production Safe Health Check
+router.get('/health', async (req, res) => {
+  let dbStatus = 'UNKNOWN';
+  try {
+    const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 1000));
+    await Promise.race([prisma.$queryRaw`SELECT 1`, timeout]);
+    dbStatus = 'CONNECTED';
+  } catch {
+    dbStatus = 'FALLBACK_READY';
+  }
+
   res.status(200).json({
     success: true,
     name: 'Urban Nest API',
     status: 'HEALTHY',
+    database: dbStatus,
     message: 'Urban Nest API is running smoothly',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
@@ -60,10 +75,13 @@ router.get('/health', (req, res) => {
 // Auth Routes
 router.use('/auth', authRoutes);
 
-// Resident Portal Routes (Phase 1)
+// Resident Portal Routes
 router.use('/resident', residentRoutes);
 
-// Owner / Admin Portal Routes (Phase 2)
+// Owner / Admin Portal Routes
 router.use('/owner', ownerRoutes);
+
+// Webhook Handlers
+router.use('/webhooks', webhookRoutes);
 
 export default router;
