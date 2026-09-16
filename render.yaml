@@ -1,0 +1,15 @@
+services:
+  # Node.js Express Backend Service
+  - type: web
+    name: pg-management-backend
+    env: node
+    plan: free
+    buildCommand: npm run build
+    startCommand: npm run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false # You will connect this to your Supabase/PostgreSQL connection string
+      - key: JWT_SECRET
+        generateValue: true # Generates a secure random JWT secret automatically

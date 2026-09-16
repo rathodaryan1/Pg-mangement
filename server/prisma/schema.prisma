@@ -1,0 +1,691 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// -------------------------------------------------------------
+// 1. USER & AUTHENTICATION
+// -------------------------------------------------------------
+enum UserRole {
+  SUPER_ADMIN
+  OWNER
+  MANAGER
+  RECEPTIONIST
+  ACCOUNTANT
+  MAINTENANCE
+  RESIDENT
+}
+
+model User {
+  id           String         @id @default(uuid())
+  email        String         @unique
+  passwordHash String
+  name         String
+  role         UserRole       @default(RESIDENT)
+  mobile       String?
+  avatarUrl    String?
+  propertyId   String?
+  property     Property?      @relation(fields: [propertyId], references: [id])
+  resident     Resident?
+  notifications Notification[]
+  auditLogs    AuditLog[]     @relation("ActorAuditLogs")
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@index([email])
+  @@index([role])
+}
+
+// -------------------------------------------------------------
+// 2. PROPERTY STRUCTURE: Property -> Building -> Floor -> Room -> Bed
+// -------------------------------------------------------------
+model Property {
+  id                String            @id @default(uuid())
+  name              String
+  address           String
+  city              String            @default("Bengaluru")
+  phone             String?
+  email             String?
+  upiId             String?
+  gstNumber         String?
+  razorpayKeyId     String?
+  razorpayKeySecret String?
+  buildings         Building[]
+  rooms             Room[]
+  residents         Resident[]
+  staff             User[]
+  agreements        Agreement[]
+  securityDeposits  SecurityDeposit[]
+  payments          Payment[]
+  visitorRequests   VisitorRequest[]
+  complaints        Complaint[]
+  leaveRequests     LeaveRequest[]
+  documents         Document[]
+  notices           Notice[]
+  sosEvents         SOSEvent[]
+  expenses          Expense[]
+  inventoryItems    InventoryItem[]
+  tasks             OperationalTask[]
+  auditLogs         AuditLog[]
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+}
+
+model Building {
+  id         String   @id @default(uuid())
+  name       String   // e.g. "Block A", "Main Wing"
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  floors     Floor[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Floor {
+  id          String   @id @default(uuid())
+  floorNumber Int      // 1, 2, 3...
+  buildingId  String
+  building    Building @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+  rooms       Room[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum RoomStatus {
+  AVAILABLE
+  FULL
+  MAINTENANCE
+}
+
+model Room {
+  id         String     @id @default(uuid())
+  number     String     // e.g. "101", "202"
+  type       String     // Single, Double, Triple, Four-sharing
+  capacity   Int
+  baseRent   Float
+  deposit    Float
+  status     RoomStatus @default(AVAILABLE)
+  amenities  String     // Comma-separated: "AC, High-Speed Wi-Fi, Attached Bath"
+  floorId    String?
+  floor      Floor?     @relation(fields: [floorId], references: [id], onDelete: SetNull)
+  propertyId String
+  property   Property   @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  beds       Bed[]
+  complaints Complaint[]
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  @@unique([number, propertyId])
+}
+
+enum BedStatus {
+  AVAILABLE
+  OCCUPIED
+  RESERVED
+  MAINTENANCE
+}
+
+model Bed {
+  id          String    @id @default(uuid())
+  bedNumber   String    // e.g. "Bed A", "Bed B"
+  roomId      String
+  room        Room      @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  status      BedStatus @default(AVAILABLE)
+  monthlyRent Float
+  resident    Resident?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([bedNumber, roomId])
+}
+
+// -------------------------------------------------------------
+// 3. RESIDENT PROFILE & LIFECYCLE
+// -------------------------------------------------------------
+enum ResidentStatus {
+  PENDING_MOVE_IN
+  ACTIVE
+  NOTICE_PERIOD
+  MOVED_OUT
+  INACTIVE
+}
+
+enum KycStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum KycDocumentType {
+  AADHAAR
+  PAN
+  PASSPORT
+  VOTER_ID
+}
+
+model Resident {
+  id                       String            @id @default(uuid())
+  userId                   String            @unique
+  user                     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  propertyId               String
+  property                 Property          @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  bedId                    String?           @unique
+  bed                      Bed?              @relation(fields: [bedId], references: [id], onDelete: SetNull)
+  fullName                 String
+  email                    String
+  mobile                   String
+  alternateMobile          String?
+  gender                   String?           // MALE, FEMALE, OTHER
+  emergencyContactName     String
+  emergencyContactRelation String
+  emergencyContactPhone    String
+  kycStatus                KycStatus         @default(PENDING)
+  kycDocumentType          KycDocumentType   @default(AADHAAR)
+  kycDocumentNumber        String?
+  joiningDate              DateTime          @default(now())
+  expectedMoveOutDate      DateTime?
+  status                   ResidentStatus    @default(ACTIVE)
+  permanentAddress         String?
+  workCompany              String?
+  agreements               Agreement[]
+  securityDeposits         SecurityDeposit[]
+  payments                 Payment[]
+  visitorRequests          VisitorRequest[]
+  complaints               Complaint[]
+  leaveRequests            LeaveRequest[]
+  documents                Document[]
+  notifications            Notification[]
+  sosEvents                SOSEvent[]
+  createdAt                DateTime          @default(now())
+  updatedAt                DateTime          @updatedAt
+
+  @@index([propertyId])
+  @@index([status])
+}
+
+// -------------------------------------------------------------
+// 4. LEASE AGREEMENT & SECURITY DEPOSIT
+// -------------------------------------------------------------
+enum AgreementStatus {
+  DRAFT
+  ACTIVE
+  EXPIRED
+  TERMINATED
+}
+
+model Agreement {
+  id              String          @id @default(uuid())
+  residentId      String
+  resident        Resident        @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  propertyId      String
+  property        Property        @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  agreementNumber String          @unique
+  validFrom       DateTime
+  validTill       DateTime
+  signedUrl       String?
+  status          AgreementStatus @default(ACTIVE)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+}
+
+enum DepositStatus {
+  PENDING
+  PAID
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+model SecurityDeposit {
+  id           String        @id @default(uuid())
+  residentId   String
+  resident     Resident      @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  propertyId   String
+  property     Property      @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  amount       Float
+  status       DepositStatus @default(PENDING)
+  paidAt       DateTime?
+  refundAmount Float?
+  deductions   Float?        @default(0)
+  notes        String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+// -------------------------------------------------------------
+// 5. FINANCE & PAYMENTS
+// -------------------------------------------------------------
+enum PaymentStatus {
+  PENDING
+  PAID
+  OVERDUE
+  APPROVAL_PENDING
+  FAILED
+}
+
+enum PaymentMethod {
+  CASH
+  UPI
+  NET_BANKING
+  CARD
+  RAZORPAY
+}
+
+enum ChargeCategory {
+  RENT
+  SECURITY_DEPOSIT
+  ELECTRICITY
+  FOOD
+  MAINTENANCE_FEE
+  LATE_FINE
+  OTHER
+}
+
+model Payment {
+  id            String          @id @default(uuid())
+  residentId    String
+  resident      Resident        @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  propertyId    String
+  property      Property        @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  amount        Float
+  category      ChargeCategory  @default(RENT)
+  period        String          // e.g. "September 2026"
+  dueDate       DateTime
+  paidDate      DateTime?
+  status        PaymentStatus   @default(PENDING)
+  method        PaymentMethod?
+  transactionId String?
+  orderId       String?         // Razorpay Order ID
+  receipt       PaymentReceipt?
+  notes         String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@index([residentId])
+  @@index([propertyId])
+  @@index([status])
+}
+
+model PaymentReceipt {
+  id            String   @id @default(uuid())
+  paymentId     String   @unique
+  payment       Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  receiptNumber String   @unique
+  generatedAt   DateTime @default(now())
+  pdfUrl        String?
+  createdAt     DateTime @default(now())
+}
+
+// -------------------------------------------------------------
+// 6. VISITOR PASS & GATE SECURITY
+// -------------------------------------------------------------
+enum VisitorStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CHECKED_IN
+  CHECKED_OUT
+  EXPIRED
+  CANCELLED
+}
+
+model VisitorRequest {
+  id                String        @id @default(uuid())
+  residentId        String
+  resident          Resident      @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  propertyId        String
+  property          Property      @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  visitorName       String
+  visitorMobile     String
+  relation          String
+  purpose           String
+  visitDate         DateTime
+  expectedEntryTime String        // e.g. "04:00 PM"
+  expectedExitTime  String?       // e.g. "08:00 PM"
+  status            VisitorStatus @default(PENDING)
+  approvedBy        String?
+  qrPassToken       String        @unique @default(uuid())
+  checkInTime       DateTime?
+  checkOutTime      DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@index([residentId])
+  @@index([propertyId])
+  @@index([status])
+}
+
+// -------------------------------------------------------------
+// 7. COMPLAINTS & MAINTENANCE
+// -------------------------------------------------------------
+enum ComplaintCategory {
+  PLUMBING
+  ELECTRICAL
+  AIR_CONDITIONING
+  WIFI_INTERNET
+  CLEANING
+  CARPENTRY
+  PEST_CONTROL
+  OTHER
+}
+
+enum ComplaintPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum ComplaintStatus {
+  REPORTED
+  ASSIGNED
+  IN_PROGRESS
+  WAITING
+  RESOLVED
+  CLOSED
+}
+
+model Complaint {
+  id            String                @id @default(uuid())
+  ticketNumber  String                @unique
+  residentId    String
+  resident      Resident              @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  propertyId    String
+  property      Property              @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  roomId        String?
+  room          Room?                 @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  title         String
+  description   String
+  category      ComplaintCategory     @default(OTHER)
+  priority      ComplaintPriority     @default(MEDIUM)
+  status        ComplaintStatus       @default(REPORTED)
+  assignedStaff String?
+  resolvedAt    DateTime?
+  rating        Int?
+  feedback      String?
+  activities    MaintenanceActivity[]
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+
+  @@index([residentId])
+  @@index([propertyId])
+  @@index([status])
+}
+
+model MaintenanceActivity {
+  id          String          @id @default(uuid())
+  complaintId String
+  complaint   Complaint       @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  status      ComplaintStatus
+  updatedBy   String
+  comment     String
+  timestamp   DateTime        @default(now())
+}
+
+// -------------------------------------------------------------
+// 8. LEAVE REQUESTS
+// -------------------------------------------------------------
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+model LeaveRequest {
+  id         String      @id @default(uuid())
+  residentId String
+  resident   Resident    @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  propertyId String
+  property   Property    @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  fromDate   DateTime
+  toDate     DateTime
+  reason     String
+  status     LeaveStatus @default(PENDING)
+  approvedBy String?
+  appliedAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  @@index([residentId])
+  @@index([propertyId])
+}
+
+// -------------------------------------------------------------
+// 9. DOCUMENTS (KYC, AGREEMENTS, PROOFS)
+// -------------------------------------------------------------
+enum DocumentType {
+  AADHAAR
+  PAN
+  AGREEMENT
+  POLICE_VERIFICATION
+  RECEIPT
+  OTHER
+}
+
+enum DocumentStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+model Document {
+  id              String         @id @default(uuid())
+  residentId      String
+  resident        Resident       @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  propertyId      String
+  property        Property       @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  title           String
+  type            DocumentType   @default(OTHER)
+  fileUrl         String
+  fileSize        Int?           // In Bytes
+  mimeType        String?
+  status          DocumentStatus @default(PENDING)
+  rejectionReason String?
+  uploadedAt      DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([residentId])
+  @@index([propertyId])
+}
+
+// -------------------------------------------------------------
+// 10. NOTICES & NOTIFICATIONS
+// -------------------------------------------------------------
+enum NoticeCategory {
+  GENERAL
+  MAINTENANCE
+  PAYMENT
+  EMERGENCY
+  EVENT
+  RULES
+}
+
+model Notice {
+  id            String         @id @default(uuid())
+  propertyId    String
+  property      Property       @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  title         String
+  content       String
+  category      NoticeCategory @default(GENERAL)
+  isImportant   Boolean        @default(false)
+  publishedAt   DateTime       @default(now())
+  expiresAt     DateTime?
+  publisherName String         @default("Urban Nest Management")
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([propertyId])
+}
+
+model Notification {
+  id         String    @id @default(uuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  residentId String?
+  resident   Resident? @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  title      String
+  message    String
+  type       String    @default("INFO") // PAYMENT, VISITOR, COMPLAINT, LEAVE, NOTICE, SOS
+  isRead     Boolean   @default(false)
+  linkUrl    String?
+  createdAt  DateTime  @default(now())
+
+  @@index([userId])
+  @@index([isRead])
+}
+
+// -------------------------------------------------------------
+// 11. EMERGENCY SOS EVENTS
+// -------------------------------------------------------------
+enum SOSStatus {
+  ACTIVE
+  ACKNOWLEDGED
+  RESOLVED
+}
+
+model SOSEvent {
+  id             String    @id @default(uuid())
+  residentId     String
+  resident       Resident  @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  propertyId     String
+  property       Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  status         SOSStatus @default(ACTIVE)
+  triggeredAt    DateTime  @default(now())
+  acknowledgedBy String?
+  resolvedAt     DateTime?
+  notes          String?
+
+  @@index([residentId])
+  @@index([propertyId])
+}
+
+// -------------------------------------------------------------
+// 12. AUDIT TRAIL LOGS
+// -------------------------------------------------------------
+model AuditLog {
+  id         String    @id @default(uuid())
+  propertyId String?
+  property   Property? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  actorId    String?
+  actor      User?     @relation("ActorAuditLogs", fields: [actorId], references: [id], onDelete: SetNull)
+  actorName  String
+  actorRole  String
+  action     String    // LOGIN, PROFILE_UPDATE, TICKET_CREATED, PAYMENT_INITIATED, SOS_TRIGGERED, etc.
+  entity     String    // User, Resident, Payment, Complaint, VisitorRequest, etc.
+  entityId   String?
+  timestamp  DateTime  @default(now())
+  ipAddress  String?
+  details    String
+
+  @@index([propertyId])
+  @@index([timestamp])
+}
+
+// -------------------------------------------------------------
+// 13. SYSTEM SETTINGS
+// -------------------------------------------------------------
+model Setting {
+  key   String @id
+  value String
+}
+
+// -------------------------------------------------------------
+// 14. EXPENSES (PROPERTY-SCOPED)
+// -------------------------------------------------------------
+enum ExpenseCategory {
+  ELECTRICITY
+  WATER
+  MAINTENANCE
+  SALARY
+  INTERNET
+  SUPPLIES
+  FOOD
+  OTHER
+}
+
+model Expense {
+  id          String          @id @default(uuid())
+  propertyId  String
+  property    Property        @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  title       String
+  category    ExpenseCategory @default(OTHER)
+  amount      Float
+  vendor      String?
+  date        DateTime        @default(now())
+  receiptUrl  String?
+  notes       String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([propertyId])
+  @@index([date])
+}
+
+// -------------------------------------------------------------
+// 15. INVENTORY & ASSETS TRACKING
+// -------------------------------------------------------------
+enum AssetCondition {
+  EXCELLENT
+  GOOD
+  NEEDS_REPAIR
+  REPLACED
+  LOW_STOCK
+}
+
+model InventoryItem {
+  id             String         @id @default(uuid())
+  propertyId     String
+  property       Property       @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  name           String
+  category       String         // e.g. "Furniture", "Electronics", "Appliance", "Plumbing"
+  quantity       Int            @default(1)
+  minQuantity    Int            @default(2)
+  status         AssetCondition @default(GOOD)
+  location       String?        // e.g. "Room 101", "Common Lounge", "Basement"
+  purchaseDate   DateTime?
+  vendor         String?
+  cost           Float?
+  warrantyExpiry DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index([propertyId])
+}
+
+// -------------------------------------------------------------
+// 16. OPERATIONAL TASKS & HOUSEKEEPING
+// -------------------------------------------------------------
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model OperationalTask {
+  id          String       @id @default(uuid())
+  propertyId  String
+  property    Property     @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  title       String
+  category    String       // "CLEANING", "INSPECTION", "MAINTENANCE", "RENT_COLLECTION"
+  priority    TaskPriority @default(MEDIUM)
+  assignedTo  String?
+  dueDate     DateTime?
+  status      TaskStatus   @default(PENDING)
+  notes       String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([propertyId])
+}
+
