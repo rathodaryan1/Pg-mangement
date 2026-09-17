@@ -6,30 +6,20 @@ import {
   BedDouble,
   Users,
   UserCheck,
-  CreditCard,
   Receipt,
   Wallet,
   ShieldCheck,
   Wrench,
-  CheckSquare,
-  Sparkles,
-  ClipboardList,
   Box,
-  Truck,
-  FileText,
-  Bell,
   Calendar,
   BarChart3,
   History,
-  HardDriveDownload,
   Settings,
   Menu,
   X,
-  Search,
   ChevronDown,
   UserCircle,
   LogOut,
-  AlertTriangle,
   ArrowRightLeft,
   LifeBuoy,
   FileSpreadsheet
@@ -37,6 +27,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { MOCK_PROPERTIES } from '../../data/mockData';
 import { Button } from '../ui/Button';
+import { UrbanNestLogo, UrbanNestMark } from '../ui/UrbanNestLogo';
 
 interface NavGroup {
   groupName: string;
@@ -89,7 +80,7 @@ const OWNER_NAV_GROUPS: NavGroup[] = [
     ]
   },
   {
-    groupName: 'INTELLIGENCE & AUDIT',
+    groupName: 'INTELLIGENCE',
     items: [
       { label: 'Reports & Analytics', path: '/owner/reports', icon: FileSpreadsheet },
       { label: 'Audit Logs', path: '/owner/audit-logs', icon: History },
@@ -106,29 +97,21 @@ export const OwnerLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   const [propertyDropdownOpen, setPropertyDropdownOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex">
+    <div className="min-h-screen bg-[#F8F7F3] dark:bg-slate-950 text-[#18231F] dark:text-slate-100 flex">
       {/* Sidebar for Desktop */}
-      <aside className="hidden lg:flex flex-col w-64 border-r border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 h-screen z-30 shrink-0">
-        {/* Brand Header */}
-        <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-base shadow-sm">
-              UN
-            </div>
-            <div>
-              <h1 className="text-sm font-bold tracking-tight text-slate-900 dark:text-white">URBAN NEST</h1>
-              <p className="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold tracking-wide uppercase">
-                Owner & Admin System
-              </p>
-            </div>
-          </div>
+      <aside className="hidden lg:flex flex-col w-60 border-r border-[#DDE2DD] dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 h-screen z-30 shrink-0">
+        {/* Brand Header with Exact Logo */}
+        <div className="h-16 px-4 border-b border-[#DDE2DD] dark:border-slate-800 flex items-center justify-between">
+          <Link to="/owner/dashboard" className="flex items-center">
+            <UrbanNestLogo variant="horizontal" size="sm" />
+          </Link>
         </div>
 
         {/* Grouped Navigation Links */}
-        <div className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
+        <div className="flex-1 overflow-y-auto px-2.5 py-3 space-y-4">
           {OWNER_NAV_GROUPS.map((group) => (
-            <div key={group.groupName} className="space-y-1">
-              <h3 className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+            <div key={group.groupName} className="space-y-0.5">
+              <h3 className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#8A928D] dark:text-slate-500">
                 {group.groupName}
               </h3>
               {group.items.map((item) => {
@@ -140,18 +123,18 @@ export const OwnerLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                   <Link
                     key={item.path}
                     to={item.path}
-                    className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                    className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                       isActive
-                        ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-semibold'
-                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white'
+                        ? 'bg-[#EAF2EE] text-[#0B4036] font-bold border-l-2 border-[#0B4036] dark:bg-emerald-950/60 dark:text-emerald-300'
+                        : 'text-[#68736D] dark:text-slate-400 hover:bg-[#F8F7F3] dark:hover:bg-slate-800/60 hover:text-[#18231F] dark:hover:text-white'
                     }`}
                   >
-                    <div className="flex items-center gap-2.5">
-                      <Icon className={`w-4 h-4 ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`} />
-                      <span>{item.label}</span>
+                    <div className="flex items-center gap-2">
+                      <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#0B4036] dark:text-emerald-400' : 'text-[#8A928D]'}`} />
+                      <span className="truncate">{item.label}</span>
                     </div>
                     {item.badge && (
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#FAF5EB] text-[#B9954E] border border-[#C8A45D]/30">
                         {item.badge}
                       </span>
                     )}
@@ -163,16 +146,16 @@ export const OwnerLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         </div>
 
         {/* Switch Role Footer Launcher */}
-        <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40">
+        <div className="p-2.5 border-t border-[#DDE2DD] dark:border-slate-800 bg-[#FCFBF8] dark:bg-slate-900/50">
           <Button
             variant="outline"
-            size="sm"
-            className="w-full text-xs justify-start text-purple-700 border-purple-200 dark:border-purple-900/60 bg-purple-50/50 dark:bg-purple-950/30 hover:bg-purple-100 dark:hover:bg-purple-900/50"
+            size="xs"
+            className="w-full text-xs justify-center text-[#0B4036] font-semibold border-[#DDE2DD] hover:bg-[#EAF2EE]"
             onClick={() => {
               switchRole('RESIDENT');
               navigate('/resident/dashboard');
             }}
-            leftIcon={<ArrowRightLeft className="w-3.5 h-3.5" />}
+            leftIcon={<ArrowRightLeft className="w-3.5 h-3.5 text-[#C8A45D]" />}
           >
             Switch to Resident Portal
           </Button>
@@ -182,11 +165,12 @@ export const OwnerLayout: React.FC<{ children: React.ReactNode }> = ({ children 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top Header */}
-        <header className="sticky top-0 z-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-4 lg:px-8 py-3.5 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <header className="sticky top-0 z-20 h-14 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-[#DDE2DD] dark:border-slate-800 px-4 sm:px-6 flex items-center justify-between">
+          <div className="flex items-center gap-3">
             <button
-              className="lg:hidden p-2 rounded-xl text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800"
+              className="lg:hidden p-1.5 rounded-lg text-[#18231F] dark:text-slate-400 hover:bg-[#EAF2EE]"
               onClick={() => setMobileMenuOpen(true)}
+              aria-label="Open sidebar"
             >
               <Menu className="w-5 h-5" />
             </button>
@@ -195,16 +179,16 @@ export const OwnerLayout: React.FC<{ children: React.ReactNode }> = ({ children 
             <div className="relative">
               <button
                 onClick={() => setPropertyDropdownOpen(!propertyDropdownOpen)}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-200 transition-colors"
+                className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-[#DDE2DD] dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-[#F8F7F3] text-xs font-semibold text-[#18231F] dark:text-slate-200 shadow-xs transition-colors"
               >
-                <Building2 className="w-3.5 h-3.5 text-indigo-600" />
-                <span className="max-w-[140px] sm:max-w-[200px] truncate">{activeProperty?.name || 'Urban Nest Premium'}</span>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                <Building2 className="w-3.5 h-3.5 text-[#0B4036] shrink-0" />
+                <span className="max-w-[140px] sm:max-w-[200px] truncate">{activeProperty?.name || 'Urban Nest Prime'}</span>
+                <ChevronDown className="w-3.5 h-3.5 text-[#8A928D] shrink-0" />
               </button>
 
               {propertyDropdownOpen && (
-                <div className="absolute top-full left-0 mt-1 w-64 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl py-2 z-50">
-                  <div className="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                <div className="absolute top-full left-0 mt-1 w-64 bg-white dark:bg-slate-900 border border-[#DDE2DD] dark:border-slate-800 rounded-xl shadow-lg py-1.5 z-50">
+                  <div className="px-3 py-1 text-[10px] font-bold text-[#8A928D] uppercase tracking-wider">
                     Select Active Property
                   </div>
                   {MOCK_PROPERTIES.map((prop) => (
@@ -214,14 +198,14 @@ export const OwnerLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                         setActiveProperty(prop);
                         setPropertyDropdownOpen(false);
                       }}
-                      className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800 ${
+                      className={`w-full text-left px-3 py-1.5 text-xs flex items-center justify-between hover:bg-[#F8F7F3] dark:hover:bg-slate-800 ${
                         activeProperty?.id === prop.id
-                          ? 'font-bold text-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/40'
-                          : 'text-slate-700 dark:text-slate-300'
+                          ? 'font-bold text-[#0B4036] bg-[#EAF2EE]'
+                          : 'text-[#18231F] dark:text-slate-300'
                       }`}
                     >
                       <span className="truncate">{prop.name}</span>
-                      {activeProperty?.id === prop.id && <span className="w-1.5 h-1.5 rounded-full bg-indigo-600" />}
+                      {activeProperty?.id === prop.id && <span className="w-1.5 h-1.5 rounded-full bg-[#0B4036]" />}
                     </button>
                   ))}
                 </div>
@@ -231,29 +215,20 @@ export const OwnerLayout: React.FC<{ children: React.ReactNode }> = ({ children 
 
           {/* Right Header Actions */}
           <div className="flex items-center gap-3">
-            <Link
-              to="/owner/dashboard"
-              className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/40 text-xs font-medium hover:bg-amber-100 transition-colors"
-            >
-              <AlertTriangle className="w-3.5 h-3.5" />
-              <span>Live Operations</span>
-            </Link>
-
-            {/* Profile Menu */}
-            <div className="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-slate-800">
-              <img
-                src={user?.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'}
-                alt={user?.name}
-                className="w-8 h-8 rounded-full border border-slate-200 object-cover"
-              />
-              <div className="hidden md:block text-left text-xs">
-                <p className="font-bold text-slate-900 dark:text-white">{user?.name || 'PG Owner'}</p>
-                <p className="text-[10px] text-slate-400">Owner & Admin</p>
+            {/* User Profile & Logout */}
+            <div className="flex items-center gap-2.5 pl-2 border-l border-[#DDE2DD] dark:border-slate-800">
+              <div className="w-7 h-7 rounded-full bg-[#0B4036] text-white font-bold flex items-center justify-center text-xs">
+                {user?.name ? user.name.charAt(0) : 'O'}
+              </div>
+              <div className="hidden sm:block text-left text-xs">
+                <p className="font-bold text-[#18231F] dark:text-white leading-tight truncate max-w-[120px]">{user?.name || 'PG Owner'}</p>
+                <p className="text-[10px] text-[#8A928D] leading-none">Property Owner</p>
               </div>
               <button
                 onClick={logout}
                 title="Logout"
-                className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                className="p-1.5 text-[#8A928D] hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors"
+                aria-label="Logout"
               >
                 <LogOut className="w-4 h-4" />
               </button>
@@ -262,29 +237,24 @@ export const OwnerLayout: React.FC<{ children: React.ReactNode }> = ({ children 
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">{children}</main>
+        <main className="flex-1 p-4 sm:p-6 max-w-7xl w-full mx-auto">{children}</main>
       </div>
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 lg:hidden flex">
-          <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
-          <div className="relative w-72 bg-white dark:bg-slate-900 h-full flex flex-col z-10 shadow-2xl overflow-y-auto">
-            <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-sm">
-                  UN
-                </div>
-                <span className="font-bold text-sm">URBAN NEST</span>
-              </div>
-              <button onClick={() => setMobileMenuOpen(false)} className="p-1 rounded-lg text-slate-400">
-                <X className="w-5 h-5" />
+          <div className="fixed inset-0 bg-slate-950/50 backdrop-blur-xs" onClick={() => setMobileMenuOpen(false)} />
+          <div className="relative w-64 bg-white dark:bg-slate-900 h-full flex flex-col z-10 shadow-xl overflow-y-auto border-r border-[#DDE2DD] dark:border-slate-800">
+            <div className="h-16 px-4 border-b border-[#DDE2DD] dark:border-slate-800 flex items-center justify-between">
+              <UrbanNestLogo variant="horizontal" size="sm" />
+              <button onClick={() => setMobileMenuOpen(false)} className="p-1 rounded-lg text-[#8A928D] hover:bg-[#F8F7F3]">
+                <X className="w-4 h-4" />
               </button>
             </div>
-            <div className="p-4 space-y-5">
+            <div className="p-3 space-y-4">
               {OWNER_NAV_GROUPS.map((group) => (
-                <div key={group.groupName} className="space-y-1">
-                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2">
+                <div key={group.groupName} className="space-y-0.5">
+                  <h4 className="text-[10px] font-bold text-[#8A928D] uppercase tracking-wider px-2 py-1">
                     {group.groupName}
                   </h4>
                   {group.items.map((item) => (
@@ -292,9 +262,9 @@ export const OwnerLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                       key={item.path}
                       to={item.path}
                       onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center gap-3 px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 rounded-xl"
+                      className="flex items-center gap-2.5 px-2.5 py-1.5 text-xs font-medium text-[#18231F] dark:text-slate-300 hover:bg-[#EAF2EE] rounded-lg"
                     >
-                      <item.icon className="w-4 h-4 text-indigo-600" />
+                      <item.icon className="w-4 h-4 text-[#0B4036]" />
                       <span>{item.label}</span>
                     </Link>
                   ))}

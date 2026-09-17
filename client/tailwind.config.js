@@ -41,6 +41,24 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        // Urban Nest Brand Tokens (Forest Green + Champagne Gold + Warm White)
+        brand: {
+          forest: "#0B4036",
+          "forest-dark": "#072C25",
+          "forest-light": "#1B5548",
+          "forest-muted": "#2D6B5B",
+          "forest-soft": "#EAF2EE",
+          gold: "#C8A45D",
+          "gold-dark": "#B9954E",
+          "gold-light": "#D7BD7A",
+          "gold-soft": "#FAF5EB",
+          canvas: "#FCFBF8",
+          "canvas-alt": "#F8F7F3",
+          border: "#DDE2DD",
+          text: "#18231F",
+          "text-secondary": "#68736D",
+          "text-muted": "#8A928D",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -48,11 +66,8 @@ export default {
         sm: "calc(var(--radius) - 4px)",
       },
       animation: {
-        "accordion-down": "accordion-down 0.2s ease-out",
-        "accordion-up": "accordion-up 0.2s ease-out",
-        "fade-in": "fadeIn 0.5s ease-out forwards",
-        "slide-up": "slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards",
-        "pulse-slow": "pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+        "fade-in": "fadeIn 0.25s ease-out forwards",
+        "slide-up": "slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards",
       },
       keyframes: {
         fadeIn: {
@@ -60,7 +75,7 @@ export default {
           "100%": { opacity: "1" },
         },
         slideUp: {
-          "0%": { transform: "translateY(20px)", opacity: "0" },
+          "0%": { transform: "translateY(12px)", opacity: "0" },
           "100%": { transform: "translateY(0)", opacity: "1" },
         },
       },

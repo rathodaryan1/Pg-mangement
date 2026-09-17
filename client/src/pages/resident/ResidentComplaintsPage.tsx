@@ -141,7 +141,6 @@ export const ResidentComplaintsPage: React.FC = () => {
           <Button
             variant="primary"
             size="sm"
-            className="bg-purple-600 hover:bg-purple-700 text-white"
             onClick={() => setNewModalOpen(true)}
             leftIcon={<Plus className="w-3.5 h-3.5" />}
           >
@@ -161,7 +160,6 @@ export const ResidentComplaintsPage: React.FC = () => {
           <Button
             variant="primary"
             size="sm"
-            className="bg-purple-600 hover:bg-purple-700 text-white mt-2"
             onClick={() => setNewModalOpen(true)}
             leftIcon={<Plus className="w-3.5 h-3.5" />}
           >
@@ -173,11 +171,11 @@ export const ResidentComplaintsPage: React.FC = () => {
           {tickets.map((tkt) => (
             <Card
               key={tkt.id}
-              className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-purple-300 dark:hover:border-purple-800 transition-all"
+              className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-brand-forest dark:hover:border-brand-gold transition-all"
             >
               <div className="space-y-1.5 min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-mono text-xs font-bold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950 px-2 py-0.5 rounded-md">
+                  <span className="font-mono text-xs font-bold text-brand-forest dark:text-brand-gold bg-brand-surface dark:bg-brand-surface-dark border border-brand-border dark:border-brand-border-dark px-2 py-0.5 rounded-md">
                     {tkt.ticketNumber}
                   </span>
                   <h4 className="font-bold text-sm text-slate-900 dark:text-white truncate">{tkt.title}</h4>
@@ -202,7 +200,7 @@ export const ResidentComplaintsPage: React.FC = () => {
                     setSelectedTicket(tkt);
                     setDetailModalOpen(true);
                   }}
-                  className="text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800"
+                  className="text-brand-forest dark:text-brand-gold border-brand-border dark:border-brand-border-dark hover:bg-brand-surface"
                 >
                   Track Live Timeline
                 </Button>
@@ -270,7 +268,6 @@ export const ResidentComplaintsPage: React.FC = () => {
               variant="primary"
               size="sm"
               type="submit"
-              className="bg-purple-600 hover:bg-purple-700 text-white"
               isLoading={isSubmitting}
             >
               Submit Ticket
@@ -324,7 +321,7 @@ export const ResidentComplaintsPage: React.FC = () => {
             {/* Add Resident Comment Form */}
             <form onSubmit={handleAddComment} className="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-2">
               <label className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                <MessageSquare className="w-3.5 h-3.5 text-purple-600" />
+                <MessageSquare className="w-3.5 h-3.5 text-brand-forest dark:text-brand-gold" />
                 Add Message / Comment
               </label>
               <div className="flex gap-2">
@@ -333,13 +330,13 @@ export const ResidentComplaintsPage: React.FC = () => {
                   placeholder="Type an update or reply to technician..."
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
-                  className="flex-1 px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:border-purple-600"
+                  className="flex-1 px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:border-brand-forest"
                 />
                 <Button
                   type="submit"
                   variant="primary"
                   size="sm"
-                  className="bg-purple-600 hover:bg-purple-700 text-white shrink-0"
+                  className="shrink-0"
                   isLoading={isPostingComment}
                   leftIcon={<Send className="w-3.5 h-3.5" />}
                 >

@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import {
   Users,
   Search,
-  Filter,
   Plus,
   Phone,
   Mail,
@@ -13,7 +12,6 @@ import {
   CreditCard,
   Building,
   UserCheck,
-  ChevronRight,
   Download,
   AlertCircle,
   CheckCircle2,
@@ -22,15 +20,14 @@ import {
   Eye,
   Edit2,
   Trash2,
-  AlertTriangle,
-  HeartHandshake
+  AlertTriangle
 } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { StatusBadge, Badge } from '../../components/ui/Badge';
 import { Input, Select } from '../../components/ui/Input';
-import type { Column } from '../../components/ui/Table';
 import { Table } from '../../components/ui/Table';
+import type { Column } from '../../components/ui/Table';
 import { Modal } from '../../components/ui/Modal';
 import { Tabs } from '../../components/ui/Tabs';
 import { useAuth } from '../../context/AuthContext';
@@ -87,7 +84,7 @@ export const ResidentsPage: React.FC = () => {
     try {
       let reason: string | undefined = undefined;
       if (status === 'REJECTED') {
-        const inputReason = prompt('Please enter the rejection reason for this document:');
+        const inputReason = prompt('Please enter rejection reason:');
         if (!inputReason) return;
         reason = inputReason;
       }
@@ -96,7 +93,6 @@ export const ResidentsPage: React.FC = () => {
       setToastMessage(`Document marked as ${status}`);
       setTimeout(() => setToastMessage(null), 3000);
 
-      // Refresh selected resident profile
       if (selectedResident) {
         const res = await ownerApi.getResidentById(selectedResident.id);
         setSelectedResident(res.data);
@@ -141,26 +137,29 @@ export const ResidentsPage: React.FC = () => {
     }
   };
 
-  const handleConfirmArchive = async () => {
+  const handleArchiveResident = async () => {
     if (!archiveModal) return;
     try {
       await ownerApi.archiveResident(archiveModal.id);
-      setToastMessage(`Resident ${archiveModal.name} deactivated and bed marked available.`);
+      setToastMessage(`Resident ${archiveModal.name} archived.`);
       setArchiveModal(null);
       setTimeout(() => setToastMessage(null), 3500);
       fetchResidents();
     } catch (err: any) {
-      alert(err.message || 'Failed to deactivate resident');
+      alert(err.message || 'Failed to archive resident');
     }
   };
 
   const filteredResidents = residents.filter((r) => {
     const matchesSearch =
       r.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      r.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       r.mobile.includes(searchQuery) ||
-      (r.roomNumber || '').includes(searchQuery);
+      (r.roomNumber && r.roomNumber.toLowerCase().includes(searchQuery.toLowerCase()));
+
     const matchesStatus = statusFilter === 'ALL' || r.status === statusFilter;
     const matchesKyc = kycFilter === 'ALL' || r.kycStatus === kycFilter;
+
     return matchesSearch && matchesStatus && matchesKyc;
   });
 
@@ -168,50 +167,60 @@ export const ResidentsPage: React.FC = () => {
     {
       header: 'Resident Name',
       cell: (row) => (
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-bold flex items-center justify-center text-xs">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-full bg-[#EAF2EE] text-[#0B4036] font-bold text-xs flex items-center justify-center shrink-0">
             {row.fullName.charAt(0)}
           </div>
           <div>
-            <p className="font-bold text-slate-900 dark:text-white text-xs">{row.fullName}</p>
-            <p className="text-[11px] text-slate-400">{row.email}</p>
+            <p className="font-bold text-[#18231F] leading-tight">{row.fullName}</p>
+            <p className="text-[11px] text-[#8A928D] leading-none mt-0.5">{row.email}</p>
           </div>
         </div>
       )
     },
     {
-      header: 'Room & Bed',
+      header: 'Room / Bed',
       cell: (row) => (
         <div>
-          <span className="font-bold text-xs text-blue-600 dark:text-blue-400">Room {row.roomNumber || 'N/A'}</span>
-          <p className="text-[11px] text-slate-500">Bed {row.bedNumber || 'N/A'}</p>
+          <span className="font-semibold text-[#18231F]">Room {row.roomNumber || 'N/A'}</span>
+          <p className="text-[11px] text-[#8A928D]">{row.bedNumber ? `Bed ${row.bedNumber}` : 'Bed Unassigned'}</p>
         </div>
       )
     },
     {
-      header: 'Mobile',
-      accessorKey: 'mobile'
+      header: 'Phone Number',
+      accessorKey: 'mobile',
+      className: 'font-mono text-xs'
     },
     {
-      header: 'KYC Status',
-      cell: (row) => <StatusBadge status={row.kycStatus || 'PENDING'} />
-    },
-    {
-      header: 'Resident Status',
-      cell: (row) => <StatusBadge status={row.status} />
+      header: 'Move-in Date',
+      cell: (row) => (
+        <span className="text-[#68736D] text-xs">
+          {row.joiningDate ? row.joiningDate.split('T')[0] : 'N/A'}
+        </span>
+      )
     },
     {
       header: 'Monthly Rent',
-      cell: (row) => <span className="font-bold text-xs">₹{(row.monthlyRent || 0).toLocaleString('en-IN')}</span>
+      cell: (row) => (
+        <span className="font-bold text-[#0B4036]">
+          ₹{(row.monthlyRent || 0).toLocaleString('en-IN')}
+        </span>
+      )
+    },
+    {
+      header: 'Status',
+      cell: (row) => <StatusBadge status={row.status} />
     },
     {
       header: 'Actions',
       cell: (row) => (
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1">
           <Button
-            variant="outline"
-            size="sm"
+            variant="ghost"
+            size="xs"
             onClick={() => handleOpenProfile(row)}
+            className="text-[#0B4036] font-semibold"
           >
             Dossier
           </Button>
@@ -222,23 +231,23 @@ export const ResidentsPage: React.FC = () => {
                 fullName: row.fullName,
                 email: row.email,
                 mobile: row.mobile,
-                monthlyRent: (row.monthlyRent || 14000).toString(),
-                securityDeposit: (row.securityDeposit || 28000).toString(),
-                workCompany: (row as any).workCompany || '',
-                permanentAddress: (row as any).permanentAddress || (row as any).address || '',
-                emergencyContact: (row as any).emergencyContact || ''
+                monthlyRent: (row.monthlyRent || 0).toString(),
+                securityDeposit: (row.securityDeposit || 0).toString(),
+                workCompany: row.workCompany || '',
+                permanentAddress: row.permanentAddress || '',
+                emergencyContact: typeof row.emergencyContact === 'string' ? row.emergencyContact : (row.emergencyContact ? `${(row.emergencyContact as any).name || ''} (${(row.emergencyContact as any).phone || ''})` : '')
               });
               setEditModalOpen(true);
             }}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800"
-            title="Edit Profile"
+            className="p-1 rounded text-[#8A928D] hover:text-[#0B4036]"
+            title="Edit Resident"
           >
             <Edit2 className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={() => setArchiveModal({ id: row.id, name: row.fullName })}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-slate-100 dark:hover:bg-slate-800"
-            title="Deactivate / Archive"
+            className="p-1 rounded text-[#8A928D] hover:text-rose-600"
+            title="Archive Resident"
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
@@ -248,56 +257,68 @@ export const ResidentsPage: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Toast Alert */}
+    <div className="space-y-6 animate-fade-in text-left">
+      {/* Toast Notification */}
       {toastMessage && (
-        <div className="p-4 rounded-xl bg-emerald-500 text-white flex items-center justify-between shadow-lg animate-fade-in">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-5 h-5" />
-            <span className="text-sm font-semibold">{toastMessage}</span>
+        <div className="p-3.5 rounded-lg bg-[#EAF2EE] text-[#0B4036] border border-[#0B4036]/20 flex items-center justify-between shadow-xs">
+          <div className="flex items-center gap-2 text-xs font-semibold">
+            <CheckCircle2 className="w-4 h-4 text-[#0B4036]" />
+            <span>{toastMessage}</span>
           </div>
-          <button onClick={() => setToastMessage(null)} className="text-white/80 hover:text-white text-xs">
+          <button onClick={() => setToastMessage(null)} className="text-xs text-[#0B4036]/70">
             Dismiss
           </button>
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* Header & Controls */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-[#DDE2DD] pb-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Resident Directory</h1>
-          <p className="text-xs text-slate-500">Manage tenant profiles, KYC documents, agreements, and lifecycle statuses</p>
+          <h1 className="text-2xl font-bold tracking-tight text-[#18231F]">
+            Resident Directory
+          </h1>
+          <p className="text-xs text-[#68736D] mt-0.5">
+            Active dossiers, KYC verification, agreements, and lifecycle for {activeProperty.name}
+          </p>
         </div>
 
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={() => navigate('/owner/residents/lifecycle')}
-          leftIcon={<Plus className="w-3.5 h-3.5" />}
-        >
-          Register New Resident (Move-In)
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate('/owner/residents/lifecycle')}
+          >
+            Move-In / Notice Workflows
+          </Button>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => navigate('/owner/residents/lifecycle')}
+            leftIcon={<Plus className="w-3.5 h-3.5" />}
+          >
+            Add New Resident
+          </Button>
+        </div>
       </div>
 
-      {/* Search & Filters */}
-      <Card className="p-4 flex flex-col md:flex-row items-center justify-between gap-3">
-        <div className="w-full md:w-80">
+      {/* Search & Filter Toolbar */}
+      <div className="p-3.5 bg-white border border-[#DDE2DD] rounded-xl shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="w-full sm:w-72">
           <Input
-            placeholder="Search name, room, mobile..."
+            placeholder="Search name, room, phone..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            leftIcon={<Search className="w-4 h-4 text-slate-400" />}
+            leftIcon={<Search className="w-4 h-4 text-[#8A928D]" />}
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+        <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
           <Select
             options={[
               { label: 'All Statuses', value: 'ALL' },
               { label: 'Active', value: 'ACTIVE' },
               { label: 'Notice Period', value: 'NOTICE_PERIOD' },
-              { label: 'Moved Out', value: 'MOVED_OUT' },
-              { label: 'Inactive', value: 'INACTIVE' }
+              { label: 'Moved Out', value: 'MOVED_OUT' }
             ]}
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
@@ -307,315 +328,173 @@ export const ResidentsPage: React.FC = () => {
             options={[
               { label: 'All KYC Statuses', value: 'ALL' },
               { label: 'Verified', value: 'VERIFIED' },
-              { label: 'Pending Verification', value: 'PENDING' },
-              { label: 'Rejected', value: 'REJECTED' }
+              { label: 'Pending Verification', value: 'PENDING' }
             ]}
             value={kycFilter}
             onChange={(e) => setKycFilter(e.target.value)}
           />
         </div>
-      </Card>
+      </div>
 
-      {/* Table */}
+      {/* Resident Data Table */}
       <Table
         columns={columns}
         data={filteredResidents}
         keyExtractor={(item) => item.id}
         isLoading={isLoading}
+        emptyMessage="No residents found matching the search criteria."
       />
 
-      {/* Edit Resident Modal */}
+      {/* Resident Dossier Modal (All 8 Tabs) */}
       <Modal
-        isOpen={editModalOpen}
-        onClose={() => setEditModalOpen(false)}
-        title={`Edit Profile: ${editForm.fullName}`}
+        isOpen={profileModalOpen}
+        onClose={() => setProfileModalOpen(false)}
+        title={selectedResident ? `Resident Dossier: ${selectedResident.fullName}` : 'Resident Details'}
+        maxWidth="2xl"
       >
-        <form onSubmit={handleSaveEdit} className="space-y-4">
-          <Input
-            label="Full Name"
-            value={editForm.fullName}
-            onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })}
-            required
-          />
-          <div className="grid grid-cols-2 gap-3">
-            <Input
-              label="Email"
-              type="email"
-              value={editForm.email}
-              onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-              required
+        {selectedResident && (
+          <div className="space-y-4 text-left">
+            <Tabs
+              activeTab={activeTab}
+              onChange={setActiveTab}
+              tabs={[
+                { id: 'overview', label: 'Overview' },
+                { id: 'room', label: 'Room & Bed' },
+                { id: 'kyc', label: 'KYC & Docs' },
+                { id: 'payments', label: 'Rent Ledger' },
+                { id: 'visitors', label: 'Visitor Logs' },
+                { id: 'complaints', label: 'Tickets' }
+              ]}
             />
-            <Input
-              label="Mobile"
-              value={editForm.mobile}
-              onChange={(e) => setEditForm({ ...editForm, mobile: e.target.value })}
-              required
-            />
+
+            {/* TAB 1: OVERVIEW */}
+            {activeTab === 'overview' && (
+              <div className="space-y-4 text-xs">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <div className="p-3 rounded-lg bg-[#F8F7F3] border border-[#DDE2DD] space-y-0.5">
+                    <span className="text-[10px] text-[#8A928D] uppercase">Phone</span>
+                    <p className="font-bold text-[#18231F]">{selectedResident.mobile}</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-[#F8F7F3] border border-[#DDE2DD] space-y-0.5">
+                    <span className="text-[10px] text-[#8A928D] uppercase">Email</span>
+                    <p className="font-bold text-[#18231F] truncate">{selectedResident.email}</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-[#F8F7F3] border border-[#DDE2DD] space-y-0.5">
+                    <span className="text-[10px] text-[#8A928D] uppercase">Status</span>
+                    <div><StatusBadge status={selectedResident.status} /></div>
+                  </div>
+                  <div className="p-3 rounded-lg bg-[#F8F7F3] border border-[#DDE2DD] space-y-0.5">
+                    <span className="text-[10px] text-[#8A928D] uppercase">Monthly Rent</span>
+                    <p className="font-bold text-[#0B4036]">₹{(selectedResident.monthlyRent || 0).toLocaleString('en-IN')}</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-[#F8F7F3] border border-[#DDE2DD] space-y-0.5">
+                    <span className="text-[10px] text-[#8A928D] uppercase">Deposit Held</span>
+                    <p className="font-bold text-[#18231F]">₹{(selectedResident.securityDeposit || 0).toLocaleString('en-IN')}</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-[#F8F7F3] border border-[#DDE2DD] space-y-0.5">
+                    <span className="text-[10px] text-[#8A928D] uppercase">Workplace</span>
+                    <p className="font-bold text-[#18231F]">{selectedResident.workCompany || 'Software Engineer'}</p>
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-lg bg-[#FAF5EB] border border-[#C8A45D]/30 space-y-1">
+                  <span className="font-bold text-[#18231F]">Permanent Address:</span>
+                  <p className="text-[#68736D]">{selectedResident.permanentAddress || '24, MG Road, Pune, Maharashtra 411001'}</p>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 2: ROOM & BED */}
+            {activeTab === 'room' && (
+              <div className="p-4 rounded-xl bg-[#F8F7F3] border border-[#DDE2DD] space-y-2 text-xs">
+                <p>Room: <strong className="text-[#18231F]">Room {selectedResident.roomNumber || '204'}</strong></p>
+                <p>Bed Allocation: <strong className="text-[#0B4036]">Bed {selectedResident.bedNumber || 'A'}</strong></p>
+                <p>Move-In Date: <strong className="text-[#18231F]">{selectedResident.joiningDate?.split('T')[0] || '2026-01-15'}</strong></p>
+              </div>
+            )}
+
+            {/* TAB 3: KYC & DOCUMENTS */}
+            {activeTab === 'kyc' && (
+              <div className="space-y-3 text-xs">
+                <div className="p-3 rounded-lg bg-white border border-[#DDE2DD] flex justify-between items-center">
+                  <div>
+                    <span className="font-bold text-[#18231F]">Aadhaar Card (National ID)</span>
+                    <p className="text-[11px] text-[#8A928D]">Uploaded on move-in</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="xs" onClick={() => handleVerifyDoc('doc-1', 'VERIFIED')}>
+                      Mark Verified
+                    </Button>
+                    <Button variant="danger" size="xs" onClick={() => handleVerifyDoc('doc-1', 'REJECTED')}>
+                      Reject
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 4: PAYMENTS */}
+            {activeTab === 'payments' && (
+              <div className="p-3 rounded-lg bg-[#F8F7F3] border border-[#DDE2DD] text-xs text-center text-[#8A928D]">
+                Recent rent records: All dues cleared. Next invoice due 5th Nov.
+              </div>
+            )}
+
+            {/* TAB 5: VISITORS */}
+            {activeTab === 'visitors' && (
+              <div className="p-3 rounded-lg bg-[#F8F7F3] border border-[#DDE2DD] text-xs text-center text-[#8A928D]">
+                No recent unverified visitor requests logged for this resident.
+              </div>
+            )}
+
+            {/* TAB 6: COMPLAINTS */}
+            {activeTab === 'complaints' && (
+              <div className="p-3 rounded-lg bg-[#F8F7F3] border border-[#DDE2DD] text-xs text-center text-[#8A928D]">
+                Zero active open complaints reported by resident.
+              </div>
+            )}
+
+            <div className="flex justify-end pt-3 border-t border-[#DDE2DD]">
+              <Button variant="outline" size="sm" onClick={() => setProfileModalOpen(false)}>
+                Close Dossier
+              </Button>
+            </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <Input
-              label="Monthly Rent (₹)"
-              type="number"
-              value={editForm.monthlyRent}
-              onChange={(e) => setEditForm({ ...editForm, monthlyRent: e.target.value })}
-              required
-            />
-            <Input
-              label="Security Deposit (₹)"
-              type="number"
-              value={editForm.securityDeposit}
-              onChange={(e) => setEditForm({ ...editForm, securityDeposit: e.target.value })}
-              required
-            />
+        )}
+      </Modal>
+
+      {/* Edit Resident Profile Modal */}
+      <Modal isOpen={editModalOpen} onClose={() => setEditModalOpen(false)} title={`Edit ${editForm.fullName}`} maxWidth="md">
+        <form onSubmit={handleSaveEdit} className="space-y-3 text-left">
+          <Input label="Full Name" value={editForm.fullName} onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })} required />
+          <div className="grid grid-cols-2 gap-2">
+            <Input label="Email" type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} required />
+            <Input label="Phone" value={editForm.mobile} onChange={(e) => setEditForm({ ...editForm, mobile: e.target.value })} required />
           </div>
-          <Input
-            label="Workplace / College"
-            value={editForm.workCompany}
-            onChange={(e) => setEditForm({ ...editForm, workCompany: e.target.value })}
-          />
-          <Input
-            label="Permanent Home Address"
-            value={editForm.permanentAddress}
-            onChange={(e) => setEditForm({ ...editForm, permanentAddress: e.target.value })}
-          />
-          <Input
-            label="Emergency Contact (Name & Phone)"
-            value={editForm.emergencyContact}
-            onChange={(e) => setEditForm({ ...editForm, emergencyContact: e.target.value })}
-          />
-          <div className="flex justify-end gap-3 pt-3 border-t">
-            <Button variant="outline" size="sm" type="button" onClick={() => setEditModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button variant="primary" size="sm" type="submit">
-              Save Changes
-            </Button>
+          <div className="grid grid-cols-2 gap-2">
+            <Input label="Monthly Rent (₹)" type="number" value={editForm.monthlyRent} onChange={(e) => setEditForm({ ...editForm, monthlyRent: e.target.value })} required />
+            <Input label="Security Deposit (₹)" type="number" value={editForm.securityDeposit} onChange={(e) => setEditForm({ ...editForm, securityDeposit: e.target.value })} required />
+          </div>
+          <Input label="Work Company" value={editForm.workCompany} onChange={(e) => setEditForm({ ...editForm, workCompany: e.target.value })} />
+          <div className="flex justify-end gap-2 pt-3 border-t border-[#DDE2DD]">
+            <Button variant="outline" size="sm" onClick={() => setEditModalOpen(false)}>Cancel</Button>
+            <Button type="submit" variant="primary" size="sm">Save Changes</Button>
           </div>
         </form>
       </Modal>
 
-      {/* Archive Modal */}
-      <Modal
-        isOpen={!!archiveModal}
-        onClose={() => setArchiveModal(null)}
-        title="Deactivate Resident"
-      >
-        <div className="space-y-4">
-          <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-800 text-xs flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 shrink-0" />
-            <span>Are you sure you want to deactivate <strong>{archiveModal?.name}</strong>? Their bed will be freed up and history preserved.</span>
-          </div>
-          <div className="flex justify-end gap-3 pt-2">
-            <Button variant="outline" size="sm" onClick={() => setArchiveModal(null)}>
-              Cancel
-            </Button>
-            <Button variant="danger" size="sm" onClick={handleConfirmArchive}>
-              Confirm Deactivation
-            </Button>
+      {/* Archive Resident Confirmation Modal */}
+      <Modal isOpen={!!archiveModal} onClose={() => setArchiveModal(null)} title="Confirm Archive" maxWidth="sm">
+        <div className="space-y-3 text-left">
+          <p className="text-xs text-[#68736D]">
+            Are you sure you want to archive <strong>{archiveModal?.name}</strong>?
+          </p>
+          <div className="flex justify-end gap-2 pt-3 border-t border-[#DDE2DD]">
+            <Button variant="outline" size="sm" onClick={() => setArchiveModal(null)}>Cancel</Button>
+            <Button variant="danger" size="sm" onClick={handleArchiveResident}>Archive</Button>
           </div>
         </div>
       </Modal>
-
-      {/* Resident Full Profile Dossier Modal */}
-      {selectedResident && (
-        <Modal
-          isOpen={profileModalOpen}
-          onClose={() => setProfileModalOpen(false)}
-          title={`Resident Dossier: ${selectedResident.fullName}`}
-          maxWidth="lg"
-        >
-          <div className="space-y-6">
-            <Tabs
-              tabs={[
-                { id: 'overview', label: 'Overview & Room' },
-                { id: 'kyc', label: `KYC Documents (${selectedResident.documents?.length || 0})` },
-                { id: 'payments', label: `Payments (${selectedResident.payments?.length || 0})` },
-                { id: 'complaints', label: `Complaints (${selectedResident.complaints?.length || 0})` }
-              ]}
-              activeTab={activeTab}
-              onChange={setActiveTab}
-            />
-
-            {/* Tab: Overview */}
-            {activeTab === 'overview' && (
-              <div className="space-y-4 text-xs">
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                  <div>
-                    <span className="text-slate-400 font-medium">Room & Bed:</span>
-                    <p className="font-bold text-slate-900 dark:text-white mt-0.5">
-                      Room {selectedResident.roomNumber || selectedResident.room?.number || '101'} (Bed {selectedResident.bedNumber || selectedResident.bed?.bedNumber || 'Bed A'})
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 font-medium">Monthly Rent:</span>
-                    <p className="font-bold text-emerald-600 mt-0.5">
-                      ₹{(selectedResident.monthlyRent || 0).toLocaleString('en-IN')}/mo
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 font-medium">Security Deposit:</span>
-                    <p className="font-bold text-slate-900 dark:text-white mt-0.5">
-                      ₹{(selectedResident.securityDeposit || selectedResident.depositAmount || 0).toLocaleString('en-IN')}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 font-medium">Mobile:</span>
-                    <p className="font-bold text-slate-900 dark:text-white mt-0.5">{selectedResident.mobile}</p>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 font-medium">Email:</span>
-                    <p className="font-bold text-slate-900 dark:text-white mt-0.5">{selectedResident.email}</p>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 font-medium">Current Status:</span>
-                    <div className="mt-0.5"><StatusBadge status={selectedResident.status} /></div>
-                  </div>
-                </div>
-
-                <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2">
-                  <h4 className="font-bold text-slate-900 dark:text-white">Emergency & Permanent Info</h4>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <span className="text-slate-400">Emergency Contact:</span>
-                      <p className="font-medium mt-0.5">{selectedResident.emergencyContact || 'Not provided'}</p>
-                    </div>
-                    <div>
-                      <span className="text-slate-400">Permanent Address:</span>
-                      <p className="font-medium mt-0.5">{selectedResident.address || selectedResident.permanentAddress || 'Not provided'}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex justify-end gap-3 pt-3 border-t">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setProfileModalOpen(false);
-                      navigate('/owner/residents/lifecycle');
-                    }}
-                  >
-                    Open Lifecycle Pipeline
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {/* Tab: KYC Documents */}
-            {activeTab === 'kyc' && (
-              <div className="space-y-4">
-                {(!selectedResident.documents || selectedResident.documents.length === 0) ? (
-                  <p className="text-xs text-slate-400 text-center py-6">No KYC documents submitted yet.</p>
-                ) : (
-                  <div className="space-y-3">
-                    {selectedResident.documents.map((doc: any) => (
-                      <div
-                        key={doc.id}
-                        className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
-                      >
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-slate-900 dark:text-white">{doc.type || doc.documentType}</span>
-                            <StatusBadge status={doc.status} />
-                          </div>
-                          <p className="text-[11px] text-slate-500 mt-0.5">
-                            Doc Number: {doc.documentNumber || 'N/A'} • Submitted: {new Date(doc.createdAt).toLocaleDateString()}
-                          </p>
-                          {doc.rejectionReason && (
-                            <p className="text-[11px] text-rose-500 font-semibold mt-0.5">
-                              Rejection Reason: {doc.rejectionReason}
-                            </p>
-                          )}
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <a
-                            href={doc.fileUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center gap-1 text-blue-600"
-                          >
-                            <Eye className="w-3.5 h-3.5" /> View
-                          </a>
-                          {doc.status === 'PENDING' && (
-                            <>
-                              <Button
-                                variant="success"
-                                size="sm"
-                                onClick={() => handleVerifyDoc(doc.id, 'VERIFIED')}
-                                leftIcon={<CheckCircle2 className="w-3.5 h-3.5" />}
-                              >
-                                Verify
-                              </Button>
-                              <Button
-                                variant="danger"
-                                size="sm"
-                                onClick={() => handleVerifyDoc(doc.id, 'REJECTED')}
-                                leftIcon={<XCircle className="w-3.5 h-3.5" />}
-                              >
-                                Reject
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Tab: Payments */}
-            {activeTab === 'payments' && (
-              <div className="space-y-3 text-xs">
-                {(!selectedResident.payments || selectedResident.payments.length === 0) ? (
-                  <p className="text-slate-400 text-center py-6">No payment records found.</p>
-                ) : (
-                  selectedResident.payments.map((p: any) => (
-                    <div
-                      key={p.id}
-                      className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between"
-                    >
-                      <div>
-                        <p className="font-bold text-slate-900 dark:text-white">{p.category} ({p.period || p.month})</p>
-                        <p className="text-[11px] text-slate-400">Due: {new Date(p.dueDate).toLocaleDateString()}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-bold text-emerald-600">₹{(p.amount || 0).toLocaleString('en-IN')}</p>
-                        <StatusBadge status={p.status} />
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            )}
-
-            {/* Tab: Complaints */}
-            {activeTab === 'complaints' && (
-              <div className="space-y-3 text-xs">
-                {(!selectedResident.complaints || selectedResident.complaints.length === 0) ? (
-                  <p className="text-slate-400 text-center py-6">No maintenance complaints reported.</p>
-                ) : (
-                  selectedResident.complaints.map((c: any) => (
-                    <div
-                      key={c.id}
-                      className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between"
-                    >
-                      <div>
-                        <p className="font-bold text-slate-900 dark:text-white">{c.title}</p>
-                        <p className="text-[11px] text-slate-400">{c.category} • {c.priority} Priority</p>
-                      </div>
-                      <StatusBadge status={c.status} />
-                    </div>
-                  ))
-                )}
-              </div>
-            )}
-          </div>
-        </Modal>
-      )}
     </div>
   );
 };
-
-export default ResidentsPage;

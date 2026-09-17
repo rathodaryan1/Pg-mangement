@@ -76,7 +76,7 @@ export const ResidentNoticesPage: React.FC = () => {
               className={`p-6 space-y-3 transition-all ${
                 n.isImportant
                   ? 'border-red-300 dark:border-red-900/60 bg-red-50/20 dark:bg-red-950/10'
-                  : 'hover:border-purple-200 dark:hover:border-purple-800'
+                  : 'hover:border-brand-forest dark:hover:border-brand-gold'
               }`}
             >
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
@@ -85,7 +85,7 @@ export const ResidentNoticesPage: React.FC = () => {
                     className={`p-2 rounded-xl ${
                       n.isImportant
                         ? 'bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-400'
-                        : 'bg-purple-100 text-purple-600 dark:bg-purple-950 dark:text-purple-400'
+                        : 'bg-brand-surface text-brand-forest dark:bg-brand-surface-dark dark:text-brand-gold border border-brand-border dark:border-brand-border-dark'
                     }`}
                   >
                     <Bell className="w-4 h-4" />
@@ -99,7 +99,7 @@ export const ResidentNoticesPage: React.FC = () => {
                       URGENT
                     </span>
                   )}
-                  <Badge variant="purple">{n.category}</Badge>
+                  <Badge variant="secondary">{n.category}</Badge>
                 </div>
               </div>
 

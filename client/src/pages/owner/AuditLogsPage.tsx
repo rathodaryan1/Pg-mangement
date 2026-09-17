@@ -55,13 +55,13 @@ export const AuditLogsPage: React.FC = () => {
       cell: (row) => (
         <div>
           <p className="font-bold text-xs text-slate-900 dark:text-white">{row.actorName || 'System Admin'}</p>
-          <Badge variant="purple">{row.actorRole || 'OWNER'}</Badge>
+          <Badge variant="secondary">{row.actorRole || 'OWNER'}</Badge>
         </div>
       )
     },
     {
       header: 'Action',
-      cell: (row) => <span className="font-mono text-xs font-bold text-blue-600 dark:text-blue-400">{row.action}</span>
+      cell: (row) => <span className="font-mono text-xs font-bold text-brand-forest dark:text-brand-gold">{row.action}</span>
     },
     {
       header: 'Target Entity',
@@ -95,7 +95,7 @@ export const AuditLogsPage: React.FC = () => {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-          <Shield className="w-6 h-6 text-purple-600" />
+          <Shield className="w-6 h-6 text-brand-forest dark:text-brand-gold" />
           Security Audit Trail & Property Configuration
         </h1>
         <p className="text-xs text-slate-500">
@@ -106,7 +106,7 @@ export const AuditLogsPage: React.FC = () => {
       {/* Tabs */}
       <Tabs
         tabs={[
-          { id: 'logs', label: `Immutable Audit Logs (${logs.length})`, icon: <History className="w-4 h-4 text-blue-600" /> },
+          { id: 'logs', label: `Immutable Audit Logs (${logs.length})`, icon: <History className="w-4 h-4 text-brand-forest dark:text-brand-gold" /> },
           { id: 'settings', label: 'Property & Operations Settings', icon: <SettingsIcon className="w-4 h-4 text-slate-600" /> }
         ]}
         activeTab={activeTab}
@@ -137,7 +137,7 @@ export const AuditLogsPage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card className="p-6 space-y-4">
             <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <Building className="w-4 h-4 text-blue-600" />
+              <Building className="w-4 h-4 text-brand-forest dark:text-brand-gold" />
               Property Profile
             </h3>
             <div className="space-y-3 text-xs">
@@ -164,7 +164,7 @@ export const AuditLogsPage: React.FC = () => {
 
           <Card className="p-6 space-y-4">
             <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <Key className="w-4 h-4 text-purple-600" />
+              <Key className="w-4 h-4 text-brand-forest dark:text-brand-gold" />
               Operational & Visitor Policies
             </h3>
             <div className="space-y-3 text-xs">

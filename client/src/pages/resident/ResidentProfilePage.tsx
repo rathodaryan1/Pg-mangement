@@ -156,7 +156,7 @@ export const ResidentProfilePage: React.FC = () => {
           {/* Identity Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-5">
             <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-white font-black text-xl flex items-center justify-center shadow-md">
+              <div className="w-16 h-16 rounded-2xl bg-brand-forest text-brand-gold font-black text-xl flex items-center justify-center shadow-md border border-brand-gold/30">
                 {profile?.fullName?.charAt(0) || 'R'}
               </div>
               <div>
@@ -249,7 +249,6 @@ export const ResidentProfilePage: React.FC = () => {
                 variant="primary"
                 size="sm"
                 type="submit"
-                className="bg-purple-600 hover:bg-purple-700 text-white"
                 isLoading={isSaving}
                 leftIcon={<Save className="w-3.5 h-3.5" />}
               >
@@ -263,7 +262,7 @@ export const ResidentProfilePage: React.FC = () => {
         <div className="space-y-6">
           <Card className="p-5 space-y-4">
             <h3 className="text-sm font-bold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center gap-2">
-              <KeyRound className="w-4 h-4 text-purple-600" />
+              <KeyRound className="w-4 h-4 text-brand-forest dark:text-brand-gold" />
               Change Password
             </h3>
 

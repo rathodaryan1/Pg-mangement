@@ -1,210 +1,248 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import {
+  Building2,
   BedDouble,
-  QrCode,
+  Users,
   CreditCard,
   Wrench,
   ShieldCheck,
-  Siren,
-  Users,
-  BarChart3,
-  CheckCircle2,
+  Bell,
+  CheckCircle,
+  FileCheck,
+  Receipt,
+  QrCode,
+  Box,
+  LifeBuoy,
+  FileSpreadsheet,
   ArrowRight,
-  Sparkles,
-  Zap,
-  Lock,
-  Clock,
-  Building2,
-  FileCheck
+  Shield
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
-import { Card } from '../../components/ui/Card';
-import { Badge } from '../../components/ui/Badge';
+
+interface FeatureCategory {
+  title: string;
+  subtitle: string;
+  icon: React.ElementType;
+  features: {
+    name: string;
+    description: string;
+  }[];
+}
+
+const FEATURE_CATEGORIES: FeatureCategory[] = [
+  {
+    title: 'PROPERTY OPERATIONS',
+    subtitle: 'Full hierarchy from property portfolio down to individual bed records.',
+    icon: Building2,
+    features: [
+      {
+        name: 'Multi-Property Management',
+        description: 'Manage multiple branches, buildings, and addresses under one owner profile.'
+      },
+      {
+        name: 'Floor & Room Hierarchy',
+        description: 'Organize properties by floors and individual rooms with customizable capacities.'
+      },
+      {
+        name: 'Bed Allocation Matrix',
+        description: 'Assign, reserve, and release beds (Bed A, Bed B) with live occupancy status.'
+      },
+      {
+        name: 'Room Amenities & Pricing',
+        description: 'Set custom base rents, security deposit requirements, and room amenities.'
+      }
+    ]
+  },
+  {
+    title: 'RESIDENT MANAGEMENT',
+    subtitle: 'End-to-end digital lifecycle from onboarding to security deposit settlement.',
+    icon: Users,
+    features: [
+      {
+        name: 'Digital Resident Dossiers',
+        description: 'Comprehensive resident profiles storing emergency contacts, workplace, and room allocations.'
+      },
+      {
+        name: 'Move-In & Agreement Tracking',
+        description: 'Log move-in dates, agreement durations, lease start/end periods, and agreement copies.'
+      },
+      {
+        name: 'KYC & Document Verification',
+        description: 'Secure Aadhaar / Government ID verification records with police verification notes.'
+      },
+      {
+        name: 'Notice Period & Move-Out Workflow',
+        description: 'Track 30-day notice periods with itemized deposit deductions and refund settlements.'
+      }
+    ]
+  },
+  {
+    title: 'FINANCE & BILLING',
+    subtitle: 'Transparent accounting with automated invoices, receipts, and expense tracking.',
+    icon: Receipt,
+    features: [
+      {
+        name: 'Recurring Rent Invoicing',
+        description: 'Generate monthly rent invoices automatically with custom billing cycle dates.'
+      },
+      {
+        name: 'Payment Reconciliation',
+        description: 'Record manual UPI, Cash, NEFT, and online payments with unique transaction IDs.'
+      },
+      {
+        name: 'Escrow Security Deposit Ledger',
+        description: 'Track held deposits, deductions for property damage, and return refunds.'
+      },
+      {
+        name: 'Operating Expense Tracking',
+        description: 'Record property expenses (Electricity, Wi-Fi, Water, Maintenance) categorized by vendor.'
+      }
+    ]
+  },
+  {
+    title: 'FACILITY OPERATIONS',
+    subtitle: 'Resolve maintenance complaints and coordinate on-ground staff seamlessly.',
+    icon: Wrench,
+    features: [
+      {
+        name: 'Maintenance Ticket Desk',
+        description: 'Structured ticketing for electrical, plumbing, cleaning, and appliance issues.'
+      },
+      {
+        name: 'Staff & Shift Management',
+        description: 'Staff directory with shift assignments (Morning, Evening), roles, and contact details.'
+      },
+      {
+        name: 'Asset & Consumables Inventory',
+        description: 'Track inventory (cleaning supplies, linen, bulbs) with minimum threshold alerts.'
+      },
+      {
+        name: 'Task Delegation',
+        description: 'Assign operational daily tasks to wardens with priority tags and due dates.'
+      }
+    ]
+  },
+  {
+    title: 'SECURITY & ACCESS CONTROL',
+    subtitle: 'Protect premises with digital gate passes and verified visitor logs.',
+    icon: Shield,
+    features: [
+      {
+        name: 'Digital QR Visitor Passes',
+        description: 'Residents create visitor invites with unique QR passes scanned at the security desk.'
+      },
+      {
+        name: 'Gate Entry / Exit Logs',
+        description: 'Record visitor arrival and departure timestamps with host confirmation.'
+      },
+      {
+        name: 'Emergency SOS Broadcast',
+        description: 'One-touch resident emergency alert triggering instant warden & security alarms.'
+      },
+      {
+        name: 'Immutable Audit Logs',
+        description: 'Log all critical administrative actions, invoice creations, and record modifications.'
+      }
+    ]
+  },
+  {
+    title: 'COMMUNICATION & NOTICES',
+    subtitle: 'Keep all residents informed without noisy WhatsApp groups.',
+    icon: Bell,
+    features: [
+      {
+        name: 'Official Digital Noticeboard',
+        description: 'Broadcast maintenance alerts, meal schedules, and rules directly to resident dashboards.'
+      },
+      {
+        name: 'Resident Leave Approvals',
+        description: 'Residents submit overnight or vacation leave requests with warden approval workflows.'
+      },
+      {
+        name: 'Automated Status Alerts',
+        description: 'Instant notification on rent payments, complaint updates, and visitor approvals.'
+      },
+      {
+        name: 'Resident Self-Service',
+        description: 'Mobile-friendly resident portal accessible 24/7 from any device without app installation.'
+      }
+    ]
+  }
+];
 
 export const FeaturesPage: React.FC = () => {
-  const featureList = [
-    {
-      id: 'bed-matrix',
-      category: 'Occupancy & Inventory',
-      title: 'Interactive Visual Bed Matrix',
-      subtitle: 'Instant visibility into room availability across floors and buildings.',
-      description: 'Replace fragmented spreadsheets with a graphical bed matrix. View which rooms are occupied, available, reserved, or under maintenance at a glance.',
-      highlights: [
-        'Real-time bed-level status (Bed A, B, C, D)',
-        'Single, Double, Triple, and 4-Sharing room support',
-        'Floor-wise and building-wise categorization',
-        'One-click resident assignment & key handover tracking'
-      ],
-      icon: BedDouble,
-      color: 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800'
-    },
-    {
-      id: 'qr-gate',
-      category: 'Security & Access',
-      title: 'Encrypted QR Code Visitor Gate Passes',
-      subtitle: 'Eliminate manual paper registers with contactless, verified digital passes.',
-      description: 'Residents request visitor passes directly on their smartphone. Owners or wardens approve requests in real time to generate unique, time-stamped QR gate passes.',
-      highlights: [
-        'Resident pre-approval workflow for visiting guests & deliveries',
-        'Opaque secure QR tokens (zero sensitive data leakage)',
-        'Automatic entry/exit time logging at the security gate',
-        'Automated pass expiry to prevent unauthorized re-entry'
-      ],
-      icon: QrCode,
-      color: 'bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-800'
-    },
-    {
-      id: 'finance-ledger',
-      category: 'Billing & Payments',
-      title: 'Automated Rent Ledger & Escrow Deposits',
-      subtitle: 'Server-verified payment collection with instant tax receipts.',
-      description: 'Automate monthly rent invoicing on the 1st of every month. Residents pay through UPI or Cards, and payments are automatically reconciled without manual screenshot verification.',
-      highlights: [
-        'Automated WhatsApp & SMS rent reminders',
-        'Automated late fine calculation after due date',
-        'Official branded PDF tax receipts for resident tax exemptions',
-        'Security deposit holding ledger with itemized move-out deduction checklists'
-      ],
-      icon: CreditCard,
-      color: 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
-    },
-    {
-      id: 'maintenance-desk',
-      category: 'Operations & SLAs',
-      title: 'Maintenance Ticket Desk & Timeline',
-      subtitle: 'End-to-end issue tracking from report to verified resolution.',
-      description: 'Residents report room issues with photos in seconds. Admins assign tasks to on-duty technicians, tracking progress on a live status timeline with resident ratings upon completion.',
-      highlights: [
-        'Categorized ticketing: Plumbing, Electrical, AC, Wi-Fi, Cleaning',
-        'Priority tagging (Urgent, High, Medium, Low)',
-        'Complete chronological audit timeline for every ticket',
-        'Post-resolution resident feedback & 5-star ratings'
-      ],
-      icon: Wrench,
-      color: 'bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800'
-    },
-    {
-      id: 'emergency-sos',
-      category: 'Safety & Emergency',
-      title: 'Emergency SOS & Safety Desk',
-      subtitle: 'Instant double-confirmation panic alert system for resident emergencies.',
-      description: 'In critical medical or security emergencies, residents can trigger the SOS button with double confirmation. The system instantly broadcasts room location alerts to wardens and security staff.',
-      highlights: [
-        'Accidental-trigger prevention with double-confirmation dialog',
-        'Instant location broadcast (Building, Room, Bed ID)',
-        'Immediate display of PG warden and local emergency phone numbers',
-        'Automatic emergency contact SMS notification'
-      ],
-      icon: Siren,
-      color: 'bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-800'
-    },
-    {
-      id: 'analytics-audit',
-      category: 'Governance & Insights',
-      title: 'Analytics, Reports & Immutable Audit Logs',
-      subtitle: 'Actionable financial intelligence and security compliance.',
-      description: 'Gain complete operational visibility with occupancy trends, collection efficiencies, expense breakdowns, and tamper-proof security audit logs.',
-      highlights: [
-        'Occupancy rate and monthly revenue trajectory graphs',
-        'Outstanding dues breakdown and payment velocity metrics',
-        'Immutable audit logs capturing user, role, action, and timestamp',
-        'One-click Excel / PDF data export for accounting compliance'
-      ],
-      icon: BarChart3,
-      color: 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800'
-    }
-  ];
-
   return (
-    <div className="space-y-16 sm:space-y-24 py-12 sm:py-16 max-w-6xl mx-auto px-4 sm:px-6 animate-fade-in">
-      {/* 1. HERO HEADER */}
-      <section className="text-center space-y-4">
-        <Badge variant="primary">Comprehensive Feature Suite</Badge>
-        <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-slate-900 dark:text-white">
-          Everything You Need to Run a <br className="hidden sm:inline" />
-          <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
-            World-Class PG Community
-          </span>
+    <div className="space-y-16 py-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Header */}
+      <div className="text-left space-y-2 border-b border-slate-200 dark:border-slate-800 pb-6">
+        <span className="text-xs font-semibold text-blue-600 uppercase tracking-wider">Product Features</span>
+        <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
+          Comprehensive PG Operating Platform
         </h1>
-        <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed">
-          From room allocation to automated rent collection, digital QR gate security, and maintenance SLAs—discover how Urban Nest unifies every aspect of PG operations.
+        <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-2xl leading-relaxed">
+          Explore every module built into Urban Nest to automate property management, streamline finances, and enhance the resident living experience.
         </p>
-      </section>
+      </div>
 
-      {/* 2. DETAILED FEATURE CARDS */}
-      <section className="space-y-10">
-        {featureList.map((feat, idx) => {
-          const Icon = feat.icon;
-          const isEven = idx % 2 === 0;
-
+      {/* Feature Categories Grid */}
+      <div className="space-y-12">
+        {FEATURE_CATEGORIES.map((category, idx) => {
+          const Icon = category.icon;
           return (
-            <Card
-              key={feat.id}
-              className="p-6 sm:p-10 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-all"
-            >
-              <div className={`grid grid-cols-1 lg:grid-cols-12 gap-8 items-center ${isEven ? '' : 'lg:flex-row-reverse'}`}>
-                {/* Text Content */}
-                <div className="lg:col-span-7 space-y-4">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                      {feat.category}
-                    </span>
-                  </div>
-
-                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{feat.title}</h2>
-                  <p className="text-xs sm:text-sm font-medium text-blue-600 dark:text-blue-400">{feat.subtitle}</p>
-                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">{feat.description}</p>
-
-                  {/* Bullet Highlights */}
-                  <div className="space-y-2 pt-2">
-                    {feat.highlights.map((item, hIdx) => (
-                      <div key={hIdx} className="flex items-center gap-2 text-xs text-slate-700 dark:text-slate-300">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                        <span>{item}</span>
-                      </div>
-                    ))}
-                  </div>
+            <div key={idx} className="space-y-4">
+              <div className="flex items-center gap-2.5 pb-2 border-b border-slate-100 dark:border-slate-800">
+                <div className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 text-blue-600 flex items-center justify-center font-bold">
+                  <Icon className="w-4 h-4" />
                 </div>
-
-                {/* Visual Icon Illustration Box */}
-                <div className="lg:col-span-5 flex items-center justify-center">
-                  <div className={`w-full max-w-sm p-8 rounded-3xl border flex flex-col items-center justify-center text-center shadow-inner ${feat.color}`}>
-                    <div className="w-20 h-20 rounded-3xl bg-white dark:bg-slate-900 shadow-md flex items-center justify-center mb-4">
-                      <Icon className="w-10 h-10" />
-                    </div>
-                    <h3 className="font-bold text-sm text-slate-900 dark:text-white">{feat.title}</h3>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">{feat.subtitle}</p>
-                  </div>
+                <div>
+                  <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                    {category.title}
+                  </h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{category.subtitle}</p>
                 </div>
               </div>
-            </Card>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {category.features.map((feature, fIdx) => (
+                  <div
+                    key={fIdx}
+                    className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs space-y-1.5 text-left hover:border-slate-300 dark:hover:border-slate-700 transition-colors"
+                  >
+                    <h3 className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                      <CheckCircle className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      <span>{feature.name}</span>
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                      {feature.description}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
           );
         })}
-      </section>
+      </div>
 
-      {/* 3. CTA FOOTER */}
-      <section className="p-8 sm:p-12 rounded-3xl bg-slate-900 text-white text-center space-y-6">
-        <div className="max-w-xl mx-auto space-y-2">
-          <h2 className="text-2xl sm:text-3xl font-black">See These Features in Action</h2>
-          <p className="text-xs sm:text-sm text-slate-400">
-            Launch the live interactive demonstration for Owners or Residents right now.
-          </p>
+      {/* CTA Bottom Banner */}
+      <div className="p-8 bg-slate-900 text-white rounded-xl text-left flex flex-col sm:flex-row items-center justify-between gap-6">
+        <div className="space-y-1">
+          <h3 className="text-lg font-bold">Ready to modernize your PG operations?</h3>
+          <p className="text-xs text-slate-400">Launch a live demo in seconds with pre-configured sample properties.</p>
         </div>
-
-        <div className="flex flex-wrap items-center justify-center gap-3">
+        <div className="flex items-center gap-3 shrink-0">
           <Link to="/owner/dashboard">
-            <Button variant="primary" size="md">
-              Launch Owner Portal
+            <Button variant="primary" size="md" className="font-semibold">
+              Explore Owner Portal
             </Button>
           </Link>
-          <Link to="/resident/dashboard">
-            <Button variant="outline" size="md" className="text-purple-300 border-purple-800 bg-purple-950/40">
-              Launch Resident Portal
+          <Link to="/pricing">
+            <Button variant="outline" size="md" className="bg-transparent border-slate-700 text-white hover:bg-slate-800">
+              View Pricing
             </Button>
           </Link>
         </div>
-      </section>
+      </div>
     </div>
   );
 };

@@ -126,7 +126,6 @@ export const ResidentDocumentsPage: React.FC = () => {
           <Button
             variant="primary"
             size="sm"
-            className="bg-purple-600 hover:bg-purple-700 text-white"
             onClick={() => setUploadModalOpen(true)}
             leftIcon={<Plus className="w-3.5 h-3.5" />}
           >
@@ -146,7 +145,6 @@ export const ResidentDocumentsPage: React.FC = () => {
           <Button
             variant="primary"
             size="sm"
-            className="bg-purple-600 hover:bg-purple-700 text-white mt-2"
             onClick={() => setUploadModalOpen(true)}
             leftIcon={<UploadCloud className="w-3.5 h-3.5" />}
           >
@@ -163,7 +161,7 @@ export const ResidentDocumentsPage: React.FC = () => {
               <Card key={doc.id} className="p-5 flex flex-col justify-between gap-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3">
-                    <div className="p-3 rounded-2xl bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-300">
+                    <div className="p-3 rounded-2xl bg-brand-surface dark:bg-brand-surface-dark text-brand-forest dark:text-brand-gold border border-brand-border dark:border-brand-border-dark">
                       <FileText className="w-5 h-5" />
                     </div>
                     <div className="space-y-0.5">
@@ -241,7 +239,7 @@ export const ResidentDocumentsPage: React.FC = () => {
                   setSelectedFile(e.target.files[0]);
                 }
               }}
-              className="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100 dark:file:bg-purple-950 dark:file:text-purple-300"
+              className="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-brand-surface file:text-brand-forest hover:file:bg-brand-forest/15 dark:file:bg-brand-surface-dark dark:file:text-brand-gold"
               required
             />
           </div>
@@ -254,7 +252,6 @@ export const ResidentDocumentsPage: React.FC = () => {
               variant="primary"
               size="sm"
               type="submit"
-              className="bg-purple-600 hover:bg-purple-700 text-white"
               isLoading={isUploading}
             >
               Upload Securely

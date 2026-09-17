@@ -117,7 +117,6 @@ export const ResidentLeavePage: React.FC = () => {
           <Button
             variant="primary"
             size="sm"
-            className="bg-purple-600 hover:bg-purple-700 text-white"
             onClick={() => setModalOpen(true)}
             leftIcon={<Plus className="w-3.5 h-3.5" />}
           >
@@ -137,7 +136,6 @@ export const ResidentLeavePage: React.FC = () => {
           <Button
             variant="primary"
             size="sm"
-            className="bg-purple-600 hover:bg-purple-700 text-white mt-2"
             onClick={() => setModalOpen(true)}
             leftIcon={<Plus className="w-3.5 h-3.5" />}
           >
@@ -156,7 +154,7 @@ export const ResidentLeavePage: React.FC = () => {
                     <StatusBadge status={l.status} />
                   </div>
                   <p className="text-slate-500 flex items-center gap-2">
-                    <Calendar className="w-3.5 h-3.5 text-purple-600" />
+                    <Calendar className="w-3.5 h-3.5 text-brand-forest dark:text-brand-gold" />
                     <strong>Duration:</strong> {new Date(l.fromDate).toLocaleDateString()} to {new Date(l.toDate).toLocaleDateString()}
                     <span className="text-[10px] text-slate-400">
                       • Applied on {new Date(l.appliedAt).toLocaleDateString()}
@@ -222,7 +220,6 @@ export const ResidentLeavePage: React.FC = () => {
               variant="primary"
               size="sm"
               type="submit"
-              className="bg-purple-600 hover:bg-purple-700 text-white"
               isLoading={isSubmitting}
             >
               Submit Application

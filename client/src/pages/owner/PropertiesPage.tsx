@@ -199,32 +199,32 @@ export const PropertiesPage: React.FC = () => {
   );
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in text-left">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="p-4 rounded-xl bg-emerald-500 text-white flex items-center justify-between shadow-lg animate-fade-in">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-5 h-5" />
-            <span className="text-sm font-semibold">{toastMessage}</span>
+        <div className="p-3.5 rounded-lg bg-[#EAF2EE] text-[#0B4036] border border-[#0B4036]/20 flex items-center justify-between shadow-xs">
+          <div className="flex items-center gap-2 text-xs font-semibold">
+            <CheckCircle2 className="w-4 h-4 text-[#0B4036]" />
+            <span>{toastMessage}</span>
           </div>
-          <button onClick={() => setToastMessage(null)} className="text-white/80 hover:text-white text-xs">
+          <button onClick={() => setToastMessage(null)} className="text-xs text-[#0B4036]/70">
             Dismiss
           </button>
         </div>
       )}
 
       {/* Header & Tabs */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-[#DDE2DD] pb-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-            Property & Infrastructure Management
+          <h1 className="text-2xl font-bold tracking-tight text-[#18231F]">
+            Properties & Infrastructure
           </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Multi-tier hierarchy: Properties → Buildings → Floors → Rooms & Inventory
+          <p className="text-xs text-[#68736D] mt-0.5">
+            Hierarchy: Properties → Buildings → Floors → Rooms & Beds
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {activeTab === 'PROPERTIES' && (
             <Button
               variant="primary"
@@ -270,399 +270,242 @@ export const PropertiesPage: React.FC = () => {
       </div>
 
       {/* Tab Selector & Search Toolbar */}
-      <Card className="p-4 flex flex-col md:flex-row items-center justify-between gap-3">
-        <div className="flex items-center gap-2 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl w-full md:w-auto">
+      <div className="p-3.5 bg-white border border-[#DDE2DD] rounded-xl shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="flex items-center gap-1.5 p-1 bg-[#F8F7F3] rounded-lg w-full sm:w-auto border border-[#DDE2DD]">
           <button
             onClick={() => setActiveTab('PROPERTIES')}
-            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
               activeTab === 'PROPERTIES'
-                ? 'bg-white dark:bg-slate-900 text-blue-600 shadow-sm'
-                : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                ? 'bg-white text-[#0B4036] shadow-xs'
+                : 'text-[#68736D] hover:text-[#18231F]'
             }`}
           >
             Properties ({properties.length})
           </button>
           <button
             onClick={() => setActiveTab('BUILDINGS')}
-            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
               activeTab === 'BUILDINGS'
-                ? 'bg-white dark:bg-slate-900 text-blue-600 shadow-sm'
-                : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                ? 'bg-white text-[#0B4036] shadow-xs'
+                : 'text-[#68736D] hover:text-[#18231F]'
             }`}
           >
             Buildings ({buildings.length})
           </button>
           <button
             onClick={() => setActiveTab('FLOORS')}
-            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
               activeTab === 'FLOORS'
-                ? 'bg-white dark:bg-slate-900 text-blue-600 shadow-sm'
-                : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                ? 'bg-white text-[#0B4036] shadow-xs'
+                : 'text-[#68736D] hover:text-[#18231F]'
             }`}
           >
             Floors ({floors.length})
           </button>
         </div>
 
-        <div className="w-full md:w-72">
+        <div className="w-full sm:w-64">
           <Input
-            placeholder="Search name, code, location..."
+            placeholder="Search..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            leftIcon={<Search className="w-4 h-4 text-slate-400" />}
+            leftIcon={<Search className="w-4 h-4 text-[#8A928D]" />}
           />
         </div>
-      </Card>
+      </div>
 
-      {/* TAB 1: PROPERTIES */}
+      {/* TAB 1: PROPERTIES LIST */}
       {activeTab === 'PROPERTIES' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProperties.map((prop) => (
-            <Card key={prop.id} className="p-5 space-y-4 hover:border-slate-300 dark:hover:border-slate-700 transition-all flex flex-col justify-between">
-              <div className="space-y-3">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
-                      <Building2 className="w-5 h-5" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {filteredProperties.map((prop) => {
+            const isActive = activeProperty?.id === prop.id;
+            return (
+              <Card key={prop.id} className={`p-5 space-y-4 transition-all ${isActive ? 'border-[#0B4036] ring-1 ring-[#0B4036]' : ''}`}>
+                <div className="flex items-start justify-between pb-3 border-b border-[#DDE2DD]">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-base font-bold text-[#18231F]">{prop.name}</h3>
+                      {isActive && (
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#EAF2EE] text-[#0B4036]">
+                          Active
+                        </span>
+                      )}
                     </div>
-                    <div>
-                      <h3 className="text-base font-bold text-slate-900 dark:text-white">{prop.name}</h3>
-                      <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
-                        <MapPin className="w-3 h-3 text-slate-400" />
-                        <span>{prop.city}</span>
-                      </p>
-                    </div>
+                    <p className="text-xs text-[#68736D] flex items-center gap-1">
+                      <MapPin className="w-3.5 h-3.5 text-[#8A928D]" /> {prop.address}, {prop.city}
+                    </p>
                   </div>
-                  {activeProperty.id === prop.id && (
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300">
-                      Active
-                    </span>
-                  )}
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => {
+                        setEditingProperty(prop);
+                        setPropertyForm({
+                          name: prop.name,
+                          address: prop.address,
+                          city: prop.city || 'Bengaluru',
+                          phone: prop.phone || '',
+                          email: prop.email || '',
+                          upiId: prop.upiId || '',
+                          gstNumber: prop.gstNumber || ''
+                        });
+                        setPropertyModalOpen(true);
+                      }}
+                      className="p-1 rounded text-[#8A928D] hover:text-[#0B4036] hover:bg-[#EAF2EE]"
+                      title="Edit Property"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </button>
+                    {properties.length > 1 && (
+                      <button
+                        onClick={() => setDeleteConfirmModal({ type: 'PROPERTY', id: prop.id, title: prop.name })}
+                        className="p-1 rounded text-[#8A928D] hover:text-rose-600 hover:bg-rose-50"
+                        title="Archive Property"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
                 </div>
 
-                <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2">
-                  {prop.address}
-                </p>
-
-                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
-                  <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40">
-                    <span className="text-slate-400 text-[10px] uppercase font-bold block">Capacity</span>
-                    <strong className="text-slate-900 dark:text-white">{prop.totalBeds || 24} Beds</strong>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="p-2.5 rounded-lg bg-[#F8F7F3] space-y-0.5">
+                    <p className="text-[10px] text-[#8A928D]">Rooms</p>
+                    <p className="font-bold text-[#18231F]">{prop._count?.rooms || prop.totalRooms || 24}</p>
                   </div>
-                  <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800/40">
-                    <span className="text-slate-400 text-[10px] uppercase font-bold block">Active Residents</span>
-                    <strong className="text-blue-600 dark:text-blue-400">{prop.occupiedBeds || prop.activeResidentsCount || 18} Occupied</strong>
+                  <div className="p-2.5 rounded-lg bg-[#F8F7F3] space-y-0.5">
+                    <p className="text-[10px] text-[#8A928D]">Total Beds</p>
+                    <p className="font-bold text-[#0B4036]">{prop._count?.beds || prop.totalBeds || 48}</p>
                   </div>
                 </div>
 
-                {prop.phone && (
-                  <p className="text-[11px] text-slate-500 flex items-center gap-1.5">
-                    <Phone className="w-3 h-3 text-slate-400" /> {prop.phone}
-                  </p>
-                )}
-              </div>
+                <div className="pt-2 flex justify-between items-center">
+                  <Button
+                    variant={isActive ? 'outline' : 'primary'}
+                    size="xs"
+                    onClick={() => setActiveProperty(prop)}
+                    className="w-full font-semibold"
+                  >
+                    {isActive ? 'Currently Active' : 'Switch to this Property'}
+                  </Button>
+                </div>
+              </Card>
+            );
+          })}
+        </div>
+      )}
 
-              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-xs"
-                  onClick={() => {
-                    setActiveProperty(prop);
-                    setToastMessage(`Switched active context to ${prop.name}`);
-                    setTimeout(() => setToastMessage(null), 3000);
-                  }}
-                >
-                  Select Context
-                </Button>
-
+      {/* TAB 2: BUILDINGS LIST */}
+      {activeTab === 'BUILDINGS' && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {filteredBuildings.map((bld) => (
+            <Card key={bld.id} className="p-5 space-y-3">
+              <div className="flex justify-between items-center pb-2.5 border-b border-[#DDE2DD]">
+                <div className="flex items-center gap-2">
+                  <Building className="w-4 h-4 text-[#0B4036]" />
+                  <h3 className="text-base font-bold text-[#18231F]">{bld.name}</h3>
+                </div>
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => {
-                      setEditingProperty(prop);
-                      setPropertyForm({
-                        name: prop.name || '',
-                        address: prop.address || '',
-                        city: prop.city || 'Bengaluru',
-                        phone: prop.phone || '',
-                        email: prop.email || '',
-                        upiId: prop.upiId || '',
-                        gstNumber: prop.gstNumber || ''
-                      });
-                      setPropertyModalOpen(true);
+                      setEditingBuilding(bld);
+                      setBuildingForm({ name: bld.name, code: bld.code || '', numberOfFloors: (bld.numberOfFloors || 3).toString() });
+                      setBuildingModalOpen(true);
                     }}
-                    className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800"
-                    title="Edit Property"
+                    className="p-1 rounded text-[#8A928D] hover:text-[#0B4036]"
                   >
-                    <Edit2 className="w-4 h-4" />
+                    <Edit2 className="w-3.5 h-3.5" />
                   </button>
                   <button
-                    onClick={() => setDeleteConfirmModal({ type: 'PROPERTY', id: prop.id, title: prop.name })}
-                    className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-slate-100 dark:hover:bg-slate-800"
-                    title="Archive Property"
+                    onClick={() => setDeleteConfirmModal({ type: 'BUILDING', id: bld.id, title: bld.name })}
+                    className="p-1 rounded text-[#8A928D] hover:text-rose-600"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
-            </Card>
-          ))}
-        </div>
-      )}
 
-      {/* TAB 2: BUILDINGS */}
-      {activeTab === 'BUILDINGS' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredBuildings.map((bld) => (
-            <Card key={bld.id} className="p-5 space-y-4 hover:border-slate-300 dark:hover:border-slate-700 transition-all flex flex-col justify-between">
-              <div className="space-y-3">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold">
-                      <Building className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h3 className="text-base font-bold text-slate-900 dark:text-white">{bld.name}</h3>
-                      <p className="text-xs text-slate-500 font-mono">{bld.code || 'MAIN-WING'}</p>
-                    </div>
-                  </div>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                    Active
-                  </span>
-                </div>
-
-                <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 text-xs flex items-center justify-between">
-                  <span className="text-slate-500">Configured Floors:</span>
-                  <strong className="text-slate-900 dark:text-white">{bld.floors?.length || 3} Floors</strong>
-                </div>
-              </div>
-
-              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2">
-                <button
-                  onClick={() => {
-                    setEditingBuilding(bld);
-                    setBuildingForm({
-                      name: bld.name || '',
-                      code: bld.code || '',
-                      numberOfFloors: (bld.floors?.length || 3).toString()
-                    });
-                    setBuildingModalOpen(true);
-                  }}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800"
-                  title="Edit Building"
-                >
-                  <Edit2 className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => setDeleteConfirmModal({ type: 'BUILDING', id: bld.id, title: bld.name })}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-slate-100 dark:hover:bg-slate-800"
-                  title="Archive Building"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+              <div className="space-y-1.5 text-xs text-[#68736D]">
+                <p>Code: <strong className="text-[#18231F]">{bld.code || 'MAIN'}</strong></p>
+                <p>Floors: <strong className="text-[#18231F]">{bld.numberOfFloors || 4} Floors</strong></p>
+                <p>Associated Property: <span className="font-semibold text-[#0B4036]">{activeProperty.name}</span></p>
               </div>
             </Card>
           ))}
         </div>
       )}
 
-      {/* TAB 3: FLOORS */}
+      {/* TAB 3: FLOORS LIST */}
       {activeTab === 'FLOORS' && (
-        <Card className="p-0 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-                  <th className="p-4 font-bold text-slate-600 dark:text-slate-300">Floor Level</th>
-                  <th className="p-4 font-bold text-slate-600 dark:text-slate-300">Building</th>
-                  <th className="p-4 font-bold text-slate-600 dark:text-slate-300">Rooms Count</th>
-                  <th className="p-4 font-bold text-slate-600 dark:text-slate-300 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {floors.map((flr) => (
-                  <tr key={flr.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50">
-                    <td className="p-4 font-bold text-slate-900 dark:text-white">
-                      Floor {flr.floorNumber}
-                    </td>
-                    <td className="p-4 text-slate-600 dark:text-slate-300 font-medium">
-                      {flr.buildingName || 'Block A - Executive Wing'}
-                    </td>
-                    <td className="p-4 text-slate-600 dark:text-slate-400">
-                      {flr.totalRooms || 4} Rooms
-                    </td>
-                    <td className="p-4 text-right">
-                      <button
-                        onClick={() => setDeleteConfirmModal({ type: 'FLOOR', id: flr.id, title: `Floor ${flr.floorNumber}` })}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-slate-100 dark:hover:bg-slate-800"
-                        title="Archive Floor"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {floors.map((flr) => (
+            <Card key={flr.id} className="p-4 space-y-2">
+              <div className="flex justify-between items-center pb-2 border-b border-[#DDE2DD]">
+                <span className="font-bold text-sm text-[#18231F]">Floor {flr.floorNumber}</span>
+                <button
+                  onClick={() => setDeleteConfirmModal({ type: 'FLOOR', id: flr.id, title: `Floor ${flr.floorNumber}` })}
+                  className="p-1 rounded text-[#8A928D] hover:text-rose-600"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              <p className="text-xs text-[#68736D]">Building: <strong>{flr.buildingName || 'Block A'}</strong></p>
+            </Card>
+          ))}
+        </div>
       )}
 
-      {/* Property Modal */}
-      <Modal
-        isOpen={propertyModalOpen}
-        onClose={() => setPropertyModalOpen(false)}
-        title={editingProperty ? 'Edit Property Details' : 'Add New PG Property'}
-      >
-        <form onSubmit={handleSaveProperty} className="space-y-4">
-          <Input
-            label="Property Name"
-            placeholder="e.g. Urban Nest Residency (Whitefield)"
-            value={propertyForm.name}
-            onChange={(e) => setPropertyForm({ ...propertyForm, name: e.target.value })}
-            required
-          />
-          <Input
-            label="Full Physical Address"
-            placeholder="Plot No, Street, Landmark..."
-            value={propertyForm.address}
-            onChange={(e) => setPropertyForm({ ...propertyForm, address: e.target.value })}
-            required
-          />
-          <div className="grid grid-cols-2 gap-3">
-            <Input
-              label="City"
-              value={propertyForm.city}
-              onChange={(e) => setPropertyForm({ ...propertyForm, city: e.target.value })}
-              required
-            />
-            <Input
-              label="Contact Phone"
-              placeholder="+91 98765 43210"
-              value={propertyForm.phone}
-              onChange={(e) => setPropertyForm({ ...propertyForm, phone: e.target.value })}
-            />
+      {/* Add / Edit Property Modal */}
+      <Modal isOpen={propertyModalOpen} onClose={() => setPropertyModalOpen(false)} title={editingProperty ? 'Edit Property' : 'Create New Property'} maxWidth="md">
+        <form onSubmit={handleSaveProperty} className="space-y-3">
+          <Input label="Property Name" value={propertyForm.name} onChange={(e) => setPropertyForm({ ...propertyForm, name: e.target.value })} required />
+          <Input label="Address" value={propertyForm.address} onChange={(e) => setPropertyForm({ ...propertyForm, address: e.target.value })} required />
+          <div className="grid grid-cols-2 gap-2">
+            <Input label="City" value={propertyForm.city} onChange={(e) => setPropertyForm({ ...propertyForm, city: e.target.value })} required />
+            <Input label="Contact Phone" value={propertyForm.phone} onChange={(e) => setPropertyForm({ ...propertyForm, phone: e.target.value })} />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <Input
-              label="Contact Email"
-              type="email"
-              placeholder="pg@urbannest.com"
-              value={propertyForm.email}
-              onChange={(e) => setPropertyForm({ ...propertyForm, email: e.target.value })}
-            />
-            <Input
-              label="UPI ID (Rent Collection)"
-              placeholder="urbannest@okhdfc"
-              value={propertyForm.upiId}
-              onChange={(e) => setPropertyForm({ ...propertyForm, upiId: e.target.value })}
-            />
-          </div>
-          <Input
-            label="GST Number (Optional)"
-            placeholder="06AAAAA0000A1Z5"
-            value={propertyForm.gstNumber}
-            onChange={(e) => setPropertyForm({ ...propertyForm, gstNumber: e.target.value })}
-          />
-          <div className="flex justify-end gap-3 pt-3 border-t">
-            <Button variant="outline" size="sm" type="button" onClick={() => setPropertyModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button variant="primary" size="sm" type="submit">
-              {editingProperty ? 'Save Changes' : 'Create Property'}
-            </Button>
+          <div className="flex justify-end gap-2 pt-3 border-t border-[#DDE2DD]">
+            <Button variant="outline" size="sm" onClick={() => setPropertyModalOpen(false)}>Cancel</Button>
+            <Button type="submit" variant="primary" size="sm">{editingProperty ? 'Save Changes' : 'Create Property'}</Button>
           </div>
         </form>
       </Modal>
 
-      {/* Building Modal */}
-      <Modal
-        isOpen={buildingModalOpen}
-        onClose={() => setBuildingModalOpen(false)}
-        title={editingBuilding ? 'Edit Building' : 'Add New Building Block'}
-      >
-        <form onSubmit={handleSaveBuilding} className="space-y-4">
-          <Input
-            label="Building Name"
-            placeholder="e.g. Block B - Premier Wing"
-            value={buildingForm.name}
-            onChange={(e) => setBuildingForm({ ...buildingForm, name: e.target.value })}
-            required
-          />
-          <div className="grid grid-cols-2 gap-3">
-            <Input
-              label="Building Code"
-              placeholder="e.g. BLK-B"
-              value={buildingForm.code}
-              onChange={(e) => setBuildingForm({ ...buildingForm, code: e.target.value })}
-            />
-            <Input
-              label="Number of Floors"
-              type="number"
-              value={buildingForm.numberOfFloors}
-              onChange={(e) => setBuildingForm({ ...buildingForm, numberOfFloors: e.target.value })}
-              required
-            />
-          </div>
-          <div className="flex justify-end gap-3 pt-3 border-t">
-            <Button variant="outline" size="sm" type="button" onClick={() => setBuildingModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button variant="primary" size="sm" type="submit">
-              {editingBuilding ? 'Update Building' : 'Create Building'}
-            </Button>
+      {/* Add / Edit Building Modal */}
+      <Modal isOpen={buildingModalOpen} onClose={() => setBuildingModalOpen(false)} title={editingBuilding ? 'Edit Building' : 'Add Building'} maxWidth="sm">
+        <form onSubmit={handleSaveBuilding} className="space-y-3">
+          <Input label="Building Name" value={buildingForm.name} onChange={(e) => setBuildingForm({ ...buildingForm, name: e.target.value })} required />
+          <Input label="Building Code" value={buildingForm.code} onChange={(e) => setBuildingForm({ ...buildingForm, code: e.target.value })} />
+          <Input label="Number of Floors" type="number" value={buildingForm.numberOfFloors} onChange={(e) => setBuildingForm({ ...buildingForm, numberOfFloors: e.target.value })} required />
+          <div className="flex justify-end gap-2 pt-3 border-t border-[#DDE2DD]">
+            <Button variant="outline" size="sm" onClick={() => setBuildingModalOpen(false)}>Cancel</Button>
+            <Button type="submit" variant="primary" size="sm">Save</Button>
           </div>
         </form>
       </Modal>
 
-      {/* Floor Modal */}
-      <Modal
-        isOpen={floorModalOpen}
-        onClose={() => setFloorModalOpen(false)}
-        title="Add New Floor"
-      >
-        <form onSubmit={handleSaveFloor} className="space-y-4">
-          <Input
-            label="Floor Number"
-            type="number"
-            value={floorForm.floorNumber}
-            onChange={(e) => setFloorForm({ ...floorForm, floorNumber: e.target.value })}
-            required
-          />
-          <div className="flex justify-end gap-3 pt-3 border-t">
-            <Button variant="outline" size="sm" type="button" onClick={() => setFloorModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button variant="primary" size="sm" type="submit">
-              Add Floor
-            </Button>
+      {/* Add Floor Modal */}
+      <Modal isOpen={floorModalOpen} onClose={() => setFloorModalOpen(false)} title="Add Floor" maxWidth="sm">
+        <form onSubmit={handleSaveFloor} className="space-y-3">
+          <Input label="Floor Number" type="number" value={floorForm.floorNumber} onChange={(e) => setFloorForm({ ...floorForm, floorNumber: e.target.value })} required />
+          <div className="flex justify-end gap-2 pt-3 border-t border-[#DDE2DD]">
+            <Button variant="outline" size="sm" onClick={() => setFloorModalOpen(false)}>Cancel</Button>
+            <Button type="submit" variant="primary" size="sm">Add Floor</Button>
           </div>
         </form>
       </Modal>
 
-      {/* Confirmation Modal */}
-      <Modal
-        isOpen={!!deleteConfirmModal}
-        onClose={() => setDeleteConfirmModal(null)}
-        title="Confirm Deletion / Archive"
-      >
-        <div className="space-y-4">
-          <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-800 text-xs flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 shrink-0" />
-            <span>Are you sure you want to archive <strong>{deleteConfirmModal?.title}</strong>? Historical financial and resident records will remain safely preserved.</span>
-          </div>
-          <div className="flex justify-end gap-3 pt-2">
-            <Button variant="outline" size="sm" onClick={() => setDeleteConfirmModal(null)}>
-              Cancel
-            </Button>
-            <Button variant="danger" size="sm" onClick={handleConfirmArchive}>
-              Confirm Archive
-            </Button>
+      {/* Delete / Archive Confirmation Dialog */}
+      <Modal isOpen={!!deleteConfirmModal} onClose={() => setDeleteConfirmModal(null)} title="Confirm Archive" maxWidth="sm">
+        <div className="space-y-3">
+          <p className="text-xs text-[#68736D]">
+            Are you sure you want to archive <strong>{deleteConfirmModal?.title}</strong>?
+          </p>
+          <div className="flex justify-end gap-2 pt-3 border-t border-[#DDE2DD]">
+            <Button variant="outline" size="sm" onClick={() => setDeleteConfirmModal(null)}>Cancel</Button>
+            <Button variant="danger" size="sm" onClick={handleConfirmArchive}>Archive</Button>
           </div>
         </div>
       </Modal>
     </div>
   );
 };
-
-export default PropertiesPage;

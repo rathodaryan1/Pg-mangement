@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShieldCheck, ArrowRight, UserCheck, Building2, KeyRound } from 'lucide-react';
+import { Building2, UserCheck, KeyRound, ArrowRight, ShieldCheck } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
+import { UrbanNestLogo } from '../../components/ui/UrbanNestLogo';
 import { useAuth } from '../../context/AuthContext';
 import type { UserRole } from '../../types';
 
@@ -41,7 +42,6 @@ export const LoginPage: React.FC = () => {
           navigate('/owner/dashboard');
         }
       } else {
-        // Direct navigation if backend demo fallback is triggered
         if (selectedRole === 'RESIDENT') {
           navigate('/resident/dashboard');
         } else {
@@ -56,90 +56,108 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Glow Effects */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl" />
-      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl" />
-
-      <Card className="w-full max-w-md p-8 bg-slate-900/90 border border-slate-800 shadow-2xl rounded-3xl space-y-6 relative z-10">
-        <div className="text-center space-y-2">
-          <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white font-black text-xl flex items-center justify-center mx-auto shadow-lg shadow-blue-500/30">
-            UN
+    <div className="min-h-screen bg-[#FCFBF8] text-[#18231F] flex items-center justify-center p-4 sm:p-8">
+      <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-12 bg-white rounded-2xl border border-[#DDE2DD] shadow-sm overflow-hidden">
+        {/* Left Brand Panel */}
+        <div className="md:col-span-5 bg-[#F8F7F3] p-8 sm:p-10 border-b md:border-b-0 md:border-r border-[#DDE2DD] flex flex-col justify-between items-center text-center">
+          <div className="my-auto space-y-6">
+            <UrbanNestLogo variant="full" size="xl" />
+            <p className="text-xs text-[#68736D] leading-relaxed max-w-xs mx-auto">
+              One centralized operating system for properties, residents, rent, and everyday operations.
+            </p>
           </div>
-          <h1 className="text-2xl font-black tracking-tight text-white">URBAN NEST</h1>
-          <p className="text-xs text-slate-400">Smart PG Operating Platform</p>
-        </div>
 
-        {/* Role Selector Tabs */}
-        <div className="grid grid-cols-2 gap-2 p-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-bold">
-          <button
-            type="button"
-            onClick={() => handleRoleChange('OWNER')}
-            className={`py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
-              selectedRole === 'OWNER' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <Building2 className="w-3.5 h-3.5" />
-            Owner / Admin
-          </button>
-          <button
-            type="button"
-            onClick={() => handleRoleChange('RESIDENT')}
-            className={`py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
-              selectedRole === 'RESIDENT' ? 'bg-purple-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <UserCheck className="w-3.5 h-3.5" />
-            Resident Portal
-          </button>
-        </div>
-
-        {errorMsg && (
-          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs">
-            {errorMsg}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Input
-            label="Email Address"
-            placeholder={selectedRole === 'OWNER' ? 'owner@pg.com' : 'aakash.v@gmail.com'}
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-
-          <Input
-            label="Password"
-            type="password"
-            placeholder="admin123"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-
-          <Button
-            type="submit"
-            variant="primary"
-            isLoading={isLoading}
-            className={`w-full py-3 ${selectedRole === 'RESIDENT' ? 'bg-purple-600 hover:bg-purple-700' : 'bg-blue-600 hover:bg-blue-700'}`}
-            rightIcon={<ArrowRight className="w-4 h-4" />}
-          >
-            Sign In to {selectedRole === 'OWNER' ? 'Owner Portal' : 'Resident Portal'}
-          </Button>
-        </form>
-
-        {/* Quick Demo Credentials Panel */}
-        <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-2 text-xs">
-          <p className="font-bold text-slate-300 flex items-center gap-1.5">
-            <KeyRound className="w-3.5 h-3.5 text-blue-400" /> Demo Credentials:
-          </p>
-          <div className="space-y-1 text-[11px] text-slate-400">
-            <p><strong>Owner:</strong> <span className="text-blue-400">owner@pg.com</span> / <span className="text-slate-200">admin123</span></p>
-            <p><strong>Resident:</strong> <span className="text-purple-400">aakash.v@gmail.com</span> / <span className="text-slate-200">admin123</span></p>
+          <div className="pt-6 border-t border-[#DDE2DD] w-full flex items-center justify-center gap-1.5 text-xs text-[#0B4036] font-semibold">
+            <ShieldCheck className="w-4 h-4 text-[#C8A45D]" />
+            <span>Bank-Grade Escrow & DPDP Privacy</span>
           </div>
         </div>
-      </Card>
+
+        {/* Right Form Panel */}
+        <div className="md:col-span-7 p-6 sm:p-10 space-y-6">
+          <div className="space-y-1 text-left">
+            <h2 className="text-xl font-bold text-[#18231F]">Account Sign In</h2>
+            <p className="text-xs text-[#68736D]">
+              Select your portal role to access management or resident features.
+            </p>
+          </div>
+
+          {/* Role Selector Tabs */}
+          <div className="grid grid-cols-2 gap-1.5 p-1 rounded-lg bg-[#F8F7F3] border border-[#DDE2DD] text-xs font-semibold">
+            <button
+              type="button"
+              onClick={() => handleRoleChange('OWNER')}
+              className={`py-2 rounded-md transition-colors flex items-center justify-center gap-1.5 ${
+                selectedRole === 'OWNER'
+                  ? 'bg-[#0B4036] text-white shadow-xs'
+                  : 'text-[#68736D] hover:text-[#18231F]'
+              }`}
+            >
+              <Building2 className="w-3.5 h-3.5" />
+              Owner / Admin
+            </button>
+            <button
+              type="button"
+              onClick={() => handleRoleChange('RESIDENT')}
+              className={`py-2 rounded-md transition-colors flex items-center justify-center gap-1.5 ${
+                selectedRole === 'RESIDENT'
+                  ? 'bg-[#0B4036] text-white shadow-xs'
+                  : 'text-[#68736D] hover:text-[#18231F]'
+              }`}
+            >
+              <UserCheck className="w-3.5 h-3.5 text-[#C8A45D]" />
+              Resident Portal
+            </button>
+          </div>
+
+          {errorMsg && (
+            <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs">
+              {errorMsg}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-4 text-left">
+            <Input
+              label="Email Address"
+              type="email"
+              placeholder={selectedRole === 'OWNER' ? 'owner@pg.com' : 'aakash.v@gmail.com'}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+
+            <Input
+              label="Password"
+              type="password"
+              placeholder="admin123"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+
+            <Button
+              type="submit"
+              variant="primary"
+              isLoading={isLoading}
+              className="w-full py-2.5 font-bold shadow-xs"
+              rightIcon={<ArrowRight className="w-4 h-4" />}
+            >
+              Sign In to {selectedRole === 'OWNER' ? 'Owner Portal' : 'Resident Portal'}
+            </Button>
+          </form>
+
+          {/* Quick Demo Credentials Panel */}
+          <div className="p-3.5 rounded-lg bg-[#FAF5EB] border border-[#C8A45D]/30 space-y-1.5 text-xs text-left">
+            <p className="font-bold text-[#18231F] flex items-center gap-1.5">
+              <KeyRound className="w-3.5 h-3.5 text-[#B9954E]" /> Sample Demo Credentials:
+            </p>
+            <div className="space-y-0.5 text-[11px] text-[#68736D]">
+              <p><strong>Owner:</strong> <span className="font-mono text-[#0B4036]">owner@pg.com</span> / <span className="font-mono text-[#18231F]">admin123</span></p>
+              <p><strong>Resident:</strong> <span className="font-mono text-[#0B4036]">aakash.v@gmail.com</span> / <span className="font-mono text-[#18231F]">admin123</span></p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

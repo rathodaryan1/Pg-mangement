@@ -1,310 +1,319 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  CheckCircle2,
-  XCircle,
-  HelpCircle,
-  Zap,
-  Building2,
-  ShieldCheck,
-  Calculator,
-  ArrowRight,
-  Sparkles,
-  ChevronDown
-} from 'lucide-react';
+import { Check, HelpCircle, ArrowRight, ShieldCheck } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
-import { Card } from '../../components/ui/Card';
-import { Badge } from '../../components/ui/Badge';
+
+interface PricingTier {
+  id: string;
+  name: string;
+  description: string;
+  priceMonthly: number;
+  priceAnnual: number;
+  bedLimit: string;
+  popular?: boolean;
+  features: string[];
+}
+
+const PRICING_TIERS: PricingTier[] = [
+  {
+    id: 'starter',
+    name: 'Starter',
+    description: 'Essential management for single-location PGs and boutique hostels.',
+    priceMonthly: 1499,
+    priceAnnual: 1199,
+    bedLimit: 'Up to 50 Beds',
+    features: [
+      '1 Property Location',
+      'Bed-level room matrix',
+      'Resident KYC & Onboarding',
+      'Automated rent invoice generation',
+      'Manual payment recording (UPI/Cash)',
+      'Digital visitor QR gate passes',
+      'Maintenance ticket tracker',
+      'Standard email support'
+    ]
+  },
+  {
+    id: 'growth',
+    name: 'Growth',
+    description: 'Complete operating system for growing multi-property PG businesses.',
+    priceMonthly: 3999,
+    priceAnnual: 3199,
+    bedLimit: 'Up to 250 Beds',
+    popular: true,
+    features: [
+      'Up to 5 Property Locations',
+      'Multi-building & floor hierarchy',
+      'Full resident lifecycle & move-out settlement',
+      'Escrow security deposit ledger',
+      'Operating expense tracking & vendor reports',
+      'Staff shift & duty assignment',
+      'Asset & consumables inventory tracking',
+      'Financial & occupancy analytics export',
+      'Priority phone & WhatsApp support'
+    ]
+  },
+  {
+    id: 'enterprise',
+    name: 'Enterprise',
+    description: 'Custom infrastructure for large co-living chains and student housing.',
+    priceMonthly: 8999,
+    priceAnnual: 7199,
+    bedLimit: 'Unlimited Beds',
+    features: [
+      'Unlimited Property Locations',
+      'Custom role-based permissions & audit trails',
+      'Automated payment gateway integration (Razorpay)',
+      'Custom lease agreement contract generation',
+      'Dedicated account manager',
+      'Custom ERP & accounting exports',
+      '99.9% uptime SLA guarantee',
+      'On-site staff training'
+    ]
+  }
+];
+
+const COMPARISON_FEATURES = [
+  {
+    category: 'Capacity & Structure',
+    items: [
+      { name: 'Bed Limit', starter: '50 Beds', growth: '250 Beds', enterprise: 'Unlimited' },
+      { name: 'Properties', starter: '1 Property', growth: 'Up to 5', enterprise: 'Unlimited' },
+      { name: 'Floor & Room Hierarchy', starter: true, growth: true, enterprise: true }
+    ]
+  },
+  {
+    category: 'Finance & Billing',
+    items: [
+      { name: 'Automated Rent Invoicing', starter: true, growth: true, enterprise: true },
+      { name: 'Security Deposit Ledger', starter: 'Basic', growth: 'Advanced Escrow', enterprise: 'Multi-Account' },
+      { name: 'Operating Expense Tracking', starter: false, growth: true, enterprise: true },
+      { name: 'Online Payment Gateway', starter: false, growth: 'Add-on', enterprise: true },
+      { name: 'CSV & Excel Financial Export', starter: 'Monthly', growth: 'Real-time', enterprise: 'Custom API' }
+    ]
+  },
+  {
+    category: 'Operations & Security',
+    items: [
+      { name: 'QR Visitor Gate Pass Desk', starter: true, growth: true, enterprise: true },
+      { name: 'Emergency SOS Broadcast', starter: true, growth: true, enterprise: true },
+      { name: 'Maintenance Ticket Desk', starter: true, growth: true, enterprise: true },
+      { name: 'Staff Management & Shifts', starter: false, growth: true, enterprise: true },
+      { name: 'Inventory & Consumables Tracking', starter: false, growth: true, enterprise: true },
+      { name: 'Immutable Audit Logs', starter: '7 Days', growth: '90 Days', enterprise: '1 Year' }
+    ]
+  }
+];
+
+const FAQS = [
+  {
+    q: 'Can I upgrade my plan as my PG expands?',
+    a: 'Yes, you can upgrade your plan anytime with prorated billing. Your bed allocation limits and multi-property features will unlock instantly.'
+  },
+  {
+    q: 'Is there any setup or onboarding fee?',
+    a: 'No setup fees. You can start with our Starter or Growth plan immediately. For Enterprise setups, our team provides complimentary database onboarding.'
+  },
+  {
+    q: 'Do residents need to download an app?',
+    a: 'No. Urban Nest includes a progressive web app (PWA) resident portal that works on any smartphone browser with zero friction.'
+  },
+  {
+    q: 'How is data privacy handled for resident KYC?',
+    a: 'All resident government documents and contact records are encrypted with bank-grade security complying with Indian DPDP standards.'
+  }
+];
 
 export const PricingPage: React.FC = () => {
-  const [isAnnual, setIsAnnual] = useState(true);
-  const [bedsCount, setBedsCount] = useState(40);
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
-
-  const plans = [
-    {
-      name: 'Starter PG',
-      desc: 'Ideal for independent PG owners managing a single boutique building.',
-      monthlyPrice: 1499,
-      annualPrice: 1199,
-      bedsLimit: 'Up to 25 Beds',
-      propertiesLimit: '1 Property',
-      popular: false,
-      features: [
-        'Visual Room & Bed Matrix',
-        'Automated Rent Invoicing (WhatsApp)',
-        'Basic Visitor Approval Log',
-        'Standard Maintenance Ticketing',
-        'Resident Mobile Web Portal',
-        'Downloadable Payment Receipts',
-        'Email Support'
-      ]
-    },
-    {
-      name: 'Pro Operator',
-      desc: 'For growing co-living operators needing gate security & staff delegation.',
-      monthlyPrice: 3999,
-      annualPrice: 3199,
-      bedsLimit: 'Up to 100 Beds',
-      propertiesLimit: 'Up to 3 Properties',
-      popular: true,
-      badge: 'MOST POPULAR',
-      features: [
-        'Everything in Starter PG, plus:',
-        'Digital QR Code Gate Security',
-        'Double-Confirmation Emergency SOS',
-        'Staff Roles, Shifts & Task Allocations',
-        'Maintenance Ticket Timeline & SLAs',
-        'Digital Lease Agreement E-Signing',
-        'Security Deposit Escrow Ledger',
-        'Asset & Inventory Warranty Tracking',
-        'Priority Phone & WhatsApp Support'
-      ]
-    },
-    {
-      name: 'Enterprise Network',
-      desc: 'Designed for large multi-city PG chains requiring advanced compliance & APIs.',
-      monthlyPrice: 8999,
-      annualPrice: 7199,
-      bedsLimit: 'Unlimited Beds',
-      propertiesLimit: 'Unlimited Properties',
-      popular: false,
-      features: [
-        'Everything in Pro Operator, plus:',
-        'Multi-City Property Switcher',
-        'Custom Domain & Brand Whitelabel',
-        'Direct Razorpay / Payment Gateway Key Integration',
-        'Automated Biometric Fingerprint API Sync',
-        'Immutable Security Audit Trail Logs',
-        'Automated Daily Cloud Backups',
-        'Dedicated Technical Account Manager',
-        '99.9% Uptime SLA Guarantee'
-      ]
-    }
-  ];
-
-  const faqs = [
-    {
-      q: 'Do I need special hardware to scan QR Gate Passes at our PG?',
-      a: 'No! Any smartphone or tablet with a standard camera can scan and verify Urban Nest visitor passes directly in the browser with zero hardware investment.'
-    },
-    {
-      q: 'How does the rent collection & payment verification work?',
-      a: 'Residents can pay via UPI, NetBanking, or Cards. Urban Nest verifies payments server-side and automatically updates the ledger and issues instant branded tax receipts to residents.'
-    },
-    {
-      q: 'Can I switch or upgrade plans as our bed count grows?',
-      a: 'Yes, you can upgrade or modify your plan instantly. Your billing will automatically be prorated with zero disruption to active resident data.'
-    },
-    {
-      q: 'Is resident KYC and Aadhaar data securely stored?',
-      a: 'Absolutely. All sensitive documents are encrypted at rest and in transit in compliance with Indian DPDP Act standards. Only authorized PG admins have role-gated access.'
-    }
-  ];
-
-  // ROI estimation
-  const hoursSaved = Math.round(bedsCount * 0.4);
-  const revenueLeakageSaved = Math.round(bedsCount * 350);
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('annual');
 
   return (
-    <div className="space-y-16 sm:space-y-24 py-12 sm:py-16 max-w-6xl mx-auto px-4 sm:px-6 animate-fade-in">
-      {/* 1. HEADER & BILLING TOGGLE */}
-      <section className="text-center space-y-4">
-        <Badge variant="primary">Transparent Commercial Pricing</Badge>
-        <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-slate-900 dark:text-white">
-          Simple, Predictable Plans for <br className="hidden sm:inline" />
-          <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">Every PG Scale</span>
+    <div className="space-y-16 py-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-left">
+      {/* Header */}
+      <div className="text-center max-w-2xl mx-auto space-y-3">
+        <span className="text-xs font-semibold text-blue-600 uppercase tracking-wider">Commercial Pricing</span>
+        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 dark:text-white">
+          Simple, predictable pricing for your PG
         </h1>
-        <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 max-w-xl mx-auto">
-          No hidden fees per transaction. Pick a plan scaled to your bed capacity and unlock complete operational automation.
+        <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+          Choose the plan that fits your property portfolio. No hidden commissions or charges.
         </p>
 
-        {/* Monthly / Annual Switcher */}
-        <div className="pt-4 flex items-center justify-center gap-3">
-          <span className={`text-xs font-bold ${!isAnnual ? 'text-slate-900 dark:text-white' : 'text-slate-400'}`}>
-            Monthly Billing
-          </span>
-          <button
-            type="button"
-            onClick={() => setIsAnnual(!isAnnual)}
-            className="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out bg-blue-600 focus:outline-none"
-          >
-            <span
-              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                isAnnual ? 'translate-x-5' : 'translate-x-0'
-              }`}
-            />
-          </button>
-          <span className={`text-xs font-bold flex items-center gap-1.5 ${isAnnual ? 'text-slate-900 dark:text-white' : 'text-slate-400'}`}>
-            Annual Billing
-            <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-              SAVE 20%
-            </span>
-          </span>
-        </div>
-      </section>
-
-      {/* 2. PRICING CARDS */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
-        {plans.map((plan) => {
-          const price = isAnnual ? plan.annualPrice : plan.monthlyPrice;
-
-          return (
-            <Card
-              key={plan.name}
-              className={`p-6 sm:p-8 flex flex-col justify-between relative transition-all ${
-                plan.popular
-                  ? 'border-2 border-blue-600 dark:border-blue-500 shadow-xl ring-4 ring-blue-50 dark:ring-blue-950/40 bg-white dark:bg-slate-900'
-                  : 'border-slate-200 dark:border-slate-800'
+        {/* Billing Switcher */}
+        <div className="pt-2 flex items-center justify-center gap-2">
+          <div className="inline-flex p-1 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium">
+            <button
+              onClick={() => setBillingCycle('monthly')}
+              className={`px-3 py-1.5 rounded-md transition-colors ${
+                billingCycle === 'monthly'
+                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs font-semibold'
+                  : 'text-slate-600 dark:text-slate-400'
               }`}
             >
-              {plan.badge && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-blue-600 text-white font-black text-[10px] tracking-wider shadow-md">
-                  {plan.badge}
-                </span>
-              )}
+              Monthly Billing
+            </button>
+            <button
+              onClick={() => setBillingCycle('annual')}
+              className={`px-3 py-1.5 rounded-md transition-colors flex items-center gap-1.5 ${
+                billingCycle === 'annual'
+                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs font-semibold'
+                  : 'text-slate-600 dark:text-slate-400'
+              }`}
+            >
+              <span>Annual Billing</span>
+              <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded">
+                Save 20%
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
 
+      {/* Plan Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {PRICING_TIERS.map((tier) => {
+          const price = billingCycle === 'annual' ? tier.priceAnnual : tier.priceMonthly;
+          return (
+            <div
+              key={tier.id}
+              className={`p-6 rounded-xl border flex flex-col justify-between transition-all ${
+                tier.popular
+                  ? 'bg-white dark:bg-slate-900 border-blue-600 shadow-sm ring-1 ring-blue-600'
+                  : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-xs'
+              }`}
+            >
               <div className="space-y-4">
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">{plan.name}</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 min-h-[32px]">{plan.desc}</p>
+                <div className="flex justify-between items-center">
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">{tier.name}</h3>
+                  {tier.popular && (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                      Most Popular
+                    </span>
+                  )}
                 </div>
 
-                <div className="py-2 border-y border-slate-100 dark:border-slate-800">
+                <p className="text-xs text-slate-500 dark:text-slate-400">{tier.description}</p>
+
+                <div className="pt-2 pb-1 border-b border-slate-100 dark:border-slate-800">
                   <div className="flex items-baseline gap-1">
-                    <span className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white">
+                    <span className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
                       ₹{price.toLocaleString('en-IN')}
                     </span>
-                    <span className="text-xs text-slate-400 font-medium">/ month</span>
+                    <span className="text-xs text-slate-400">/ month</span>
                   </div>
-                  <p className="text-[10px] text-slate-400 mt-1">
-                    {isAnnual ? 'Billed annually (₹' + (price * 12).toLocaleString('en-IN') + '/yr)' : 'Billed monthly'}
+                  <p className="text-[11px] font-semibold text-blue-600 mt-1">{tier.bedLimit}</p>
+                </div>
+
+                <div className="space-y-2 text-xs">
+                  <p className="font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[10px]">
+                    Included Features:
                   </p>
-                </div>
-
-                <div className="space-y-1 text-xs font-semibold text-blue-600 dark:text-blue-400">
-                  <p>• {plan.bedsLimit}</p>
-                  <p>• {plan.propertiesLimit}</p>
-                </div>
-
-                {/* Features list */}
-                <div className="space-y-2.5 pt-2">
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">What's Included</p>
-                  {plan.features.map((feat, idx) => (
-                    <div key={idx} className="flex items-start gap-2 text-xs text-slate-600 dark:text-slate-300">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-                      <span>{feat}</span>
-                    </div>
-                  ))}
+                  <ul className="space-y-2 text-slate-600 dark:text-slate-300">
+                    {tier.features.map((feat, idx) => (
+                      <li key={idx} className="flex items-start gap-2 text-xs leading-tight">
+                        <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                        <span>{feat}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </div>
 
-              <div className="pt-6 mt-6 border-t border-slate-100 dark:border-slate-800">
-                <Link to="/owner/dashboard" className="block">
+              <div className="pt-6">
+                <Link to="/login">
                   <Button
-                    variant={plan.popular ? 'primary' : 'outline'}
+                    variant={tier.popular ? 'primary' : 'outline'}
                     size="md"
-                    className="w-full justify-center font-bold"
+                    className="w-full font-semibold"
                   >
-                    Start 14-Day Free Trial
+                    Start with {tier.name}
                   </Button>
                 </Link>
               </div>
-            </Card>
+            </div>
           );
         })}
-      </section>
+      </div>
 
-      {/* 3. INTERACTIVE ROI CALCULATOR */}
-      <section className="p-8 sm:p-10 rounded-3xl bg-slate-900 text-white space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-6">
-          <div className="space-y-1">
-            <Badge variant="purple">ROI Estimator</Badge>
-            <h3 className="text-xl sm:text-2xl font-bold">Calculate Your Monthly Time & Money Saved</h3>
-          </div>
-          <div className="text-left md:text-right">
-            <span className="text-xs text-slate-400">Selected Capacity:</span>
-            <p className="text-xl font-bold text-blue-400">{bedsCount} Active PG Beds</p>
-          </div>
+      {/* Feature Comparison Matrix */}
+      <div className="space-y-6 pt-6">
+        <div className="space-y-1">
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white">Detailed Plan Comparison</h2>
+          <p className="text-xs text-slate-500">Compare operational capabilities across Urban Nest tiers.</p>
         </div>
 
-        <div className="space-y-3">
-          <label className="text-xs font-medium text-slate-300">Slide to adjust your PG bed count:</label>
-          <input
-            type="range"
-            min={10}
-            max={300}
-            step={5}
-            value={bedsCount}
-            onChange={(e) => setBedsCount(Number(e.target.value))}
-            className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
-          />
-          <div className="flex justify-between text-[11px] text-slate-400">
-            <span>10 Beds (Single PG)</span>
-            <span>150 Beds (Medium Hub)</span>
-            <span>300+ Beds (Multi-Property)</span>
-          </div>
+        <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 shadow-xs">
+          <table className="w-full text-xs text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 text-slate-500">
+                <th className="p-3.5 font-semibold text-slate-900 dark:text-white w-1/3">Feature</th>
+                <th className="p-3.5 font-semibold text-center">Starter</th>
+                <th className="p-3.5 font-semibold text-center text-blue-600">Growth</th>
+                <th className="p-3.5 font-semibold text-center">Enterprise</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              {COMPARISON_FEATURES.map((cat, catIdx) => (
+                <React.Fragment key={catIdx}>
+                  <tr className="bg-slate-50/50 dark:bg-slate-800/40">
+                    <td colSpan={4} className="px-3.5 py-2 font-bold text-[11px] uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                      {cat.category}
+                    </td>
+                  </tr>
+                  {cat.items.map((item, iIdx) => (
+                    <tr key={iIdx} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30">
+                      <td className="px-3.5 py-2.5 font-medium text-slate-800 dark:text-slate-200">{item.name}</td>
+                      <td className="px-3.5 py-2.5 text-center text-slate-600 dark:text-slate-400">
+                        {typeof item.starter === 'boolean' ? (
+                          item.starter ? <Check className="w-4 h-4 text-emerald-600 mx-auto" /> : '—'
+                        ) : (
+                          item.starter
+                        )}
+                      </td>
+                      <td className="px-3.5 py-2.5 text-center font-medium text-slate-800 dark:text-slate-200">
+                        {typeof item.growth === 'boolean' ? (
+                          item.growth ? <Check className="w-4 h-4 text-emerald-600 mx-auto" /> : '—'
+                        ) : (
+                          item.growth
+                        )}
+                      </td>
+                      <td className="px-3.5 py-2.5 text-center text-slate-600 dark:text-slate-400">
+                        {typeof item.enterprise === 'boolean' ? (
+                          item.enterprise ? <Check className="w-4 h-4 text-emerald-600 mx-auto" /> : '—'
+                        ) : (
+                          item.enterprise
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </React.Fragment>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* FAQ Section */}
+      <div className="space-y-6 pt-6 border-t border-slate-200 dark:border-slate-800">
+        <div className="space-y-1">
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white">Frequently Asked Questions</h2>
+          <p className="text-xs text-slate-500">Quick answers about billing, security, and setup.</p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
-          <div className="p-4 rounded-2xl bg-slate-800/80 border border-slate-700/60 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-blue-600/20 text-blue-400 flex items-center justify-center shrink-0">
-              <Zap className="w-6 h-6" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {FAQS.map((faq, idx) => (
+            <div key={idx} className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-1.5">
+              <h3 className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                <HelpCircle className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                <span>{faq.q}</span>
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed pl-5">
+                {faq.a}
+              </p>
             </div>
-            <div>
-              <span className="text-[10px] text-slate-400 uppercase font-bold">Admin Hours Saved</span>
-              <p className="text-2xl font-black text-white">{hoursSaved} Hours / Month</p>
-              <p className="text-[11px] text-slate-400">Zero manual rent calls & paperwork</p>
-            </div>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-slate-800/80 border border-slate-700/60 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-emerald-600/20 text-emerald-400 flex items-center justify-center shrink-0">
-              <ShieldCheck className="w-6 h-6" />
-            </div>
-            <div>
-              <span className="text-[10px] text-slate-400 uppercase font-bold">Recovered Rent Leakage</span>
-              <p className="text-2xl font-black text-emerald-400">₹{revenueLeakageSaved.toLocaleString('en-IN')} / Month</p>
-              <p className="text-[11px] text-slate-400">Eliminating unbilled days & late fines</p>
-            </div>
-          </div>
+          ))}
         </div>
-      </section>
-
-      {/* 4. FAQS */}
-      <section className="max-w-3xl mx-auto space-y-6">
-        <div className="text-center space-y-2">
-          <Badge variant="purple">Got Questions?</Badge>
-          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
-            Frequently Asked Questions
-          </h2>
-        </div>
-
-        <div className="space-y-3">
-          {faqs.map((faq, idx) => {
-            const isOpen = openFaq === idx;
-            return (
-              <div
-                key={idx}
-                className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden transition-all"
-              >
-                <button
-                  onClick={() => setOpenFaq(isOpen ? null : idx)}
-                  className="w-full p-4 sm:p-5 text-left flex items-center justify-between gap-3 text-xs sm:text-sm font-bold text-slate-900 dark:text-white"
-                >
-                  <span>{faq.q}</span>
-                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isOpen ? 'rotate-180 text-blue-600' : ''}`} />
-                </button>
-                {isOpen && (
-                  <div className="px-5 pb-5 pt-1 text-xs text-slate-600 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800/60 leading-relaxed">
-                    {faq.a}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </section>
+      </div>
     </div>
   );
 };

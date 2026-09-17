@@ -134,7 +134,6 @@ export const ResidentVisitorsPage: React.FC = () => {
           <Button
             variant="primary"
             size="sm"
-            className="bg-purple-600 hover:bg-purple-700 text-white"
             onClick={() => setRequestModalOpen(true)}
             leftIcon={<Plus className="w-3.5 h-3.5" />}
           >
@@ -143,7 +142,7 @@ export const ResidentVisitorsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Grid of visitor cards */}
+      {/* Visitors List */}
       {visitors.length === 0 ? (
         <div className="p-12 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center space-y-3 max-w-md mx-auto">
           <UserCheck className="w-12 h-12 text-slate-400 mx-auto" />
@@ -154,7 +153,6 @@ export const ResidentVisitorsPage: React.FC = () => {
           <Button
             variant="primary"
             size="sm"
-            className="bg-purple-600 hover:bg-purple-700 text-white mt-2"
             onClick={() => setRequestModalOpen(true)}
             leftIcon={<Plus className="w-3.5 h-3.5" />}
           >
@@ -184,7 +182,7 @@ export const ResidentVisitorsPage: React.FC = () => {
                     <strong className="text-slate-700 dark:text-slate-200">Purpose:</strong> {vis.purpose || 'Personal'}
                   </p>
                   <p className="flex items-center gap-1.5">
-                    <Calendar className="w-3.5 h-3.5 text-purple-600" />
+                    <Calendar className="w-3.5 h-3.5 text-brand-forest dark:text-brand-gold" />
                     <strong>Date:</strong> {new Date(vis.visitDate).toLocaleDateString()}
                   </p>
                   <p className="flex items-center gap-1.5">
@@ -204,12 +202,12 @@ export const ResidentVisitorsPage: React.FC = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="w-full text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800 bg-purple-50/50 dark:bg-purple-950/30"
+                      className="w-full text-brand-forest dark:text-brand-gold border-brand-border dark:border-brand-border-dark bg-brand-surface dark:bg-brand-surface-dark"
                       onClick={() => {
                         setSelectedVisitor(vis);
                         setQrModalOpen(true);
                       }}
-                      leftIcon={<QrCode className="w-4 h-4 text-purple-600" />}
+                      leftIcon={<QrCode className="w-4 h-4 text-brand-forest dark:text-brand-gold" />}
                     >
                       View Digital QR Gate Pass
                     </Button>
@@ -249,35 +247,36 @@ export const ResidentVisitorsPage: React.FC = () => {
         <form onSubmit={handleCreateRequest} className="space-y-4 pt-2">
           <Input
             label="Visitor Full Name"
-            placeholder="e.g. Ramesh Patel"
+            placeholder="e.g. Rahul Sharma"
             value={visitorName}
             onChange={(e) => setVisitorName(e.target.value)}
             required
           />
 
-          <Input
-            label="Visitor Mobile Number"
-            placeholder="10-digit mobile number"
-            type="tel"
-            value={visitorMobile}
-            onChange={(e) => setVisitorMobile(e.target.value)}
-            required
-          />
-
-          <Select
-            label="Relation with Visitor"
-            value={relation}
-            onChange={(e) => setRelation(e.target.value)}
-            options={[
-              { label: 'Friend / Colleague', value: 'Friend' },
-              { label: 'Parent / Guardian', value: 'Parent' },
-              { label: 'Sibling / Relative', value: 'Relative' },
-              { label: 'Delivery / Service Provider', value: 'Delivery' },
-              { label: 'Other', value: 'Other' },
-            ]}
-          />
-
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Input
+              label="Visitor Mobile Number"
+              placeholder="e.g. +91 98765 43210"
+              value={visitorMobile}
+              onChange={(e) => setVisitorMobile(e.target.value)}
+              required
+            />
+
+            <Select
+              label="Relationship"
+              value={relation}
+              onChange={(e) => setRelation(e.target.value)}
+              options={[
+                { label: 'Friend', value: 'Friend' },
+                { label: 'Parent / Family', value: 'Parent' },
+                { label: 'Colleague', value: 'Colleague' },
+                { label: 'Sibling', value: 'Sibling' },
+                { label: 'Other', value: 'Other' },
+              ]}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <Input
               label="Visit Date"
               type="date"
@@ -286,34 +285,33 @@ export const ResidentVisitorsPage: React.FC = () => {
               required
             />
             <Input
-              label="Expected Entry Time"
-              placeholder="e.g. 05:00 PM"
+              label="Expected Entry"
+              type="text"
+              placeholder="04:00 PM"
               value={expectedEntryTime}
               onChange={(e) => setExpectedEntryTime(e.target.value)}
-              required
+            />
+            <Input
+              label="Expected Exit"
+              type="text"
+              placeholder="08:00 PM"
+              value={expectedExitTime}
+              onChange={(e) => setExpectedExitTime(e.target.value)}
             />
           </div>
 
           <Input
-            label="Expected Exit Time (Optional)"
-            placeholder="e.g. 08:30 PM"
-            value={expectedExitTime}
-            onChange={(e) => setExpectedExitTime(e.target.value)}
-          />
-
-          <Input
             label="Purpose of Visit"
-            placeholder="e.g. Family dinner, project collaboration"
+            placeholder="e.g. Weekend study session, festival visit"
             value={purpose}
             onChange={(e) => setPurpose(e.target.value)}
-            required
           />
 
           <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
             <Button variant="secondary" size="sm" type="button" onClick={() => setRequestModalOpen(false)} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button variant="primary" size="sm" type="submit" className="bg-purple-600 hover:bg-purple-700 text-white" isLoading={isSubmitting}>
+            <Button variant="primary" size="sm" type="submit" isLoading={isSubmitting}>
               Submit for Approval
             </Button>
           </div>

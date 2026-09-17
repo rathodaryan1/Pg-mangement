@@ -103,7 +103,7 @@ export const StaffPage: React.FC = () => {
       header: 'Staff Name',
       cell: (row) => (
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-full bg-purple-100 text-purple-700 font-bold flex items-center justify-center text-xs">
+          <div className="w-8 h-8 rounded-full bg-brand-forest/10 text-brand-forest dark:bg-brand-gold/15 dark:text-brand-gold font-bold flex items-center justify-center text-xs">
             {row.name.charAt(0)}
           </div>
           <div>
@@ -115,7 +115,7 @@ export const StaffPage: React.FC = () => {
     },
     {
       header: 'Role',
-      cell: (row) => <Badge variant="purple">{row.role}</Badge>
+      cell: (row) => <Badge variant="secondary">{row.role}</Badge>
     },
     {
       header: 'Shift',

@@ -176,7 +176,7 @@ export const ResidentPaymentsPage: React.FC = () => {
         <Card className="p-6 md:col-span-2 space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
             <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <CreditCard className="w-4 h-4 text-purple-600" />
+              <CreditCard className="w-4 h-4 text-brand-forest dark:text-brand-gold" />
               Payment Invoices & History
             </h3>
             <span className="text-xs text-slate-500">{payments.length} Records</span>
@@ -234,7 +234,7 @@ export const ResidentPaymentsPage: React.FC = () => {
                           variant="secondary"
                           size="xs"
                           onClick={() => handleOpenReceiptModal(p.id)}
-                          leftIcon={<Receipt className="w-3.5 h-3.5 text-purple-600" />}
+                          leftIcon={<Receipt className="w-3.5 h-3.5 text-brand-forest dark:text-brand-gold" />}
                         >
                           Receipt
                         </Button>
@@ -346,7 +346,7 @@ export const ResidentPaymentsPage: React.FC = () => {
                       onClick={() => setPaymentMethod(m.id)}
                       className={`p-3 rounded-xl border text-xs font-bold transition-all text-center ${
                         paymentMethod === m.id
-                          ? 'border-purple-600 bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300'
+                          ? 'border-brand-forest bg-brand-forest/10 dark:border-brand-gold dark:bg-brand-gold/15 text-brand-forest dark:text-brand-gold'
                           : 'border-slate-200 dark:border-slate-800 text-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800'
                       }`}
                     >

@@ -94,7 +94,7 @@ export const ResidentEmergencyPage: React.FC = () => {
         <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1 text-center">
           <p className="text-slate-500 font-semibold">PG Warden (24x7)</p>
           <p className="text-sm font-black text-slate-900 dark:text-white">+91 98765 43210</p>
-          <a href="tel:+919876543210" className="inline-block text-[11px] text-purple-600 font-bold hover:underline">
+          <a href="tel:+919876543210" className="inline-block text-[11px] text-brand-forest dark:text-brand-gold font-bold hover:underline">
             Call Warden
           </a>
         </div>
@@ -110,7 +110,7 @@ export const ResidentEmergencyPage: React.FC = () => {
         <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1 text-center">
           <p className="text-slate-500 font-semibold">Ambulance Services</p>
           <p className="text-sm font-black text-slate-900 dark:text-white">108</p>
-          <a href="tel:108" className="inline-block text-[11px] text-purple-600 font-bold hover:underline">
+          <a href="tel:108" className="inline-block text-[11px] text-brand-forest dark:text-brand-gold font-bold hover:underline">
             Dial 108
           </a>
         </div>
@@ -118,7 +118,7 @@ export const ResidentEmergencyPage: React.FC = () => {
         <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1 text-center">
           <p className="text-slate-500 font-semibold">Women Safety Helpline</p>
           <p className="text-sm font-black text-slate-900 dark:text-white">1091</p>
-          <a href="tel:1091" className="inline-block text-[11px] text-purple-600 font-bold hover:underline">
+          <a href="tel:1091" className="inline-block text-[11px] text-brand-forest dark:text-brand-gold font-bold hover:underline">
             Dial 1091
           </a>
         </div>

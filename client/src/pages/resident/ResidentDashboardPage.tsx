@@ -93,13 +93,13 @@ export const ResidentDashboardPage: React.FC = () => {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Welcome Banner */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 text-white shadow-xl relative overflow-hidden">
-        {/* Glow effect */}
-        <div className="absolute -top-16 -right-16 w-48 h-48 bg-purple-500/20 rounded-full blur-3xl pointer-events-none" />
+      <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-brand-forest via-[#123F36] to-slate-900 text-white shadow-xl relative overflow-hidden border border-brand-forest/30">
+        {/* Subtle decorative glow */}
+        <div className="absolute -top-16 -right-16 w-48 h-48 bg-brand-gold/15 rounded-full blur-3xl pointer-events-none" />
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold px-3 py-1 rounded-full bg-purple-500/30 text-purple-200 border border-purple-400/30">
+              <span className="text-xs font-semibold px-3 py-1 rounded-full bg-brand-gold/15 text-brand-gold border border-brand-gold/30">
                 Welcome, {resident.name}
               </span>
               <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 flex items-center gap-1">
@@ -109,8 +109,8 @@ export const ResidentDashboardPage: React.FC = () => {
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight mt-3">
               Room {resident.roomNumber || '101'} • {resident.bedNumber || 'Bed A'}
             </h1>
-            <p className="text-xs sm:text-sm text-purple-200/90 mt-1 flex items-center gap-1.5">
-              <DoorOpen className="w-4 h-4 text-purple-300" />
+            <p className="text-xs sm:text-sm text-brand-gold/90 mt-1 flex items-center gap-1.5 font-medium">
+              <DoorOpen className="w-4 h-4 text-brand-gold" />
               {resident.buildingName || 'Block A'}, Floor {resident.floorNumber || 1} • {resident.propertyName}
             </p>
           </div>
@@ -120,7 +120,7 @@ export const ResidentDashboardPage: React.FC = () => {
               <Button
                 variant="primary"
                 size="sm"
-                className="bg-purple-600 hover:bg-purple-500 text-white border-none shadow-lg px-4 py-2.5"
+                className="bg-brand-gold hover:bg-brand-gold-dark text-slate-950 font-bold border-none shadow-lg px-4 py-2.5"
                 onClick={() => setQrModalOpen(true)}
                 leftIcon={<QrCode className="w-4 h-4" />}
               >
@@ -131,7 +131,7 @@ export const ResidentDashboardPage: React.FC = () => {
               <Button
                 variant="secondary"
                 size="sm"
-                className="bg-red-600/20 hover:bg-red-600/30 text-red-200 border border-red-500/40 px-3 py-2.5"
+                className="bg-red-600/20 hover:bg-red-600/30 text-red-200 border border-red-500/40 px-3 py-2.5 font-semibold"
                 leftIcon={<Shield className="w-4 h-4 text-red-400" />}
               >
                 Emergency SOS
@@ -171,9 +171,9 @@ export const ResidentDashboardPage: React.FC = () => {
 
         <Link
           to="/resident/complaints"
-          className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:border-purple-500 transition-all text-center space-y-2 group"
+          className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:border-brand-forest dark:hover:border-brand-gold transition-all text-center space-y-2 group"
         >
-          <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950 text-purple-600 mx-auto flex items-center justify-center group-hover:scale-110 transition-transform">
+          <div className="w-10 h-10 rounded-xl bg-brand-forest/10 dark:bg-brand-gold/15 text-brand-forest dark:text-brand-gold mx-auto flex items-center justify-center group-hover:scale-110 transition-transform">
             <Wrench className="w-5 h-5" />
           </div>
           <p className="text-xs font-bold text-slate-900 dark:text-white">Raise Issue</p>
@@ -246,10 +246,10 @@ export const ResidentDashboardPage: React.FC = () => {
         <Card className="p-5 space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
             <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <Wrench className="w-4 h-4 text-purple-600" />
+              <Wrench className="w-4 h-4 text-brand-forest dark:text-brand-gold" />
               Active Maintenance Tickets
             </h3>
-            <Link to="/resident/complaints" className="text-xs text-purple-600 dark:text-purple-400 font-semibold hover:underline flex items-center gap-1">
+            <Link to="/resident/complaints" className="text-xs text-brand-forest dark:text-brand-gold font-semibold hover:underline flex items-center gap-1">
               View All <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
@@ -270,7 +270,7 @@ export const ResidentDashboardPage: React.FC = () => {
                 <Link
                   key={tkt.id}
                   to={`/resident/complaints`}
-                  className="p-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 hover:border-purple-300 dark:hover:border-purple-800 transition-all flex items-center justify-between gap-3 text-xs block"
+                  className="p-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 hover:border-brand-forest dark:hover:border-brand-gold transition-all flex items-center justify-between gap-3 text-xs block"
                 >
                   <div className="space-y-0.5 min-w-0">
                     <p className="font-bold text-slate-900 dark:text-white truncate">{tkt.title}</p>
@@ -289,10 +289,10 @@ export const ResidentDashboardPage: React.FC = () => {
         <Card className="p-5 space-y-3">
           <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
             <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <Bell className="w-4 h-4 text-amber-500" />
+              <Bell className="w-4 h-4 text-brand-gold" />
               Important PG Notices
             </h3>
-            <Link to="/resident/notices" className="text-xs text-purple-600 dark:text-purple-400 font-semibold hover:underline">
+            <Link to="/resident/notices" className="text-xs text-brand-forest dark:text-brand-gold font-semibold hover:underline">
               Notice Board
             </Link>
           </div>

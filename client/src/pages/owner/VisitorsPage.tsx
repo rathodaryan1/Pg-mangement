@@ -191,7 +191,7 @@ export const VisitorsPage: React.FC = () => {
       header: 'Host Resident',
       cell: (row) => (
         <div>
-          <p className="font-bold text-xs text-indigo-600 dark:text-indigo-400">{row.residentName || 'Walk-in / Gate Pass'}</p>
+          <p className="font-bold text-xs text-brand-forest dark:text-brand-gold">{row.residentName || 'Walk-in / Gate Pass'}</p>
           <p className="text-[11px] text-slate-500">{row.roomNumber ? `Room ${row.roomNumber}` : 'General Entry'}</p>
         </div>
       )
@@ -236,7 +236,7 @@ export const VisitorsPage: React.FC = () => {
                   setSelectedVisitor(row);
                   setQrModalOpen(true);
                 }}
-                leftIcon={<QrCode className="w-3.5 h-3.5 text-purple-600" />}
+                leftIcon={<QrCode className="w-3.5 h-3.5 text-brand-forest dark:text-brand-gold" />}
               >
                 QR Pass
               </Button>
@@ -294,7 +294,7 @@ export const VisitorsPage: React.FC = () => {
               setQrVerificationResult(null);
               setGateScanModalOpen(true);
             }}
-            leftIcon={<Scan className="w-3.5 h-3.5 text-indigo-600" />}
+            leftIcon={<Scan className="w-3.5 h-3.5 text-brand-forest dark:text-brand-gold" />}
           >
             Verify / Scan QR
           </Button>

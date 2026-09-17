@@ -103,14 +103,14 @@ export const ResidentRoomPage: React.FC = () => {
                 <Badge variant="success">ACTIVE LEASE</Badge>
               </div>
               <p className="text-xs text-slate-500 mt-1 flex items-center gap-2">
-                <Building className="w-3.5 h-3.5 text-purple-600" />
+                <Building className="w-3.5 h-3.5 text-brand-forest dark:text-brand-gold" />
                 {room.building}, Floor {room.floor} • {room.roomType}
               </p>
             </div>
 
             <div className="text-right">
               <span className="text-[11px] text-slate-400 uppercase tracking-wider block">Monthly Rent</span>
-              <span className="text-lg font-black text-purple-600 dark:text-purple-400">
+              <span className="text-lg font-black text-brand-forest dark:text-brand-gold">
                 ₹{(myBed?.monthlyRent || room.baseRent).toLocaleString()}/mo
               </span>
             </div>
@@ -119,12 +119,12 @@ export const ResidentRoomPage: React.FC = () => {
           {/* Roommates Section */}
           <div className="space-y-3">
             <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
-              <Users className="w-4 h-4 text-purple-600" />
+              <Users className="w-4 h-4 text-brand-forest dark:text-brand-gold" />
               Roommates ({roommates.length} {roommates.length === 1 ? 'Person' : 'People'})
             </h4>
 
             {roommates.length === 0 ? (
-              <div className="p-4 rounded-2xl bg-purple-50/50 dark:bg-purple-950/20 border border-purple-100 dark:border-purple-900/40 text-xs text-purple-800 dark:text-purple-300">
+              <div className="p-4 rounded-2xl bg-brand-surface dark:bg-brand-surface-dark border border-brand-border dark:border-brand-border-dark text-xs text-brand-text dark:text-slate-300">
                 ✨ Single occupancy room or no other residents currently assigned to this room.
               </div>
             ) : (
@@ -135,7 +135,7 @@ export const ResidentRoomPage: React.FC = () => {
                     className="p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 flex items-center justify-between text-xs"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-600 text-white font-bold flex items-center justify-center text-xs shadow-sm">
+                      <div className="w-9 h-9 rounded-full bg-brand-forest/15 text-brand-forest dark:bg-brand-gold/15 dark:text-brand-gold font-bold flex items-center justify-center text-xs shadow-sm">
                         {mate.name.charAt(0)}
                       </div>
                       <div>
@@ -155,16 +155,16 @@ export const ResidentRoomPage: React.FC = () => {
           {/* Included Room Amenities */}
           <div className="space-y-3 pt-2">
             <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
-              <Sparkles className="w-4 h-4 text-purple-600" />
+              <Sparkles className="w-4 h-4 text-brand-forest dark:text-brand-gold" />
               Included Room Amenities
             </h4>
             <div className="flex flex-wrap gap-2">
               {room.amenities.map((amenity) => (
                 <span
                   key={amenity}
-                  className="px-3 py-1.5 rounded-xl bg-purple-50 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300 text-xs font-medium flex items-center gap-1.5 border border-purple-200/50 dark:border-purple-900/40"
+                  className="px-3 py-1.5 rounded-xl bg-brand-surface text-brand-forest dark:bg-brand-forest/20 dark:text-brand-gold text-xs font-medium flex items-center gap-1.5 border border-brand-border dark:border-brand-border-dark"
                 >
-                  <CheckCircle2 className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+                  <CheckCircle2 className="w-3.5 h-3.5 text-brand-forest dark:text-brand-gold shrink-0" />
                   {amenity}
                 </span>
               ))}
@@ -188,11 +188,11 @@ export const ResidentRoomPage: React.FC = () => {
                 </p>
                 <div className="pt-2 space-y-1.5 border-t border-slate-100 dark:border-slate-800">
                   <p className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
-                    <Phone className="w-3.5 h-3.5 text-purple-600" />
+                    <Phone className="w-3.5 h-3.5 text-brand-forest dark:text-brand-gold" />
                     <strong>Manager:</strong> {property.phone}
                   </p>
                   <p className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
-                    <Mail className="w-3.5 h-3.5 text-purple-600" />
+                    <Mail className="w-3.5 h-3.5 text-brand-forest dark:text-brand-gold" />
                     <strong>Email:</strong> {property.email}
                   </p>
                 </div>
@@ -203,24 +203,24 @@ export const ResidentRoomPage: React.FC = () => {
           {/* House Rules Card */}
           <Card className="p-5 space-y-3">
             <h3 className="text-sm font-bold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-2.5 flex items-center gap-1.5">
-              <ShieldCheck className="w-4 h-4 text-purple-600" />
+              <ShieldCheck className="w-4 h-4 text-brand-forest dark:text-brand-gold" />
               PG House Rules & Timings
             </h3>
             <ul className="space-y-2 text-xs text-slate-600 dark:text-slate-300">
               <li className="flex items-start gap-1.5">
-                <span className="text-purple-600 font-bold">•</span>
+                <span className="text-brand-forest dark:text-brand-gold font-bold">•</span>
                 <strong>Main Gate Closes:</strong> 11:30 PM sharp IST
               </li>
               <li className="flex items-start gap-1.5">
-                <span className="text-purple-600 font-bold">•</span>
+                <span className="text-brand-forest dark:text-brand-gold font-bold">•</span>
                 <strong>Visitor Hours:</strong> 09:00 AM – 08:00 PM with gate pass
               </li>
               <li className="flex items-start gap-1.5">
-                <span className="text-purple-600 font-bold">•</span>
+                <span className="text-brand-forest dark:text-brand-gold font-bold">•</span>
                 <strong>Quiet Hours:</strong> 11:00 PM to 07:00 AM
               </li>
               <li className="flex items-start gap-1.5">
-                <span className="text-purple-600 font-bold">•</span>
+                <span className="text-brand-forest dark:text-brand-gold font-bold">•</span>
                 Smoking & alcohol strictly prohibited on premises.
               </li>
             </ul>

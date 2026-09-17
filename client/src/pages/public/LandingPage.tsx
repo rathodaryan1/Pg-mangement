@@ -11,162 +11,185 @@ import {
   ArrowRight,
   CheckCircle2,
   TrendingUp,
-  Sparkles,
-  Zap,
-  Users,
-  Clock,
+  Receipt,
+  CheckCircle,
   FileCheck,
-  Star,
-  ChevronRight,
-  ShieldAlert
+  Shield,
+  Box,
+  Users,
+  FileSpreadsheet
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
-import { Card } from '../../components/ui/Card';
-import { Badge } from '../../components/ui/Badge';
 import { StatusBadge } from '../../components/ui/Badge';
+import { UrbanNestLogo } from '../../components/ui/UrbanNestLogo';
 
 export const LandingPage: React.FC = () => {
   return (
-    <div className="space-y-20 sm:space-y-28 pb-20 animate-fade-in overflow-hidden">
+    <div className="space-y-16 sm:space-y-24 pb-20 overflow-hidden text-left bg-[#FCFBF8]">
       {/* 1. HERO SECTION */}
-      <section className="relative pt-12 sm:pt-20 pb-12 overflow-hidden">
-        {/* Ambient Gradient Glows */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-gradient-to-tr from-blue-600/15 via-indigo-600/15 to-purple-600/15 blur-3xl pointer-events-none -z-10 rounded-full" />
+      <section className="pt-10 sm:pt-16 pb-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-8 items-center">
+          {/* Left Column */}
+          <div className="lg:col-span-6 space-y-5">
+            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-[#EAF2EE] border border-[#0B4036]/20 text-xs font-semibold text-[#0B4036]">
+              <span className="w-2 h-2 rounded-full bg-[#0B4036]" />
+              <span>Smart PG Management System</span>
+            </div>
 
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 text-center space-y-6">
-          {/* Top Pill Badge */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/60 border border-blue-200/80 dark:border-blue-800/60 text-xs font-semibold text-blue-700 dark:text-blue-300 shadow-sm animate-fade-in">
-            <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-            <span>Next-Gen Operating Platform for PG & Co-Living Communities</span>
+            <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-[#18231F] dark:text-white leading-[1.15]">
+              Better managed spaces. <br className="hidden sm:inline" />
+              <span className="text-[#0B4036]">Better living.</span>
+            </h1>
+
+            <p className="text-sm sm:text-base text-[#68736D] font-normal leading-relaxed max-w-xl">
+              Urban Nest brings residents, rooms, rent, visitors and everyday PG operations together in one simple platform designed for modern property managers.
+            </p>
+
+            <div className="flex flex-wrap items-center gap-3 pt-2">
+              <Link to="/login">
+                <Button
+                  variant="primary"
+                  size="lg"
+                  className="font-semibold shadow-xs"
+                  rightIcon={<ArrowRight className="w-4 h-4" />}
+                >
+                  Get Started
+                </Button>
+              </Link>
+
+              <Link to="/features">
+                <Button variant="outline" size="lg" className="font-semibold border-[#DDE2DD] text-[#0B4036]">
+                  Explore the Platform
+                </Button>
+              </Link>
+
+              <Link to="/owner/dashboard">
+                <Button variant="ghost" size="lg" className="text-[#68736D] font-medium hover:bg-[#EAF2EE]">
+                  Live Demo
+                </Button>
+              </Link>
+            </div>
+
+            <div className="pt-4 flex flex-wrap items-center gap-6 text-xs text-[#68736D] border-t border-[#DDE2DD]">
+              <span className="flex items-center gap-1.5 font-medium">
+                <CheckCircle2 className="w-4 h-4 text-[#0B4036]" /> Bed-Level Matrix
+              </span>
+              <span className="flex items-center gap-1.5 font-medium">
+                <CheckCircle2 className="w-4 h-4 text-[#0B4036]" /> QR Visitor Passes
+              </span>
+              <span className="flex items-center gap-1.5 font-medium">
+                <CheckCircle2 className="w-4 h-4 text-[#0B4036]" /> Automated Invoicing
+              </span>
+            </div>
           </div>
 
-          {/* Main Title */}
-          <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-slate-900 dark:text-white leading-[1.15]">
-            Run Your PG Operations on <br className="hidden sm:inline" />
-            <span className="bg-gradient-to-r from-blue-700 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              Autopilot with Urban Nest
-            </span>
-          </h1>
-
-          {/* Subtitle */}
-          <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto font-normal leading-relaxed">
-            A centralized platform connecting <strong>PG Owners</strong> and <strong>Residents</strong>. Replace paper registers, manual UPI reconciliation, and unverified visitors with real-time digital workflows.
-          </p>
-
-          {/* Action CTAs */}
-          <div className="flex flex-wrap items-center justify-center gap-3.5 pt-2">
-            <Link to="/owner/dashboard">
-              <Button
-                variant="primary"
-                size="lg"
-                className="bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-600/25 px-6 font-bold"
-                rightIcon={<ArrowRight className="w-4 h-4" />}
-              >
-                Launch Owner Portal
-              </Button>
-            </Link>
-
-            <Link to="/resident/dashboard">
-              <Button
-                variant="outline"
-                size="lg"
-                className="px-6 font-bold text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800 bg-white dark:bg-slate-900 hover:bg-purple-50"
-                leftIcon={<UserCheck className="w-4 h-4 text-purple-600" />}
-              >
-                Explore Resident Portal
-              </Button>
-            </Link>
-
-            <Link to="/pricing">
-              <Button variant="ghost" size="lg" className="text-slate-600 dark:text-slate-400">
-                View Pricing Plans
-              </Button>
-            </Link>
-          </div>
-
-          {/* Micro Trust Indicators */}
-          <div className="pt-4 flex flex-wrap items-center justify-center gap-6 text-xs text-slate-500 dark:text-slate-400">
-            <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-500" /> Instant Setup in 5 Mins
-            </span>
-            <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-500" /> Digital QR Gate Security
-            </span>
-            <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-500" /> Automated Rent Collection
-            </span>
-          </div>
-        </div>
-
-        {/* Interactive Dashboard Sneak Peek Card */}
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-12">
-          <div className="p-3 sm:p-4 rounded-3xl bg-slate-900/5 dark:bg-white/5 border border-slate-200/80 dark:border-slate-800 shadow-2xl backdrop-blur-xl">
-            <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 p-4 sm:p-6 space-y-6">
-              {/* Fake Mac Window Bar */}
-              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+          {/* Right Column: Realistic Product Dashboard Preview */}
+          <div className="lg:col-span-6">
+            <div className="bg-white rounded-xl border border-[#DDE2DD] shadow-sm overflow-hidden">
+              {/* Topbar */}
+              <div className="px-4 py-3 bg-[#F8F7F3] border-b border-[#DDE2DD] flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-rose-500/80" />
-                  <div className="w-3 h-3 rounded-full bg-amber-500/80" />
-                  <div className="w-3 h-3 rounded-full bg-emerald-500/80" />
-                  <span className="ml-2 text-xs font-mono text-slate-400">urbannest.app/owner/dashboard</span>
+                  <div className="w-5 h-5 rounded bg-[#0B4036] text-white flex items-center justify-center font-bold text-[10px]">
+                    UN
+                  </div>
+                  <span className="font-bold text-[#18231F]">Urban Nest Prime — Sector 3</span>
                 </div>
-                <Badge variant="success">LIVE CLOUD SYSTEM</Badge>
-              </div>
-
-              {/* Sample Mini Overview */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-left">
-                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase">Live Occupancy</span>
-                  <p className="text-xl font-extrabold text-blue-600 mt-1">86.1%</p>
-                  <span className="text-[10px] text-slate-500">31/36 Beds Filled</span>
-                </div>
-
-                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase">Monthly Revenue</span>
-                  <p className="text-xl font-extrabold text-emerald-600 mt-1">₹5,58,000</p>
-                  <span className="text-[10px] text-slate-500">+8.1% vs last mo</span>
-                </div>
-
-                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase">QR Gate Passes</span>
-                  <p className="text-xl font-extrabold text-purple-600 mt-1">12 Active</p>
-                  <span className="text-[10px] text-slate-500">Auto Security Verified</span>
-                </div>
-
-                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase">Open Tickets</span>
-                  <p className="text-xl font-extrabold text-amber-600 mt-1">2 Pending</p>
-                  <span className="text-[10px] text-slate-500">Avg 14 min resolve</span>
+                <div className="flex items-center gap-1.5 text-[11px] text-[#0B4036] font-semibold">
+                  <span className="w-2 h-2 rounded-full bg-[#0B4036]" />
+                  <span>Live Operations</span>
                 </div>
               </div>
 
-              {/* Sample Room & Bed Grid Visual Demo */}
-              <div className="text-left space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-                    Interactive Bed Matrix Preview
-                  </h4>
-                  <Link to="/owner/rooms" className="text-xs text-blue-600 font-semibold hover:underline flex items-center gap-1">
-                    Open Full Matrix <ArrowRight className="w-3 h-3" />
-                  </Link>
+              {/* KPI Strip */}
+              <div className="grid grid-cols-4 divide-x divide-[#DDE2DD] border-b border-[#DDE2DD] bg-white">
+                <div className="p-3">
+                  <p className="text-[10px] text-[#8A928D] uppercase font-bold">Occupancy</p>
+                  <p className="text-sm font-bold text-[#0B4036] mt-0.5">94.2%</p>
+                  <p className="text-[10px] text-[#68736D]">45/48 Beds</p>
+                </div>
+                <div className="p-3">
+                  <p className="text-[10px] text-[#8A928D] uppercase font-bold">Revenue</p>
+                  <p className="text-sm font-bold text-[#18231F] mt-0.5">₹4.28L</p>
+                  <p className="text-[10px] text-[#0B4036] font-semibold">Oct 2026</p>
+                </div>
+                <div className="p-3">
+                  <p className="text-[10px] text-[#8A928D] uppercase font-bold">Pending</p>
+                  <p className="text-sm font-bold text-[#B9954E] mt-0.5">₹24,000</p>
+                  <p className="text-[10px] text-[#68736D]">2 residents</p>
+                </div>
+                <div className="p-3">
+                  <p className="text-[10px] text-[#8A928D] uppercase font-bold">Tickets</p>
+                  <p className="text-sm font-bold text-[#18231F] mt-0.5">1 Open</p>
+                  <p className="text-[10px] text-[#68736D]">SLA: Normal</p>
+                </div>
+              </div>
+
+              {/* Room Bed Matrix Preview */}
+              <div className="p-4 space-y-3 bg-[#FCFBF8]">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-[#18231F] flex items-center gap-1.5">
+                    <BedDouble className="w-3.5 h-3.5 text-[#0B4036]" /> Floor 2 — Room Matrix
+                  </span>
+                  <span className="text-[11px] text-[#8A928D]">8 Rooms · 16 Beds</span>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                  <div className="p-2.5 rounded-xl bg-blue-50 text-blue-900 border border-blue-200 font-medium flex items-center justify-between">
-                    <span>Room 101-A</span>
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-200">Aarav M. (Occupied)</span>
+                <div className="grid grid-cols-2 gap-2 text-left">
+                  {/* Room 201 */}
+                  <div className="p-2.5 bg-white border border-[#DDE2DD] rounded-lg text-xs space-y-1.5">
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold text-[#18231F]">Room 201</span>
+                      <span className="text-[10px] font-semibold text-[#8A928D]">Double</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-1 text-[11px]">
+                      <div className="p-1 rounded bg-[#EAF2EE] text-[#0B4036] flex items-center justify-between font-medium">
+                        <span>Bed A</span>
+                        <span className="text-[10px]">Occupied</span>
+                      </div>
+                      <div className="p-1 rounded bg-[#FAF5EB] text-[#B9954E] flex items-center justify-between border border-[#C8A45D]/30 font-semibold">
+                        <span>Bed B</span>
+                        <span className="text-[10px]">Available</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="p-2.5 rounded-xl bg-blue-50 text-blue-900 border border-blue-200 font-medium flex items-center justify-between">
-                    <span>Room 101-B</span>
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-200">Rohan G. (Occupied)</span>
+
+                  {/* Room 202 */}
+                  <div className="p-2.5 bg-white border border-[#DDE2DD] rounded-lg text-xs space-y-1.5">
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold text-[#18231F]">Room 202</span>
+                      <span className="text-[10px] font-semibold text-[#8A928D]">Double</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-1 text-[11px]">
+                      <div className="p-1 rounded bg-[#EAF2EE] text-[#0B4036] flex items-center justify-between font-medium">
+                        <span>Bed A</span>
+                        <span className="text-[10px]">Aakash V.</span>
+                      </div>
+                      <div className="p-1 rounded bg-[#EAF2EE] text-[#0B4036] flex items-center justify-between font-medium">
+                        <span>Bed B</span>
+                        <span className="text-[10px]">Priya K.</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-900 border border-emerald-200 font-medium flex items-center justify-between">
-                    <span>Room 102-C</span>
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-200 text-emerald-800">Available Bed</span>
-                  </div>
-                  <div className="p-2.5 rounded-xl bg-amber-50 text-amber-900 border border-amber-200 font-medium flex items-center justify-between">
-                    <span>Room 301-A</span>
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-200 text-amber-800">Maintenance</span>
+                </div>
+
+                {/* Recent Receipts List */}
+                <div className="pt-2">
+                  <div className="bg-white border border-[#DDE2DD] rounded-lg overflow-hidden">
+                    <div className="px-3 py-1.5 bg-[#F8F7F3] border-b border-[#DDE2DD] flex justify-between items-center text-[11px]">
+                      <span className="font-bold text-[#18231F]">Recent Rent Receipts</span>
+                      <span className="text-[#8A928D]">Oct 2026</span>
+                    </div>
+                    <div className="divide-y divide-[#DDE2DD] text-[11px]">
+                      <div className="px-3 py-1.5 flex justify-between items-center">
+                        <span className="font-semibold text-[#18231F]">Aakash Verma (Room 202)</span>
+                        <span className="font-bold text-[#0B4036]">₹14,000</span>
+                        <StatusBadge status="PAID" />
+                      </div>
+                      <div className="px-3 py-1.5 flex justify-between items-center">
+                        <span className="font-semibold text-[#18231F]">Rohan Mehta (Room 104)</span>
+                        <span className="font-bold text-[#0B4036]">₹12,000</span>
+                        <StatusBadge status="PAID" />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -175,251 +198,201 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* 2. THE COMPLETE LIFECYCLE ENGINE */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6">
-        <div className="text-center space-y-3 mb-12">
-          <Badge variant="primary">End-To-End Workflows</Badge>
-          <h2 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
-            The Complete Resident Lifecycle Engine
+      {/* 2. PRODUCT OVERVIEW */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="space-y-1 mb-8 border-b border-[#DDE2DD] pb-4">
+          <p className="text-xs font-bold text-[#0B4036] uppercase tracking-wider">One Platform. Everyday PG Operations.</p>
+          <h2 className="text-2xl font-bold text-[#18231F]">
+            Built for properties, staff, and residents
           </h2>
-          <p className="text-sm text-slate-600 dark:text-slate-400 max-w-xl mx-auto">
-            From the minute a resident inquires to their final security deposit settlement, every interaction is tracked and automated.
+          <p className="text-xs text-[#68736D] max-w-2xl">
+            Everything structured around operational clarity and high hospitality standards.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="p-6 space-y-4 hover:shadow-lg transition-all border-blue-100 dark:border-blue-900/40">
-            <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 flex items-center justify-center">
-              <UserCheck className="w-6 h-6" />
+          <div className="p-5 bg-white border border-[#DDE2DD] rounded-xl shadow-xs space-y-3">
+            <div className="w-8 h-8 rounded-lg bg-[#EAF2EE] text-[#0B4036] flex items-center justify-center font-bold">
+              <Building2 className="w-4 h-4" />
             </div>
-            <h3 className="text-base font-bold text-slate-900 dark:text-white">1. Smart Move-In & KYC</h3>
-            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              Digital Aadhaar and PAN verification, digital lease agreement contract signing, and automatic bed matrix allocation in under 3 minutes.
-            </p>
-            <div className="pt-2 flex items-center gap-1.5 text-xs text-blue-600 font-semibold">
-              <span>Zero paper agreements</span>
-            </div>
-          </Card>
-
-          <Card className="p-6 space-y-4 hover:shadow-lg transition-all border-purple-100 dark:border-purple-900/40">
-            <div className="w-12 h-12 rounded-2xl bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400 flex items-center justify-center">
-              <QrCode className="w-6 h-6" />
-            </div>
-            <h3 className="text-base font-bold text-slate-900 dark:text-white">2. QR Gate Pass & Visitors</h3>
-            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              Residents request guest passes through their phone. Owners/wardens approve with 1 click to generate encrypted time-limited QR codes.
-            </p>
-            <div className="pt-2 flex items-center gap-1.5 text-xs text-purple-600 font-semibold">
-              <span>100% visitor accountability</span>
-            </div>
-          </Card>
-
-          <Card className="p-6 space-y-4 hover:shadow-lg transition-all border-emerald-100 dark:border-emerald-900/40">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-              <CreditCard className="w-6 h-6" />
-            </div>
-            <h3 className="text-base font-bold text-slate-900 dark:text-white">3. Rent Ledger & Deposits</h3>
-            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              Automated WhatsApp reminders on the 1st of every month, instant UPI/Card payments, automated PDF tax receipts, and escrow deposit tracking.
-            </p>
-            <div className="pt-2 flex items-center gap-1.5 text-xs text-emerald-600 font-semibold">
-              <span>Eliminate payment follow-ups</span>
-            </div>
-          </Card>
-        </div>
-      </section>
-
-      {/* 3. OWNER VS RESIDENT COMPARISON */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6">
-        <div className="p-8 sm:p-12 rounded-3xl bg-slate-900 text-white relative overflow-hidden space-y-8">
-          <div className="max-w-2xl space-y-3">
-            <Badge variant="purple">Dual-Experience Architecture</Badge>
-            <h2 className="text-2xl sm:text-4xl font-black tracking-tight">
-              Two Tailored Portals. One United Brain.
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-              Unlike generic property software, Urban Nest gives owners high-density financial analytics while giving residents a sleek mobile dashboard.
+            <h3 className="text-sm font-bold text-[#18231F]">Multi-Building Hierarchy</h3>
+            <p className="text-xs text-[#68736D] leading-relaxed">
+              Organize multiple properties, buildings, floors, rooms, and individual bed inventories with live status tracking.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
-            {/* Owner Box */}
-            <div className="p-6 rounded-2xl bg-slate-800/80 border border-slate-700/60 space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-blue-400">For Owners & Managers</span>
-                <Building2 className="w-5 h-5 text-blue-400" />
+          <div className="p-5 bg-white border border-[#DDE2DD] rounded-xl shadow-xs space-y-3">
+            <div className="w-8 h-8 rounded-lg bg-[#FAF5EB] text-[#B9954E] flex items-center justify-center font-bold">
+              <Receipt className="w-4 h-4" />
+            </div>
+            <h3 className="text-sm font-bold text-[#18231F]">Automated Billing & Escrow</h3>
+            <p className="text-xs text-[#68736D] leading-relaxed">
+              Automate monthly rent cycle invoices, record manual UPI/cash receipts, and manage security deposits transparently.
+            </p>
+          </div>
+
+          <div className="p-5 bg-white border border-[#DDE2DD] rounded-xl shadow-xs space-y-3">
+            <div className="w-8 h-8 rounded-lg bg-[#EAF2EE] text-[#0B4036] flex items-center justify-center font-bold">
+              <QrCode className="w-4 h-4" />
+            </div>
+            <h3 className="text-sm font-bold text-[#18231F]">Digital QR Visitor Desk</h3>
+            <p className="text-xs text-[#68736D] leading-relaxed">
+              Residents generate encrypted visitor passes with QR codes verified at gate check-in for modern premises security.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* 3. OPERATIONAL SECTIONS */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+        {/* Module A: Room Hierarchy */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+          <div className="space-y-4">
+            <span className="text-xs font-bold text-[#0B4036] uppercase tracking-wider">Visual Hierarchy</span>
+            <h3 className="text-xl font-bold text-[#18231F]">
+              Room & Bed Inventory Management
+            </h3>
+            <p className="text-xs text-[#68736D] leading-relaxed">
+              Eliminate double bookings and manual register errors. Every room maintains distinct bed records with occupancy rates, base rents, and amenities.
+            </p>
+            <ul className="space-y-2 text-xs text-[#18231F]">
+              <li className="flex items-center gap-2">
+                <CheckCircle className="w-3.5 h-3.5 text-[#0B4036] shrink-0" /> Floor-by-floor room configuration
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle className="w-3.5 h-3.5 text-[#0B4036] shrink-0" /> Bed-level rent and deposit tracking
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle className="w-3.5 h-3.5 text-[#0B4036] shrink-0" /> Fast status transitions: Available, Occupied, Maintenance
+              </li>
+            </ul>
+          </div>
+
+          <div className="p-4 bg-white border border-[#DDE2DD] rounded-xl shadow-xs space-y-2">
+            <div className="flex justify-between items-center pb-2 border-b border-[#DDE2DD] text-xs">
+              <span className="font-bold text-[#18231F]">Floor 3 Matrix</span>
+              <span className="text-[#8A928D] font-mono">301 - 304</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="p-2.5 rounded-lg border border-[#DDE2DD] bg-[#F8F7F3] space-y-1">
+                <div className="flex justify-between">
+                  <span className="font-bold text-[#18231F]">Room 301</span>
+                  <span className="text-[10px] text-[#8A928D]">Triple</span>
+                </div>
+                <div className="flex gap-1 text-[10px]">
+                  <span className="px-1.5 py-0.5 rounded bg-[#EAF2EE] text-[#0B4036] font-medium">Bed A</span>
+                  <span className="px-1.5 py-0.5 rounded bg-[#EAF2EE] text-[#0B4036] font-medium">Bed B</span>
+                  <span className="px-1.5 py-0.5 rounded bg-[#FAF5EB] text-[#B9954E] font-bold">Bed C</span>
+                </div>
               </div>
-              <h3 className="text-lg font-bold">The Complete PG Command Center</h3>
-              <ul className="space-y-2.5 text-xs text-slate-300">
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-blue-400 shrink-0" />
-                  Visual multi-property Room & Bed occupancy matrix
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-blue-400 shrink-0" />
-                  Automated overdue rent fines & payment verification ledger
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-blue-400 shrink-0" />
-                  Staff shift rosters, tasks & housekeeping assignments
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-blue-400 shrink-0" />
-                  Asset inventory tracking with warranty alerts
-                </li>
-              </ul>
-              <Link to="/owner/dashboard" className="block pt-2">
-                <Button variant="primary" size="sm" className="w-full justify-center">
-                  Explore Owner Dashboard
-                </Button>
-              </Link>
-            </div>
-
-            {/* Resident Box */}
-            <div className="p-6 rounded-2xl bg-slate-800/80 border border-slate-700/60 space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-purple-400">For PG Residents</span>
-                <UserCheck className="w-5 h-5 text-purple-400" />
+              <div className="p-2.5 rounded-lg border border-[#DDE2DD] bg-[#F8F7F3] space-y-1">
+                <div className="flex justify-between">
+                  <span className="font-bold text-[#18231F]">Room 302</span>
+                  <span className="text-[10px] text-[#8A928D]">Double</span>
+                </div>
+                <div className="flex gap-1 text-[10px]">
+                  <span className="px-1.5 py-0.5 rounded bg-[#EAF2EE] text-[#0B4036] font-medium">Bed A</span>
+                  <span className="px-1.5 py-0.5 rounded bg-[#EAF2EE] text-[#0B4036] font-medium">Bed B</span>
+                </div>
               </div>
-              <h3 className="text-lg font-bold">The Seamless Living Experience</h3>
-              <ul className="space-y-2.5 text-xs text-slate-300">
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-purple-400 shrink-0" />
-                  Instant rent payments via UPI / Cards with instant PDF receipts
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-purple-400 shrink-0" />
-                  Digital QR gate passes for visiting friends & deliveries
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-purple-400 shrink-0" />
-                  Raise maintenance tickets & track live resolution timeline
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-purple-400 shrink-0" />
-                  One-tap Emergency SOS alert to warden & emergency contacts
-                </li>
-              </ul>
-              <Link to="/resident/dashboard" className="block pt-2">
-                <Button variant="outline" size="sm" className="w-full justify-center text-purple-300 border-purple-800 bg-purple-950/40">
-                  Explore Resident Dashboard
-                </Button>
-              </Link>
             </div>
           </div>
         </div>
-      </section>
 
-      {/* 4. REAL METRICS / SOCIAL PROOF */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-          <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-1">
-            <p className="text-3xl sm:text-4xl font-black text-blue-600">50,000+</p>
-            <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">Beds Managed</p>
-            <p className="text-[11px] text-slate-400">Across Bengaluru, Pune & Hyd</p>
+        {/* Module B: Resident Lifecycle */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center pt-4">
+          <div className="order-2 lg:order-1 p-4 bg-white border border-[#DDE2DD] rounded-xl shadow-xs space-y-3">
+            <div className="flex items-center justify-between pb-2 border-b border-[#DDE2DD] text-xs">
+              <span className="font-bold text-[#18231F]">Resident Dossier: Aakash Verma</span>
+              <StatusBadge status="ACTIVE" />
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="p-2 rounded bg-[#F8F7F3]">
+                <p className="text-[10px] text-[#8A928D]">Assigned Bed</p>
+                <p className="font-bold text-[#18231F] mt-0.5">Room 202 · Bed A</p>
+              </div>
+              <div className="p-2 rounded bg-[#F8F7F3]">
+                <p className="text-[10px] text-[#8A928D]">Monthly Rent</p>
+                <p className="font-bold text-[#0B4036] mt-0.5">₹14,000 / month</p>
+              </div>
+              <div className="p-2 rounded bg-[#F8F7F3]">
+                <p className="text-[10px] text-[#8A928D]">Security Deposit</p>
+                <p className="font-bold text-[#18231F] mt-0.5">₹28,000 (Held)</p>
+              </div>
+              <div className="p-2 rounded bg-[#F8F7F3]">
+                <p className="text-[10px] text-[#8A928D]">KYC Status</p>
+                <p className="font-bold text-[#0B4036] mt-0.5">Aadhaar Verified</p>
+              </div>
+            </div>
           </div>
 
-          <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-1">
-            <p className="text-3xl sm:text-4xl font-black text-emerald-600">99.4%</p>
-            <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">On-Time Rent Collection</p>
-            <p className="text-[11px] text-slate-400">Via automated reminders</p>
-          </div>
-
-          <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-1">
-            <p className="text-3xl sm:text-4xl font-black text-purple-600">14 Min</p>
-            <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">Avg Ticket Response</p>
-            <p className="text-[11px] text-slate-400">Tracked with live SLAs</p>
-          </div>
-
-          <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-1">
-            <p className="text-3xl sm:text-4xl font-black text-amber-500">4.9 / 5</p>
-            <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">Resident Rating</p>
-            <p className="text-[11px] text-slate-400">Over 12,000+ reviews</p>
+          <div className="order-1 lg:order-2 space-y-4">
+            <span className="text-xs font-bold text-[#0B4036] uppercase tracking-wider">Resident Dossiers</span>
+            <h3 className="text-xl font-bold text-[#18231F]">
+              Complete Resident Lifecycle Management
+            </h3>
+            <p className="text-xs text-[#68736D] leading-relaxed">
+              Onboard residents with digital KYC, store lease agreements, manage 30-day notice periods, and handle move-out deposit settlements cleanly.
+            </p>
+            <ul className="space-y-2 text-xs text-[#18231F]">
+              <li className="flex items-center gap-2">
+                <CheckCircle className="w-3.5 h-3.5 text-[#0B4036] shrink-0" /> Digital Aadhaar verification & emergency records
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle className="w-3.5 h-3.5 text-[#0B4036] shrink-0" /> Notice period tracking with move-out checklists
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle className="w-3.5 h-3.5 text-[#0B4036] shrink-0" /> Itemized deposit deductions and refund receipts
+              </li>
+            </ul>
           </div>
         </div>
       </section>
 
-      {/* 5. TESTIMONIALS */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 space-y-8">
-        <div className="text-center space-y-2">
-          <Badge variant="purple">Customer Stories</Badge>
-          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
-            Loved by PG Owners & Residents Alike
+      {/* 4. BRAND STATEMENT SECTION: PEOPLE • PLACES • BETTER LIVING */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="p-8 sm:p-12 bg-[#0B4036] text-white rounded-2xl text-center space-y-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-xs font-bold uppercase tracking-widest text-[#E8D7A8]">
+            Brand Philosophy
+          </div>
+
+          <h2 className="text-2xl sm:text-4xl font-black tracking-tight max-w-2xl mx-auto">
+            PEOPLE • PLACES • BETTER LIVING
           </h2>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="p-6 space-y-4">
-            <div className="flex items-center gap-1 text-amber-400">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} className="w-4 h-4 fill-current" />
-              ))}
-            </div>
-            <p className="text-xs text-slate-600 dark:text-slate-300 italic leading-relaxed">
-              "Managing 3 properties in HSR Layout used to take 20 hours a week just verifying UPI screenshots. Urban Nest automated our collections and we have zero rent defaulters now."
-            </p>
-            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
-              <p className="font-bold text-slate-900 dark:text-white">Rajesh Sharma</p>
-              <p className="text-slate-400">Owner, Urban Nest Pearl (120 Beds)</p>
-            </div>
-          </Card>
+          <p className="text-xs sm:text-sm text-[#EAF2EE] max-w-xl mx-auto leading-relaxed">
+            We believe that well-managed properties create better communities. Urban Nest equips property owners with structured tools so residents can enjoy peaceful, organized living.
+          </p>
 
-          <Card className="p-6 space-y-4">
-            <div className="flex items-center gap-1 text-amber-400">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} className="w-4 h-4 fill-current" />
-              ))}
-            </div>
-            <p className="text-xs text-slate-600 dark:text-slate-300 italic leading-relaxed">
-              "The QR gate pass feature is game-changing. Whenever my parents or friends visit, I create a pass on my phone and the security gate scans them in without any awkward questioning."
-            </p>
-            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
-              <p className="font-bold text-slate-900 dark:text-white">Aarav Mehta</p>
-              <p className="text-slate-400">Resident & Software Engineer, Flipkart</p>
-            </div>
-          </Card>
-
-          <Card className="p-6 space-y-4">
-            <div className="flex items-center gap-1 text-amber-400">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} className="w-4 h-4 fill-current" />
-              ))}
-            </div>
-            <p className="text-xs text-slate-600 dark:text-slate-300 italic leading-relaxed">
-              "When an AC stopped cooling in Room 101, I raised a ticket with a photo and within 2 hours the technician arrived with status updates live on my timeline. Unmatched transparency."
-            </p>
-            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
-              <p className="font-bold text-slate-900 dark:text-white">Rohan Gupta</p>
-              <p className="text-slate-400">Resident, Koramangala Hub</p>
-            </div>
-          </Card>
+          <div className="pt-2 flex justify-center">
+            <Link to="/about">
+              <Button variant="gold" size="md" className="font-bold">
+                Read Our Story
+              </Button>
+            </Link>
+          </div>
         </div>
       </section>
 
-      {/* 6. CALL TO ACTION BANNER */}
-      <section className="max-w-5xl mx-auto px-4 sm:px-6">
-        <div className="p-8 sm:p-12 rounded-3xl bg-gradient-to-br from-blue-900 via-indigo-900 to-slate-950 text-white text-center space-y-6 shadow-2xl relative overflow-hidden">
-          <div className="max-w-2xl mx-auto space-y-3 relative z-10">
-            <h2 className="text-2xl sm:text-4xl font-black tracking-tight">
-              Ready to Upgrade Your PG Experience?
-            </h2>
-            <p className="text-xs sm:text-sm text-blue-200">
-              Start your 14-day free trial or test out the live dual-role demonstration right now with zero installation.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-center gap-3 relative z-10">
-            <Link to="/owner/dashboard">
-              <Button variant="primary" size="lg" className="bg-white text-blue-900 hover:bg-slate-100 font-bold px-6 shadow-md">
-                Launch Owner Portal
-              </Button>
-            </Link>
-            <Link to="/pricing">
-              <Button variant="outline" size="lg" className="border-blue-400/40 text-white hover:bg-blue-800/40 px-6 font-bold">
-                View Pricing & ROI
-              </Button>
-            </Link>
-          </div>
+      {/* 5. FINAL CALL TO ACTION */}
+      <section className="max-w-4xl mx-auto px-4 sm:px-6 text-center space-y-5 pt-6">
+        <h2 className="text-2xl sm:text-3xl font-bold text-[#18231F]">
+          Experience a better way to run your PG.
+        </h2>
+        <p className="text-xs sm:text-sm text-[#68736D] max-w-lg mx-auto">
+          Start exploring Urban Nest today with pre-configured sample properties.
+        </p>
+        <div className="flex items-center justify-center gap-3 pt-2">
+          <Link to="/login">
+            <Button variant="primary" size="lg" className="font-bold shadow-xs">
+              Sign In to Portal
+            </Button>
+          </Link>
+          <Link to="/pricing">
+            <Button variant="outline" size="lg" className="font-semibold border-[#DDE2DD] text-[#0B4036]">
+              View Plans
+            </Button>
+          </Link>
         </div>
       </section>
     </div>

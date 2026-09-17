@@ -245,23 +245,23 @@ export const MaintenancePage: React.FC = () => {
 
       {/* Tab Selector & Filter Bar */}
       <Card className="p-4 flex flex-col md:flex-row items-center justify-between gap-3">
-        <div className="flex items-center gap-2 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl w-full md:w-auto">
+        <div className="flex items-center gap-1.5 p-1 bg-brand-surface dark:bg-brand-surface-dark border border-brand-border dark:border-brand-border-dark rounded-xl w-full md:w-auto">
           <button
             onClick={() => setActiveTab('complaints')}
-            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+            className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
               activeTab === 'complaints'
-                ? 'bg-white dark:bg-slate-900 text-blue-600 shadow-sm'
-                : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                ? 'bg-brand-forest text-white shadow-sm'
+                : 'text-brand-muted hover:text-brand-text dark:hover:text-white'
             }`}
           >
             Resident Complaints ({tickets.length})
           </button>
           <button
             onClick={() => setActiveTab('tasks')}
-            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+            className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
               activeTab === 'tasks'
-                ? 'bg-white dark:bg-slate-900 text-blue-600 shadow-sm'
-                : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                ? 'bg-brand-forest text-white shadow-sm'
+                : 'text-brand-muted hover:text-brand-text dark:hover:text-white'
             }`}
           >
             Operational Tasks ({tasks.length})
