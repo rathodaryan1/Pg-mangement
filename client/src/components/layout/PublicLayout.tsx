@@ -17,7 +17,7 @@ export const PublicLayout: React.FC<{ children: React.ReactNode }> = ({ children
 
   const navLinks = [
     { label: 'Home', path: '/' },
-    { label: 'Features', path: '/features' },
+    { label: 'Solutions', path: '/solutions' },
     { label: 'Pricing', path: '/pricing' },
     { label: 'About', path: '/about' },
     { label: 'Contact', path: '/contact' }
@@ -36,7 +36,9 @@ export const PublicLayout: React.FC<{ children: React.ReactNode }> = ({ children
           {/* Desktop Navigation Links */}
           <nav className="hidden md:flex items-center gap-1.5">
             {navLinks.map((link) => {
-              const isActive = location.pathname === link.path;
+              const isActive =
+                location.pathname === link.path ||
+                (link.path === '/solutions' && location.pathname === '/features');
               return (
                 <Link
                   key={link.path}
@@ -103,20 +105,25 @@ export const PublicLayout: React.FC<{ children: React.ReactNode }> = ({ children
         {mobileMenuOpen && (
           <div className="md:hidden border-t border-[#DDE2DD] bg-[#FCFBF8] p-4 space-y-3 animate-fade-in shadow-lg">
             <div className="flex flex-col space-y-1">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.path}
-                  to={link.path}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`px-3 py-2 rounded-lg text-xs font-medium ${
-                    location.pathname === link.path
-                      ? 'bg-[#EAF2EE] text-[#0B4036] font-bold'
-                      : 'text-[#68736D] hover:bg-[#F8F7F3]'
-                  }`}
-                >
-                  {link.label}
-                </Link>
-              ))}
+              {navLinks.map((link) => {
+                const isActive =
+                  location.pathname === link.path ||
+                  (link.path === '/solutions' && location.pathname === '/features');
+                return (
+                  <Link
+                    key={link.path}
+                    to={link.path}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`px-3 py-2 rounded-lg text-xs font-medium ${
+                      isActive
+                        ? 'bg-[#EAF2EE] text-[#0B4036] font-bold'
+                        : 'text-[#68736D] hover:bg-[#F8F7F3]'
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                );
+              })}
             </div>
 
             <div className="pt-3 border-t border-[#DDE2DD] flex flex-col gap-2">
@@ -148,62 +155,84 @@ export const PublicLayout: React.FC<{ children: React.ReactNode }> = ({ children
       {/* Public Footer */}
       <footer className="bg-[#0B4036] text-white border-t border-[#072C25] pt-14 pb-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
-            {/* Column 1: Brand Info */}
-            <div className="space-y-3 md:col-span-1 text-left">
-              <div className="p-2 bg-white/10 rounded-xl inline-block">
-                <UrbanNestLogo variant="horizontal" size="sm" dark />
-              </div>
-              <p className="text-xs text-slate-200 leading-relaxed pt-1">
-                Centralized smart PG & property management system designed for operational clarity, hospitality, and better living.
-              </p>
-              <div className="flex items-center gap-1.5 text-xs text-[#C8A45D] font-semibold pt-1">
-                <ShieldCheck className="w-4 h-4 shrink-0" />
-                <span>Enterprise Data Privacy & Security</span>
-              </div>
-            </div>
-
-            {/* Column 2: Navigation Links */}
-            <div className="text-left">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-[#C8A45D] mb-3">Product</h4>
+          {/* Main Footer Columns */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-8 mb-12">
+            {/* Section 1: HOME */}
+            <div className="text-left space-y-3">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-[#C8A45D] pb-1 border-b border-white/15">
+                Home
+              </h4>
               <ul className="space-y-2 text-xs text-slate-200">
-                <li><Link to="/" className="hover:text-white transition-colors">Home Platform</Link></li>
-                <li><Link to="/features" className="hover:text-white transition-colors">Core Capabilities</Link></li>
-                <li><Link to="/pricing" className="hover:text-white transition-colors">Commercial Plans</Link></li>
-                <li><Link to="/about" className="hover:text-white transition-colors">Company & Vision</Link></li>
-                <li><Link to="/contact" className="hover:text-white transition-colors">Contact Sales</Link></li>
+                <li><Link to="/" className="hover:text-[#C8A45D] transition-colors">Platform Overview</Link></li>
+                <li><Link to="/owner/dashboard" className="hover:text-[#C8A45D] transition-colors font-medium">Live Dashboard</Link></li>
+                <li><Link to="/owner/rooms" className="hover:text-[#C8A45D] transition-colors">Bed Matrix</Link></li>
+                <li><Link to="/owner/visitors" className="hover:text-[#C8A45D] transition-colors">QR Gate Passes</Link></li>
               </ul>
             </div>
 
-            {/* Column 3: Live Portals */}
-            <div className="text-left">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-[#C8A45D] mb-3">Live Portals</h4>
+            {/* Section 2: SOLUTIONS */}
+            <div className="text-left space-y-3">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-[#C8A45D] pb-1 border-b border-white/15">
+                Solutions
+              </h4>
               <ul className="space-y-2 text-xs text-slate-200">
-                <li><Link to="/owner/dashboard" className="hover:text-white transition-colors font-medium">Owner Dashboard</Link></li>
-                <li><Link to="/resident/dashboard" className="hover:text-white transition-colors font-medium">Resident Portal</Link></li>
-                <li><Link to="/owner/rooms" className="hover:text-white transition-colors">Room & Bed Matrix</Link></li>
-                <li><Link to="/owner/visitors" className="hover:text-white transition-colors">Visitor QR Gate Desk</Link></li>
-                <li><Link to="/login" className="hover:text-white transition-colors">Account Login</Link></li>
+                <li><Link to="/solutions" className="hover:text-[#C8A45D] transition-colors">Single PG Owners</Link></li>
+                <li><Link to="/solutions" className="hover:text-[#C8A45D] transition-colors">Multi-Branch Chains</Link></li>
+                <li><Link to="/solutions" className="hover:text-[#C8A45D] transition-colors">Resident App Perks</Link></li>
+                <li><Link to="/solutions" className="hover:text-[#C8A45D] transition-colors">Automated Billing</Link></li>
               </ul>
             </div>
 
-            {/* Column 4: Contact & Locations */}
-            <div className="text-left">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-[#C8A45D] mb-3">Headquarters</h4>
-              <p className="text-xs text-slate-200 leading-relaxed">
-                Sector 3, 27th Main Rd, HSR Layout, Bengaluru, Karnataka 560102
-              </p>
-              <div className="mt-3 p-3 rounded-lg bg-black/20 border border-white/10 text-xs">
-                <span className="text-[#C8A45D] font-semibold">Direct Support:</span>
-                <p className="font-semibold text-white mt-0.5">support@urbannest.in</p>
-                <p className="text-slate-300 mt-0.5">+91 80 2572 8899</p>
-              </div>
+            {/* Section 3: PRICING */}
+            <div className="text-left space-y-3">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-[#C8A45D] pb-1 border-b border-white/15">
+                Pricing
+              </h4>
+              <ul className="space-y-2 text-xs text-slate-200">
+                <li><Link to="/pricing" className="hover:text-[#C8A45D] transition-colors">Starter Plan</Link></li>
+                <li><Link to="/pricing" className="hover:text-[#C8A45D] transition-colors font-medium">Growth Pro Tier</Link></li>
+                <li><Link to="/pricing" className="hover:text-[#C8A45D] transition-colors">Enterprise Portfolio</Link></li>
+                <li><Link to="/contact" className="hover:text-[#C8A45D] transition-colors">Custom Onboarding</Link></li>
+              </ul>
+            </div>
+
+            {/* Section 4: ABOUT */}
+            <div className="text-left space-y-3">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-[#C8A45D] pb-1 border-b border-white/15">
+                About
+              </h4>
+              <ul className="space-y-2 text-xs text-slate-200">
+                <li><Link to="/about" className="hover:text-[#C8A45D] transition-colors">Company & Vision</Link></li>
+                <li><Link to="/about" className="hover:text-[#C8A45D] transition-colors">Core Philosophy</Link></li>
+                <li><Link to="/about" className="hover:text-[#C8A45D] transition-colors">Security & DPDP</Link></li>
+                <li><Link to="/about" className="hover:text-[#C8A45D] transition-colors">Brand Identity</Link></li>
+              </ul>
+            </div>
+
+            {/* Section 5: CONTACT & PORTALS */}
+            <div className="text-left space-y-3">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-[#C8A45D] pb-1 border-b border-white/15">
+                Contact & Portals
+              </h4>
+              <ul className="space-y-2 text-xs text-slate-200">
+                <li><Link to="/contact" className="hover:text-[#C8A45D] transition-colors">Bengaluru Support</Link></li>
+                <li><Link to="/login" className="hover:text-[#C8A45D] transition-colors">Sign In Portal</Link></li>
+                <li><Link to="/owner/dashboard" className="hover:text-[#C8A45D] transition-colors">Owner Console</Link></li>
+                <li><Link to="/resident/dashboard" className="hover:text-[#C8A45D] transition-colors">Resident App</Link></li>
+              </ul>
             </div>
           </div>
 
-          <div className="border-t border-white/15 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-300">
-            <p>© 2026 Urban Nest Technologies Inc. All rights reserved.</p>
-            <div className="flex items-center gap-2 font-medium tracking-wider uppercase text-[11px] text-white">
+          {/* Bottom Brand Bar */}
+          <div className="border-t border-white/15 pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-300">
+            <div className="flex items-center gap-3">
+              <div className="p-1.5 bg-white/10 rounded-lg inline-block">
+                <UrbanNestLogo variant="horizontal" size="sm" dark />
+              </div>
+              <span>© 2026 Urban Nest Technologies Inc.</span>
+            </div>
+
+            <div className="flex items-center gap-2 font-semibold tracking-wider uppercase text-[11px] text-white">
               <span>PEOPLE</span>
               <span className="text-[#C8A45D]">•</span>
               <span>PLACES</span>
@@ -216,4 +245,3 @@ export const PublicLayout: React.FC<{ children: React.ReactNode }> = ({ children
     </div>
   );
 };
-

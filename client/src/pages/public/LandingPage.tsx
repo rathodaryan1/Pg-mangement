@@ -58,7 +58,7 @@ export const LandingPage: React.FC = () => {
                 </Button>
               </Link>
 
-              <Link to="/features">
+              <Link to="/solutions">
                 <Button variant="outline" size="lg" className="font-semibold border-[#DDE2DD] text-[#0B4036]">
                   Explore the Platform
                 </Button>

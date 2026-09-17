@@ -9,7 +9,7 @@ import { ResidentLayout } from './components/layout/ResidentLayout';
 
 // Public Marketing Pages
 import { LandingPage } from './pages/public/LandingPage';
-import { FeaturesPage } from './pages/public/FeaturesPage';
+import { SolutionsPage } from './pages/public/SolutionsPage';
 import { PricingPage } from './pages/public/PricingPage';
 import { AboutPage } from './pages/public/AboutPage';
 import { ContactPage } from './pages/public/ContactPage';
@@ -81,14 +81,15 @@ const AppRoutes: React.FC = () => {
       {/* ========================================================
           PUBLIC WEBSITE ROUTES
           /
-          ├── /features
+          ├── /solutions
           ├── /pricing
           ├── /about
           ├── /contact
           └── /login
          ======================================================== */}
       <Route path="/" element={<PublicLayout><LandingPage /></PublicLayout>} />
-      <Route path="/features" element={<PublicLayout><FeaturesPage /></PublicLayout>} />
+      <Route path="/solutions" element={<PublicLayout><SolutionsPage /></PublicLayout>} />
+      <Route path="/features" element={<PublicLayout><SolutionsPage /></PublicLayout>} />
       <Route path="/pricing" element={<PublicLayout><PricingPage /></PublicLayout>} />
       <Route path="/about" element={<PublicLayout><AboutPage /></PublicLayout>} />
       <Route path="/contact" element={<PublicLayout><ContactPage /></PublicLayout>} />
