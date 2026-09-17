@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta name="description" content="Urban Nest — Smart PG & Property Management Operating System. Manage residents, rooms, rent, visitor passes, maintenance and daily operations from one centralized platform." />
-    <meta name="theme-color" content="#0f172a" />
+    <meta name="theme-color" content="#FCFBF8" />
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏢</text></svg>" />
     <link rel="manifest" href="/manifest.json" />
     
@@ -16,6 +16,14 @@
     <title>Urban Nest — Smart PG Management System</title>
   </head>
   <body>
+    <script>
+      try {
+        document.documentElement.classList.remove('dark');
+        if (localStorage.getItem('theme') === 'dark') {
+          localStorage.setItem('theme', 'light');
+        }
+      } catch (e) {}
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     <script>

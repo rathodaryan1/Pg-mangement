@@ -36,9 +36,10 @@ export const LandingPage: React.FC = () => {
               <span>Smart PG Management System</span>
             </div>
 
-            <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-[#18231F] dark:text-white leading-[1.15]">
-              Better managed spaces. <br className="hidden sm:inline" />
-              <span className="text-[#0B4036]">Better living.</span>
+            <h1 className="text-3xl sm:text-5xl font-bold tracking-tight leading-[1.15]">
+              <span className="text-[#18231F] block sm:inline">Better managed spaces.</span>{' '}
+              <br className="hidden sm:inline" />
+              <span className="text-[#0B4036] block sm:inline">Better living.</span>
             </h1>
 
             <p className="text-sm sm:text-base text-[#68736D] font-normal leading-relaxed max-w-xl">

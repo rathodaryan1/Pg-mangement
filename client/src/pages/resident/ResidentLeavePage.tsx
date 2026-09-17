@@ -102,10 +102,10 @@ export const ResidentLeavePage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+          <h1 className="text-2xl font-bold tracking-tight text-[#18231F]">
             Outstation Leave Applications
           </h1>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-[#68736D]">
             Apply for temporary out-of-station leave (home visits, vacations) for warden and security gate tracking
           </p>
         </div>
@@ -127,10 +127,10 @@ export const ResidentLeavePage: React.FC = () => {
 
       {/* Leave List */}
       {leaves.length === 0 ? (
-        <div className="p-12 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center space-y-3 max-w-md mx-auto">
-          <CalendarDays className="w-12 h-12 text-slate-400 mx-auto" />
-          <h3 className="text-base font-bold text-slate-900 dark:text-white">No Leave Requests</h3>
-          <p className="text-xs text-slate-500">
+        <div className="p-12 rounded-2xl bg-white border border-[#DDE2DD] text-center space-y-3 max-w-md mx-auto shadow-xs">
+          <CalendarDays className="w-12 h-12 text-[#8A928D] mx-auto" />
+          <h3 className="text-base font-bold text-[#18231F]">No Leave Requests</h3>
+          <p className="text-xs text-[#68736D]">
             You haven't submitted any out-of-station leave applications yet.
           </p>
           <Button
@@ -147,21 +147,21 @@ export const ResidentLeavePage: React.FC = () => {
           {leaves.map((l) => {
             const isPending = l.status === 'PENDING';
             return (
-              <Card key={l.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <Card key={l.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs bg-white border border-[#DDE2DD] shadow-xs">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <p className="font-bold text-slate-900 dark:text-white text-sm">{l.reason}</p>
+                    <p className="font-bold text-[#18231F] text-sm">{l.reason}</p>
                     <StatusBadge status={l.status} />
                   </div>
-                  <p className="text-slate-500 flex items-center gap-2">
-                    <Calendar className="w-3.5 h-3.5 text-brand-forest dark:text-brand-gold" />
+                  <p className="text-[#68736D] flex items-center gap-2">
+                    <Calendar className="w-3.5 h-3.5 text-[#0B4036]" />
                     <strong>Duration:</strong> {new Date(l.fromDate).toLocaleDateString()} to {new Date(l.toDate).toLocaleDateString()}
-                    <span className="text-[10px] text-slate-400">
+                    <span className="text-[10px] text-[#8A928D]">
                       • Applied on {new Date(l.appliedAt).toLocaleDateString()}
                     </span>
                   </p>
                   {l.approvedBy && (
-                    <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                    <p className="text-[11px] text-emerald-700 font-semibold">
                       Approved by {l.approvedBy}
                     </p>
                   )}
@@ -171,7 +171,7 @@ export const ResidentLeavePage: React.FC = () => {
                   <Button
                     variant="secondary"
                     size="xs"
-                    className="text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 self-start sm:self-center"
+                    className="text-red-600 hover:bg-red-50 self-start sm:self-center"
                     onClick={() => handleCancelLeave(l.id)}
                   >
                     Cancel Application

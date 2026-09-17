@@ -46,10 +46,10 @@ export const ResidentNoticesPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+          <h1 className="text-2xl font-bold tracking-tight text-[#18231F]">
             PG Announcements & Notices
           </h1>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-[#68736D]">
             Official property announcements, maintenance windows, community events, and rule updates
           </p>
         </div>
@@ -61,10 +61,10 @@ export const ResidentNoticesPage: React.FC = () => {
 
       {/* Notices List */}
       {notices.length === 0 ? (
-        <div className="p-12 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center space-y-3 max-w-md mx-auto">
-          <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto" />
-          <h3 className="text-base font-bold text-slate-900 dark:text-white">No New Notices</h3>
-          <p className="text-xs text-slate-500">
+        <div className="p-12 rounded-2xl bg-white border border-[#DDE2DD] text-center space-y-3 max-w-md mx-auto shadow-xs">
+          <CheckCircle2 className="w-12 h-12 text-emerald-600 mx-auto" />
+          <h3 className="text-base font-bold text-[#18231F]">No New Notices</h3>
+          <p className="text-xs text-[#68736D]">
             There are no active notices published for your PG branch currently.
           </p>
         </div>
@@ -73,29 +73,29 @@ export const ResidentNoticesPage: React.FC = () => {
           {notices.map((n) => (
             <Card
               key={n.id}
-              className={`p-6 space-y-3 transition-all ${
+              className={`p-6 space-y-3 transition-all bg-white border border-[#DDE2DD] shadow-xs ${
                 n.isImportant
-                  ? 'border-red-300 dark:border-red-900/60 bg-red-50/20 dark:bg-red-950/10'
-                  : 'hover:border-brand-forest dark:hover:border-brand-gold'
+                  ? 'border-red-300 bg-red-50/20'
+                  : 'hover:border-[#0B4036]/40'
               }`}
             >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#DDE2DD]/60 pb-3">
                 <div className="flex items-center gap-2.5">
                   <div
                     className={`p-2 rounded-xl ${
                       n.isImportant
-                        ? 'bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-400'
-                        : 'bg-brand-surface text-brand-forest dark:bg-brand-surface-dark dark:text-brand-gold border border-brand-border dark:border-brand-border-dark'
+                        ? 'bg-red-100 text-red-700'
+                        : 'bg-[#EAF2EE] text-[#0B4036] border border-[#0B4036]/15'
                     }`}
                   >
                     <Bell className="w-4 h-4" />
                   </div>
-                  <h3 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white">{n.title}</h3>
+                  <h3 className="font-bold text-sm sm:text-base text-[#18231F]">{n.title}</h3>
                 </div>
 
                 <div className="flex items-center gap-2">
                   {n.isImportant && (
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300 border border-red-300 dark:border-red-800">
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-red-100 text-red-700 border border-red-200">
                       URGENT
                     </span>
                   )}
@@ -103,12 +103,12 @@ export const ResidentNoticesPage: React.FC = () => {
                 </div>
               </div>
 
-              <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+              <p className="text-xs sm:text-sm text-[#18231F] leading-relaxed">
                 {n.content}
               </p>
 
-              <div className="text-[11px] text-slate-400 pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                <span>Published by: <strong>{n.publisherName || 'Urban Nest Management'}</strong></span>
+              <div className="text-[11px] text-[#8A928D] pt-2 border-t border-[#DDE2DD]/60 flex items-center justify-between">
+                <span>Published by: <strong className="text-[#18231F]">{n.publisherName || 'Urban Nest Management'}</strong></span>
                 <span>{new Date(n.publishedAt).toLocaleDateString()}</span>
               </div>
             </Card>
