@@ -45,7 +45,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           <input
             ref={ref}
             id={inputId}
-            className={`w-full px-3 py-2 text-xs sm:text-sm rounded-lg border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder-slate-400 shadow-xs focus:outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-colors ${
+            className={`w-full px-3 py-2 text-xs sm:text-sm rounded-lg border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder-slate-400 shadow-xs focus:outline-none focus:ring-2 focus:ring-[#0B4036]/25 focus:border-[#0B4036] dark:focus:ring-[#C8A45D]/30 dark:focus:border-[#C8A45D] transition-colors ${
               leftIcon ? 'pl-9' : ''
             } ${rightIcon ? 'pr-9' : ''} ${
               error ? 'border-rose-500 focus:ring-rose-500/30 focus:border-rose-500' : ''
@@ -105,7 +105,7 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
         <textarea
           ref={ref}
           id={textareaId}
-          className={`w-full px-3 py-2 text-xs sm:text-sm rounded-lg border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder-slate-400 shadow-xs focus:outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-colors ${
+          className={`w-full px-3 py-2 text-xs sm:text-sm rounded-lg border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder-slate-400 shadow-xs focus:outline-none focus:ring-2 focus:ring-[#0B4036]/25 focus:border-[#0B4036] dark:focus:ring-[#C8A45D]/30 dark:focus:border-[#C8A45D] transition-colors ${
             error ? 'border-rose-500 focus:ring-rose-500/30 focus:border-rose-500' : ''
           } ${className}`}
           {...props}
@@ -156,7 +156,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
         <select
           ref={ref}
           id={selectId}
-          className={`w-full px-3 py-2 text-xs sm:text-sm rounded-lg border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white shadow-xs focus:outline-none focus:ring-2 focus:ring-blue-600/30 focus:border-blue-600 transition-colors ${
+          className={`w-full px-3 py-2 text-xs sm:text-sm rounded-lg border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white shadow-xs focus:outline-none focus:ring-2 focus:ring-[#0B4036]/25 focus:border-[#0B4036] dark:focus:ring-[#C8A45D]/30 dark:focus:border-[#C8A45D] transition-colors ${
             error ? 'border-rose-500' : ''
           } ${className}`}
           {...props}
@@ -187,8 +187,8 @@ export const Switch: React.FC<{ checked: boolean; onChange: (checked: boolean) =
         role="switch"
         aria-checked={checked}
         onClick={() => onChange(!checked)}
-        className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-          checked ? 'bg-blue-600' : 'bg-slate-200 dark:bg-slate-700'
+        className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#0B4036] dark:focus:ring-[#C8A45D] ${
+          checked ? 'bg-[#0B4036] dark:bg-[#C8A45D]' : 'bg-slate-200 dark:bg-slate-700'
         }`}
       >
         <span

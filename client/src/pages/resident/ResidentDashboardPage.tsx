@@ -158,9 +158,9 @@ export const ResidentDashboardPage: React.FC = () => {
 
         <Link
           to="/resident/visitors"
-          className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:border-blue-500 transition-all text-center space-y-2 group"
+          className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm hover:border-[#0B4036] dark:hover:border-[#C8A45D] transition-all text-center space-y-2 group"
         >
-          <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950 text-blue-600 mx-auto flex items-center justify-center group-hover:scale-110 transition-transform">
+          <div className="w-10 h-10 rounded-xl bg-[#0B4036]/10 dark:bg-[#C8A45D]/15 text-[#0B4036] dark:text-[#C8A45D] mx-auto flex items-center justify-center group-hover:scale-110 transition-transform">
             <UserCheck className="w-5 h-5" />
           </div>
           <p className="text-xs font-bold text-slate-900 dark:text-white">Request Visitor</p>

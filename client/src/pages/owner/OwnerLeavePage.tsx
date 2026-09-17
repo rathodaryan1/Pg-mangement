@@ -125,7 +125,7 @@ export const OwnerLeavePage: React.FC = () => {
               onClick={() => setStatusFilter(st)}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                 statusFilter === st
-                  ? 'bg-blue-600 text-white shadow-sm'
+                  ? 'bg-[#0B4036] text-white shadow-sm'
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
               }`}
             >
@@ -165,7 +165,7 @@ export const OwnerLeavePage: React.FC = () => {
                     </td>
                     <td className="p-4 font-medium text-slate-800 dark:text-slate-200">
                       <div className="flex items-center gap-1.5">
-                        <Calendar className="w-3.5 h-3.5 text-blue-600" />
+                        <Calendar className="w-3.5 h-3.5 text-[#0B4036] dark:text-[#C8A45D]" />
                         <span>{leave.fromDate} → {leave.toDate}</span>
                       </div>
                     </td>

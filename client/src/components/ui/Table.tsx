@@ -28,7 +28,7 @@ export function Table<T>({
   if (isLoading) {
     return (
       <div className="w-full p-8 text-center bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
-        <div className="w-6 h-6 mx-auto border-2 border-blue-600/20 border-t-blue-600 rounded-full animate-spin" />
+        <div className="w-6 h-6 mx-auto border-2 border-[#0B4036]/20 border-t-[#0B4036] dark:border-[#C8A45D]/30 dark:border-t-[#C8A45D] rounded-full animate-spin" />
         <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">Loading records...</p>
       </div>
     );

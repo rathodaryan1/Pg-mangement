@@ -295,7 +295,7 @@ export const InventoryPage: React.FC = () => {
             variant="ghost"
             size="sm"
             onClick={() => openEditModal(row)}
-            className="h-7 w-7 p-0 text-slate-600 hover:text-indigo-600"
+            className="h-7 w-7 p-0 text-slate-600 hover:text-[#0B4036] dark:hover:text-[#C8A45D]"
             title="Edit Asset"
           >
             <Edit2 className="w-3.5 h-3.5" />
@@ -389,7 +389,7 @@ export const InventoryPage: React.FC = () => {
               placeholder="Search assets by name, vendor, or location..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full pl-9 pr-4 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B4036]/25 dark:focus:ring-[#C8A45D]/30"
             />
           </div>
           <div className="w-full sm:w-48">

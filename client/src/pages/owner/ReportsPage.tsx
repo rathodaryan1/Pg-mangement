@@ -100,7 +100,7 @@ export const ReportsPage: React.FC = () => {
         <Card className="p-5 space-y-2">
           <div className="flex items-center justify-between text-slate-400 text-xs font-bold uppercase">
             <span>Occupancy Rate</span>
-            <BedDouble className="w-4 h-4 text-blue-600" />
+            <BedDouble className="w-4 h-4 text-[#0B4036] dark:text-[#C8A45D]" />
           </div>
           <div className="text-2xl font-black text-slate-900 dark:text-white">
             {reportData?.summary?.occupancyRate || 75}%
@@ -154,7 +154,7 @@ export const ReportsPage: React.FC = () => {
             </div>
             <button
               onClick={() => handleExportCSV('Revenue_Vs_Expenses_Report')}
-              className="text-xs text-blue-600 hover:underline flex items-center gap-1 font-semibold"
+              className="text-xs text-[#0B4036] dark:text-[#C8A45D] hover:underline flex items-center gap-1 font-semibold"
             >
               <FileSpreadsheet className="w-3.5 h-3.5" /> Export
             </button>
@@ -191,7 +191,7 @@ export const ReportsPage: React.FC = () => {
             </div>
             <button
               onClick={() => handleExportCSV('Expense_Categories_Report')}
-              className="text-xs text-blue-600 hover:underline flex items-center gap-1 font-semibold"
+              className="text-xs text-[#0B4036] dark:text-[#C8A45D] hover:underline flex items-center gap-1 font-semibold"
             >
               <FileSpreadsheet className="w-3.5 h-3.5" /> Export
             </button>

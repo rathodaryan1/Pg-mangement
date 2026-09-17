@@ -176,7 +176,7 @@ export const FeaturesPage: React.FC = () => {
     <div className="space-y-16 py-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       {/* Header */}
       <div className="text-left space-y-2 border-b border-slate-200 dark:border-slate-800 pb-6">
-        <span className="text-xs font-semibold text-blue-600 uppercase tracking-wider">Product Features</span>
+        <span className="text-xs font-semibold text-[#0B4036] dark:text-[#C8A45D] uppercase tracking-wider">Product Features</span>
         <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
           Comprehensive PG Operating Platform
         </h1>
@@ -192,7 +192,7 @@ export const FeaturesPage: React.FC = () => {
           return (
             <div key={idx} className="space-y-4">
               <div className="flex items-center gap-2.5 pb-2 border-b border-slate-100 dark:border-slate-800">
-                <div className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 text-blue-600 flex items-center justify-center font-bold">
+                <div className="w-7 h-7 rounded-lg bg-[#EAF2EE] dark:bg-[#0B4036]/30 text-[#0B4036] dark:text-[#C8A45D] flex items-center justify-center font-bold">
                   <Icon className="w-4 h-4" />
                 </div>
                 <div>

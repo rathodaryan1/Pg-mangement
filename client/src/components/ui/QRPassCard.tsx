@@ -33,7 +33,7 @@ export const QRPassCard: React.FC<QRPassProps> = ({ visitor }) => {
       {/* Header */}
       <div className="flex items-center justify-between pb-3.5 border-b border-slate-800">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-xs text-white">
+          <div className="w-8 h-8 rounded-lg bg-[#0B4036] text-[#C8A45D] border border-[#C8A45D]/30 flex items-center justify-center font-bold text-xs">
             UN
           </div>
           <div>
@@ -71,7 +71,7 @@ export const QRPassCard: React.FC<QRPassProps> = ({ visitor }) => {
       <div className="space-y-2 text-xs">
         <div className="flex items-center justify-between py-1 border-b border-slate-800">
           <span className="text-slate-400 flex items-center gap-1.5">
-            <UserCheck className="w-3.5 h-3.5 text-blue-400" /> Visitor
+            <UserCheck className="w-3.5 h-3.5 text-[#C8A45D]" /> Visitor
           </span>
           <span className="font-semibold text-white">{visitor.visitorName}</span>
         </div>

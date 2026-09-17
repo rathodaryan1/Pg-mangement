@@ -15,7 +15,7 @@ export const Timeline: React.FC<{ items: TimelineItem[] }> = ({ items }) => {
     <div className="relative pl-6 space-y-6 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200 dark:before:bg-slate-800">
       {items.map((item, idx) => (
         <div key={item.id || idx} className="relative group">
-          <span className="absolute -left-[23px] top-1 w-3 h-3 rounded-full border-2 border-white dark:border-slate-900 bg-blue-600 ring-4 ring-blue-50 dark:ring-blue-950/50" />
+          <span className="absolute -left-[23px] top-1 w-3 h-3 rounded-full border-2 border-white dark:border-slate-900 bg-[#0B4036] dark:bg-[#C8A45D] ring-4 ring-[#EAF2EE] dark:ring-[#0B4036]/40" />
           <div className="bg-slate-50 dark:bg-slate-950/60 p-3.5 rounded-xl border border-slate-200/60 dark:border-slate-800/80">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-900 dark:text-white">{item.title}</span>

@@ -8,7 +8,7 @@ export const AboutPage: React.FC = () => {
     <div className="space-y-16 py-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-left">
       {/* Header */}
       <div className="max-w-3xl space-y-3 border-b border-slate-200 dark:border-slate-800 pb-6">
-        <span className="text-xs font-semibold text-blue-600 uppercase tracking-wider">About Urban Nest</span>
+        <span className="text-xs font-semibold text-[#0B4036] dark:text-[#C8A45D] uppercase tracking-wider">About Urban Nest</span>
         <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 dark:text-white">
           Building software for the modern co-living and PG ecosystem
         </h1>
@@ -30,7 +30,7 @@ export const AboutPage: React.FC = () => {
         </div>
 
         <div className="p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs space-y-3">
-          <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 flex items-center justify-center font-bold">
+          <div className="w-8 h-8 rounded-lg bg-[#EAF2EE] dark:bg-[#0B4036]/30 text-[#0B4036] dark:text-[#C8A45D] flex items-center justify-center font-bold">
             <ShieldCheck className="w-4 h-4" />
           </div>
           <h2 className="text-base font-bold text-slate-900 dark:text-white">Our Product Philosophy</h2>
@@ -49,21 +49,21 @@ export const AboutPage: React.FC = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           <div className="p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs space-y-2">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-blue-600">PG Owners & Operators</h3>
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[#0B4036] dark:text-[#C8A45D]">PG Owners & Operators</h3>
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
               Track multi-building occupancy, automated rent billing, expense accounting, and overall profitability from a single command dashboard.
             </p>
           </div>
 
           <div className="p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs space-y-2">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-blue-600">Wardens & Facility Staff</h3>
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[#0B4036] dark:text-[#C8A45D]">Wardens & Facility Staff</h3>
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
               Manage daily check-ins, verify resident documents, handle maintenance work orders, and coordinate cleaning schedules.
             </p>
           </div>
 
           <div className="p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs space-y-2">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-blue-600">Residents</h3>
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[#0B4036] dark:text-[#C8A45D]">Residents</h3>
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
               Enjoy a seamless living experience with instant rent payment receipts, self-service QR visitor passes, ticket tracking, and emergency SOS.
             </p>

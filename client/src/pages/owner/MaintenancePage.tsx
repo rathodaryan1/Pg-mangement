@@ -301,7 +301,7 @@ export const MaintenancePage: React.FC = () => {
                       <strong className="text-slate-900 dark:text-white text-xs">{t.title}</strong>
                     </td>
                     <td className="p-4">
-                      <span className="font-bold text-blue-600 dark:text-blue-400">{t.residentName}</span>
+                      <span className="font-bold text-[#0B4036] dark:text-[#C8A45D]">{t.residentName}</span>
                       <p className="text-[10px] text-slate-400">Room {t.roomNumber || 'Common'}</p>
                     </td>
                     <td className="p-4">

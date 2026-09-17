@@ -146,7 +146,7 @@ export const StaffPage: React.FC = () => {
               });
               setStaffModalOpen(true);
             }}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-[#0B4036] dark:hover:text-[#C8A45D] hover:bg-slate-100 dark:hover:bg-slate-800"
             title="Edit Staff Profile"
           >
             <Edit2 className="w-3.5 h-3.5" />

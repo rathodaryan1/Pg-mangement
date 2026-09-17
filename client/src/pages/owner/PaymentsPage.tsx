@@ -848,7 +848,7 @@ export const PaymentsPage: React.FC = () => {
             <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-3 bg-slate-50/50 dark:bg-slate-900/50">
               <div className="flex items-center justify-between border-b pb-2 border-slate-200 dark:border-slate-800">
                 <span className="font-bold text-sm text-slate-900 dark:text-white">URBAN NEST RECEIPT</span>
-                <span className="font-mono text-blue-600 font-bold">{selectedPayment.receiptNumber || 'UN-REC-2026-0901'}</span>
+                <span className="font-mono text-[#0B4036] dark:text-[#C8A45D] font-bold">{selectedPayment.receiptNumber || 'UN-REC-2026-0901'}</span>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>

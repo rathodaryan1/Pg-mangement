@@ -28,7 +28,7 @@ export const ContactPage: React.FC = () => {
     <div className="space-y-12 py-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-left">
       {/* Header */}
       <div className="max-w-2xl space-y-2 border-b border-slate-200 dark:border-slate-800 pb-6">
-        <span className="text-xs font-semibold text-blue-600 uppercase tracking-wider">Contact & Support</span>
+        <span className="text-xs font-semibold text-[#0B4036] dark:text-[#C8A45D] uppercase tracking-wider">Contact & Support</span>
         <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
           Get in touch with our team
         </h1>
@@ -128,7 +128,7 @@ export const ContactPage: React.FC = () => {
             </h3>
             <div className="space-y-3 text-xs">
               <div className="flex items-start gap-3">
-                <Mail className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                <Mail className="w-4 h-4 text-[#0B4036] dark:text-[#C8A45D] shrink-0 mt-0.5" />
                 <div>
                   <p className="font-semibold text-slate-800 dark:text-slate-200">Email Inquiries</p>
                   <p className="text-slate-500">support@urbannest.in</p>
@@ -137,7 +137,7 @@ export const ContactPage: React.FC = () => {
               </div>
 
               <div className="flex items-start gap-3">
-                <Phone className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                <Phone className="w-4 h-4 text-[#0B4036] dark:text-[#C8A45D] shrink-0 mt-0.5" />
                 <div>
                   <p className="font-semibold text-slate-800 dark:text-slate-200">Phone Support</p>
                   <p className="text-slate-500">+91 80 2572 8899</p>
@@ -146,7 +146,7 @@ export const ContactPage: React.FC = () => {
               </div>
 
               <div className="flex items-start gap-3">
-                <MapPin className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                <MapPin className="w-4 h-4 text-[#0B4036] dark:text-[#C8A45D] shrink-0 mt-0.5" />
                 <div>
                   <p className="font-semibold text-slate-800 dark:text-slate-200">Headquarters</p>
                   <p className="text-slate-500 leading-relaxed">

@@ -28,7 +28,7 @@ export const EmptyState: React.FC<{
 export const LoadingState: React.FC<{ message?: string }> = ({ message = 'Loading system data...' }) => {
   return (
     <div className="flex flex-col items-center justify-center p-12 text-center">
-      <div className="w-7 h-7 border-2 border-blue-600/20 border-t-blue-600 rounded-full animate-spin" />
+      <div className="w-7 h-7 border-2 border-[#0B4036]/20 border-t-[#0B4036] dark:border-[#C8A45D]/30 dark:border-t-[#C8A45D] rounded-full animate-spin" />
       <p className="mt-3 text-xs font-medium text-slate-500 dark:text-slate-400">{message}</p>
     </div>
   );

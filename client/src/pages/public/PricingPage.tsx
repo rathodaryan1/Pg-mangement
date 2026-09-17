@@ -131,7 +131,7 @@ export const PricingPage: React.FC = () => {
     <div className="space-y-16 py-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-left">
       {/* Header */}
       <div className="text-center max-w-2xl mx-auto space-y-3">
-        <span className="text-xs font-semibold text-blue-600 uppercase tracking-wider">Commercial Pricing</span>
+        <span className="text-xs font-semibold text-[#0B4036] dark:text-[#C8A45D] uppercase tracking-wider">Commercial Pricing</span>
         <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 dark:text-white">
           Simple, predictable pricing for your PG
         </h1>
@@ -178,7 +178,7 @@ export const PricingPage: React.FC = () => {
               key={tier.id}
               className={`p-6 rounded-xl border flex flex-col justify-between transition-all ${
                 tier.popular
-                  ? 'bg-white dark:bg-slate-900 border-blue-600 shadow-sm ring-1 ring-blue-600'
+                  ? 'bg-white dark:bg-slate-900 border-[#0B4036] dark:border-[#C8A45D] shadow-sm ring-1 ring-[#0B4036] dark:ring-[#C8A45D]'
                   : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-xs'
               }`}
             >
@@ -186,7 +186,7 @@ export const PricingPage: React.FC = () => {
                 <div className="flex justify-between items-center">
                   <h3 className="text-base font-bold text-slate-900 dark:text-white">{tier.name}</h3>
                   {tier.popular && (
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-[#EAF2EE] text-[#0B4036] dark:bg-[#0B4036]/30 dark:text-[#C8A45D] border border-[#0B4036]/20 dark:border-[#C8A45D]/30">
                       Most Popular
                     </span>
                   )}
@@ -201,7 +201,7 @@ export const PricingPage: React.FC = () => {
                     </span>
                     <span className="text-xs text-slate-400">/ month</span>
                   </div>
-                  <p className="text-[11px] font-semibold text-blue-600 mt-1">{tier.bedLimit}</p>
+                  <p className="text-[11px] font-semibold text-[#0B4036] dark:text-[#C8A45D] mt-1">{tier.bedLimit}</p>
                 </div>
 
                 <div className="space-y-2 text-xs">
@@ -248,7 +248,7 @@ export const PricingPage: React.FC = () => {
               <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 text-slate-500">
                 <th className="p-3.5 font-semibold text-slate-900 dark:text-white w-1/3">Feature</th>
                 <th className="p-3.5 font-semibold text-center">Starter</th>
-                <th className="p-3.5 font-semibold text-center text-blue-600">Growth</th>
+                <th className="p-3.5 font-semibold text-center text-[#0B4036] dark:text-[#C8A45D]">Growth</th>
                 <th className="p-3.5 font-semibold text-center">Enterprise</th>
               </tr>
             </thead>
@@ -304,7 +304,7 @@ export const PricingPage: React.FC = () => {
           {FAQS.map((faq, idx) => (
             <div key={idx} className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-1.5">
               <h3 className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                <HelpCircle className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                <HelpCircle className="w-3.5 h-3.5 text-[#0B4036] dark:text-[#C8A45D] shrink-0" />
                 <span>{faq.q}</span>
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed pl-5">
