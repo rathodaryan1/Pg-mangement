@@ -13,6 +13,7 @@ import { SolutionsPage } from './pages/public/SolutionsPage';
 import { PricingPage } from './pages/public/PricingPage';
 import { AboutPage } from './pages/public/AboutPage';
 import { ContactPage } from './pages/public/ContactPage';
+import { GateVerifyPage } from './pages/public/GateVerifyPage';
 
 // Auth Pages
 import { LoginPage } from './pages/auth/LoginPage';
@@ -94,6 +95,10 @@ const AppRoutes: React.FC = () => {
       <Route path="/about" element={<PublicLayout><AboutPage /></PublicLayout>} />
       <Route path="/contact" element={<PublicLayout><ContactPage /></PublicLayout>} />
       
+      {/* Public Gate QR Verification */}
+      <Route path="/gate/verify/:token" element={<GateVerifyPage />} />
+      <Route path="/gate/verify" element={<GateVerifyPage />} />
+
       {/* Authentication */}
       <Route path="/login" element={<LoginPage />} />
 

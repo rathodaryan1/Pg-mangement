@@ -198,28 +198,37 @@ export class AuthController {
         );
       }
 
+      // Fallback mode password check
+      if (password !== 'admin123' && password !== 'password123') {
+        return sendError(res, 'Invalid email or password.', 401);
+      }
+
       // Dev mode fallback for seeded credentials
       const cleanEmail = email.toLowerCase().trim();
       let role: any = 'RESIDENT';
       let name = 'Aakash Verma';
       let userId = 'usr-res-1';
+      let residentId: string | undefined = 'res-1';
 
       if (cleanEmail === 'owner@pg.com' || cleanEmail.includes('owner')) {
         role = 'OWNER';
         name = 'Aaryan Sharma (Owner)';
         userId = 'usr-owner-1';
+        residentId = undefined;
       } else if (cleanEmail === 'superadmin@pg.com') {
         role = 'SUPER_ADMIN';
         name = 'Platform Super Admin';
         userId = 'usr-super-1';
+        residentId = undefined;
       } else if (cleanEmail === 'manager@pg.com') {
         role = 'MANAGER';
         name = 'Property Manager';
         userId = 'usr-mgr-1';
+        residentId = undefined;
       }
 
       const token = jwt.sign(
-        { id: userId, email: cleanEmail, role, name },
+        { id: userId, email: cleanEmail, role, name, residentId },
         config.jwtSecret,
         { expiresIn: config.jwtExpiresIn as any }
       );
@@ -235,7 +244,7 @@ export class AuthController {
             role,
             mobile: '9876500001',
             propertyId: 'prop-1',
-            residentId: role === 'RESIDENT' ? 'res-1' : undefined,
+            residentId,
           },
         },
         'Login successful'

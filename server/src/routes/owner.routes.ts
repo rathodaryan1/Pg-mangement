@@ -72,6 +72,7 @@ router.get('/visitors', OwnerController.getVisitors as any);
 router.post('/visitors', OwnerController.createVisitor as any);
 router.patch('/visitors/:id/approve', OwnerController.approveVisitor as any);
 router.patch('/visitors/:id/reject', OwnerController.rejectVisitor as any);
+router.get('/visitors/verify/:token', OwnerController.verifyVisitorQRByToken as any);
 router.post('/visitors/verify-qr', OwnerController.verifyVisitorQR as any);
 router.post('/visitors/:id/check-in', OwnerController.checkInVisitor as any);
 router.post('/visitors/:id/check-out', OwnerController.checkOutVisitor as any);

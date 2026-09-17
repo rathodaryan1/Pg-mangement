@@ -22,7 +22,11 @@ router.post('/razorpay', async (req: Request, res: Response) => {
         return sendError(res, 'Missing x-razorpay-signature header', 400);
       }
 
-      const bodyPayload = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
+      const bodyPayload = (req as any).rawBody
+        ? (req as any).rawBody
+        : typeof req.body === 'string'
+        ? req.body
+        : JSON.stringify(req.body);
       const expectedSignature = crypto
         .createHmac('sha256', webhookSecret)
         .update(bodyPayload)

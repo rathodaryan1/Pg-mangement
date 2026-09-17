@@ -72,6 +72,8 @@ router.get('/health', async (req, res) => {
   });
 });
 
+import { OwnerController } from '../controllers/owner.controller';
+
 // Auth Routes
 router.use('/auth', authRoutes);
 
@@ -80,6 +82,10 @@ router.use('/resident', residentRoutes);
 
 // Owner / Admin Portal Routes
 router.use('/owner', ownerRoutes);
+
+// Gate Verification Route for Camera Scans
+router.get('/gate/verify/:token', OwnerController.verifyVisitorQRByToken as any);
+router.post('/gate/verify', OwnerController.verifyVisitorQR as any);
 
 // Webhook Handlers
 router.use('/webhooks', webhookRoutes);

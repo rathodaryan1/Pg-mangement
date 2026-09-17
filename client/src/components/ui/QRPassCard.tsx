@@ -1,5 +1,6 @@
 import React from 'react';
-import { ShieldCheck, Calendar, Clock, UserCheck, Building2 } from 'lucide-react';
+import { ShieldCheck, Calendar, Clock, UserCheck } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import { StatusBadge } from './Badge';
 
 export interface QRPassProps {
@@ -21,12 +22,15 @@ export interface QRPassProps {
 }
 
 export const QRPassCard: React.FC<QRPassProps> = ({ visitor }) => {
-  const token = visitor.qrPassToken || visitor.qrPassCode || 'VPASS-ACTIVE';
+  const token = visitor.qrPassToken || visitor.qrPassCode || visitor.id || 'VPASS-ACTIVE';
   const entryTime = visitor.expectedEntryTime || visitor.expectedTime || '04:00 PM';
   const dateStr =
     typeof visitor.visitDate === 'string'
       ? visitor.visitDate.split('T')[0]
       : new Date(visitor.visitDate).toLocaleDateString();
+
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://aryanpg.vercel.app';
+  const qrPayload = `${baseUrl}/gate/verify/${encodeURIComponent(token)}`;
 
   return (
     <div className="w-full max-w-sm mx-auto bg-slate-900 text-white rounded-2xl p-5 shadow-lg border border-slate-800 relative">
@@ -44,27 +48,22 @@ export const QRPassCard: React.FC<QRPassProps> = ({ visitor }) => {
         <StatusBadge status={visitor.status as any} />
       </div>
 
-      {/* QR Code Simulation Area */}
+      {/* Genuine Machine-Scannable QR Code */}
       <div className="my-4 p-4 bg-white rounded-xl flex flex-col items-center justify-center">
-        <div className="w-36 h-36 bg-slate-950 p-2.5 rounded-lg flex items-center justify-center">
-          <div className="grid grid-cols-7 gap-1 w-full h-full p-1 bg-white rounded">
-            {/* Position markers */}
-            <div className="col-span-2 row-span-2 bg-slate-950 rounded-xs" />
-            <div className="col-span-3 bg-slate-950 rounded-xs" />
-            <div className="col-span-2 row-span-2 bg-slate-950 rounded-xs" />
-            <div className="col-span-1 bg-slate-950 rounded-xs" />
-            <div className="col-span-2 bg-slate-950 rounded-xs" />
-            <div className="col-span-1 bg-slate-950 rounded-xs" />
-            <div className="col-span-3 bg-slate-950 rounded-xs" />
-            <div className="col-span-2 row-span-2 bg-slate-950 rounded-xs" />
-            <div className="col-span-3 bg-slate-950 rounded-xs" />
-            <div className="col-span-2 row-span-2 bg-slate-950 rounded-xs" />
-          </div>
+        <div className="p-2 bg-white rounded-lg flex items-center justify-center">
+          <QRCodeSVG
+            value={qrPayload}
+            size={168}
+            level="H"
+            includeMargin={true}
+            bgColor="#FFFFFF"
+            fgColor="#0B4036"
+          />
         </div>
         <p className="mt-2 text-[11px] font-mono font-bold text-slate-900 tracking-wider">
           {token}
         </p>
-        <span className="text-[10px] text-slate-500">Scan at Security Gate Desk</span>
+        <span className="text-[10px] text-slate-500">Scan with Camera or Gate Scanner</span>
       </div>
 
       {/* Details List */}

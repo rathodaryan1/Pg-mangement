@@ -1307,66 +1307,446 @@ export class OwnerController {
   }
 
   // ==========================================================================
-  // 10. VISITOR DESK & QR VERIFICATION (CRUD)
+  // 10. VISITOR DESK & SECURE QR VERIFICATION (CRUD & LIFECYCLE)
   // ==========================================================================
+  private static extractPassToken(rawInput: string): string {
+    if (!rawInput) return '';
+    let cleaned = String(rawInput).trim();
+    if (cleaned.includes('/gate/verify/')) {
+      const parts = cleaned.split('/gate/verify/');
+      cleaned = parts[parts.length - 1];
+    } else if (cleaned.includes('verify/')) {
+      const parts = cleaned.split('verify/');
+      cleaned = parts[parts.length - 1];
+    }
+    return decodeURIComponent(cleaned).split('?')[0].split('#')[0].trim();
+  }
+
   static async getVisitors(req: AuthRequest, res: Response): Promise<Response> {
+    if (await isDbAvailable()) {
+      try {
+        const propertyId = req.query.propertyId || req.user?.propertyId;
+        const visitors = await prisma.visitorRequest.findMany({
+          where: propertyId ? { propertyId: String(propertyId) } : {},
+          include: {
+            resident: {
+              include: {
+                bed: {
+                  include: {
+                    room: true,
+                  },
+                },
+              },
+            },
+          },
+          orderBy: { visitDate: 'desc' },
+        });
+
+        if (visitors.length > 0) {
+          const mapped = visitors.map((v) => ({
+            id: v.id,
+            propertyId: v.propertyId,
+            residentId: v.residentId,
+            visitorName: v.visitorName,
+            visitorMobile: v.visitorMobile,
+            relation: v.relation,
+            purpose: v.purpose,
+            residentName: v.resident?.fullName || 'Resident',
+            roomNumber: v.resident?.bed?.room?.number || '101',
+            visitDate: v.visitDate,
+            expectedTime: v.expectedEntryTime,
+            expectedEntryTime: v.expectedEntryTime,
+            expectedExitTime: v.expectedExitTime,
+            status: v.status,
+            approvedBy: v.approvedBy,
+            qrPassToken: v.qrPassToken,
+            checkInTime: v.checkInTime,
+            checkOutTime: v.checkOutTime,
+          }));
+          return sendSuccess(res, mapped);
+        }
+      } catch (dbErr) {
+        console.warn('[OwnerController.getVisitors] DB fallback:', dbErr);
+      }
+    }
     return sendSuccess(res, DevStore.visitors);
   }
 
   static async createVisitor(req: AuthRequest, res: Response): Promise<Response> {
+    const { residentId, visitorName, visitorMobile, relation, purpose, visitDate, expectedTime, propertyId } = req.body;
+    if (!visitorName || !visitorMobile) {
+      return sendError(res, 'Visitor name and mobile number are required', 400);
+    }
+
+    const qrPassToken = `VPASS-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+    const targetPropId = propertyId || req.user?.propertyId || 'prop-1';
+
+    if (await isDbAvailable()) {
+      try {
+        const created = await prisma.visitorRequest.create({
+          data: {
+            propertyId: targetPropId,
+            residentId: residentId || 'res-1',
+            visitorName: visitorName.trim(),
+            visitorMobile: visitorMobile.trim(),
+            relation: relation ? relation.trim() : 'Friend',
+            purpose: purpose ? purpose.trim() : 'Visit',
+            visitDate: visitDate ? new Date(visitDate) : new Date(),
+            expectedEntryTime: expectedTime || '04:00 PM',
+            status: 'APPROVED',
+            approvedBy: req.user?.name || 'Property Warden',
+            qrPassToken,
+          },
+        });
+        return sendSuccess(res, created, 'Visitor pass created successfully', 201);
+      } catch (dbErr) {
+        console.warn('[OwnerController.createVisitor] DB fallback:', dbErr);
+      }
+    }
+
     const newVis = {
       id: `vis-${Date.now()}`,
-      propertyId: 'prop-1',
-      residentId: req.body.residentId || 'res-1',
-      visitorName: req.body.visitorName,
-      visitorMobile: req.body.visitorMobile,
-      relation: req.body.relation || 'Friend',
-      purpose: req.body.purpose || 'Visit',
+      propertyId: targetPropId,
+      residentId: residentId || 'res-1',
+      visitorName: visitorName.trim(),
+      visitorMobile: visitorMobile.trim(),
+      relation: relation || 'Friend',
+      purpose: purpose || 'Visit',
       residentName: req.body.residentName || 'Aakash Verma',
       roomNumber: req.body.roomNumber || '101',
-      visitDate: req.body.visitDate || new Date().toISOString().split('T')[0],
-      expectedTime: req.body.expectedTime || '04:00 PM',
+      visitDate: visitDate || new Date().toISOString().split('T')[0],
+      expectedTime: expectedTime || '04:00 PM',
+      expectedEntryTime: expectedTime || '04:00 PM',
       status: 'APPROVED',
-      qrPassToken: `UN-PASS-${Date.now().toString().slice(-4)}`
+      approvedBy: req.user?.name || 'Property Warden',
+      qrPassToken,
     };
     DevStore.visitors.unshift(newVis as any);
     return sendSuccess(res, newVis, 'Visitor pass created', 201);
   }
 
   static async approveVisitor(req: AuthRequest, res: Response): Promise<Response> {
-    const vis = DevStore.visitors.find((v) => v.id === req.params.id) || DevStore.visitors[0];
-    if (vis) vis.status = 'APPROVED';
+    const passId = req.params.id;
+    if (await isDbAvailable()) {
+      try {
+        const updated = await prisma.visitorRequest.update({
+          where: { id: passId },
+          data: { status: 'APPROVED', approvedBy: req.user?.name || 'Property Warden' },
+        });
+        return sendSuccess(res, updated, 'Visitor request approved');
+      } catch (dbErr) {}
+    }
+    const vis = DevStore.visitors.find((v) => v.id === passId || v.qrPassToken === passId);
+    if (!vis) {
+      return sendError(res, 'Visitor request not found', 404);
+    }
+    vis.status = 'APPROVED';
+    (vis as any).approvedBy = req.user?.name || 'Property Warden';
     return sendSuccess(res, vis, 'Visitor request approved');
   }
 
   static async rejectVisitor(req: AuthRequest, res: Response): Promise<Response> {
-    const vis = DevStore.visitors.find((v) => v.id === req.params.id) || DevStore.visitors[0];
-    if (vis) vis.status = 'REJECTED';
+    const passId = req.params.id;
+    if (await isDbAvailable()) {
+      try {
+        const updated = await prisma.visitorRequest.update({
+          where: { id: passId },
+          data: { status: 'REJECTED' },
+        });
+        return sendSuccess(res, updated, 'Visitor request rejected');
+      } catch (dbErr) {}
+    }
+    const vis = DevStore.visitors.find((v) => v.id === passId || v.qrPassToken === passId);
+    if (!vis) {
+      return sendError(res, 'Visitor request not found', 404);
+    }
+    vis.status = 'REJECTED';
     return sendSuccess(res, vis, 'Visitor request rejected');
   }
 
-  static async verifyVisitorQR(req: AuthRequest, res: Response): Promise<Response> {
-    const { qrPassToken } = req.body;
-    const vis = DevStore.visitors.find((v) => v.qrPassCode === qrPassToken || v.qrPassToken === qrPassToken || v.id === qrPassToken) || DevStore.visitors[0];
-    return sendSuccess(res, { valid: true, visitor: vis }, 'QR Pass verified successfully');
+  static async processVisitorQRVerification(rawToken: string, user: any, res: Response): Promise<Response> {
+    const token = OwnerController.extractPassToken(rawToken);
+    if (!token) {
+      return sendSuccess(res, { valid: false, reason: 'MISSING_TOKEN', message: 'No QR pass token provided' });
+    }
+
+    let visitorMatch: any = null;
+    let hostResident: any = null;
+    let roomInfo: any = null;
+
+    if (await isDbAvailable()) {
+      try {
+        const dbVis = await prisma.visitorRequest.findFirst({
+          where: {
+            OR: [
+              { qrPassToken: token },
+              { id: token },
+            ],
+          },
+          include: {
+            resident: {
+              include: {
+                bed: {
+                  include: {
+                    room: {
+                      include: {
+                        floor: {
+                          include: {
+                            building: true,
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            property: true,
+          },
+        });
+
+        if (dbVis) {
+          visitorMatch = {
+            id: dbVis.id,
+            propertyId: dbVis.propertyId,
+            residentId: dbVis.residentId,
+            visitorName: dbVis.visitorName,
+            visitorMobile: dbVis.visitorMobile,
+            relation: dbVis.relation,
+            purpose: dbVis.purpose,
+            visitDate: dbVis.visitDate,
+            expectedEntryTime: dbVis.expectedEntryTime,
+            expectedExitTime: dbVis.expectedExitTime,
+            status: dbVis.status,
+            qrPassToken: dbVis.qrPassToken,
+            checkInTime: dbVis.checkInTime,
+            checkOutTime: dbVis.checkOutTime,
+          };
+          if (dbVis.resident) {
+            hostResident = {
+              id: dbVis.resident.id,
+              fullName: dbVis.resident.fullName,
+              mobile: dbVis.resident.mobile,
+            };
+            const rm = dbVis.resident.bed?.room;
+            if (rm) {
+              roomInfo = {
+                roomNumber: rm.number,
+                buildingName: rm.floor?.building?.name || 'Main Block',
+                floorNumber: rm.floor?.floorNumber || 1,
+              };
+            }
+          }
+        }
+      } catch (dbErr) {
+        console.warn('[OwnerController.verifyVisitorQR] DB query fallback:', dbErr);
+      }
+    }
+
+    if (!visitorMatch) {
+      const devMatch = DevStore.visitors.find(
+        (v) =>
+          v.qrPassToken === token ||
+          (v as any).qrPassCode === token ||
+          v.id === token
+      );
+      if (devMatch) {
+        visitorMatch = { ...devMatch };
+        hostResident = {
+          id: 'res-1',
+          fullName: (devMatch as any).residentName || 'Aakash Verma',
+          mobile: '+91 98123 45678',
+        };
+        roomInfo = {
+          roomNumber: (devMatch as any).roomNumber || '101',
+          buildingName: 'Block A - Executive Wing',
+          floorNumber: 1,
+        };
+      }
+    }
+
+    if (!visitorMatch) {
+      return sendSuccess(res, {
+        valid: false,
+        reason: 'INVALID_PASS',
+        message: 'No visitor gate pass found with this QR token.',
+      });
+    }
+
+    // Property Isolation Guard
+    if (user && user.propertyId && user.role !== 'SUPER_ADMIN' && visitorMatch.propertyId && visitorMatch.propertyId !== user.propertyId) {
+      return sendSuccess(res, {
+        valid: false,
+        reason: 'CROSS_PROPERTY_UNAUTHORIZED',
+        message: 'Security Alert: This visitor pass belongs to a different Urban Nest property.',
+      });
+    }
+
+    // Lifecycle Status Checks
+    if (visitorMatch.status === 'PENDING') {
+      return sendSuccess(res, {
+        valid: false,
+        reason: 'NOT_APPROVED',
+        message: 'Visitor pass is pending resident/management approval.',
+        status: 'PENDING',
+        visitor: visitorMatch,
+        resident: hostResident,
+        room: roomInfo,
+      });
+    }
+
+    if (visitorMatch.status === 'REJECTED') {
+      return sendSuccess(res, {
+        valid: false,
+        reason: 'REJECTED_PASS',
+        message: 'This visitor pass was rejected and entry is not permitted.',
+        status: 'REJECTED',
+        visitor: visitorMatch,
+      });
+    }
+
+    if (visitorMatch.status === 'CANCELLED') {
+      return sendSuccess(res, {
+        valid: false,
+        reason: 'CANCELLED_PASS',
+        message: 'This visitor pass has been cancelled by the resident.',
+        status: 'CANCELLED',
+        visitor: visitorMatch,
+      });
+    }
+
+    if (visitorMatch.status === 'CHECKED_OUT') {
+      return sendSuccess(res, {
+        valid: false,
+        reason: 'ALREADY_CHECKED_OUT',
+        message: 'This visitor pass was already used and checked out. Reuse is prohibited.',
+        status: 'CHECKED_OUT',
+        visitor: visitorMatch,
+        resident: hostResident,
+      });
+    }
+
+    // Pass is Valid (APPROVED or currently CHECKED_IN)
+    return sendSuccess(
+      res,
+      {
+        valid: true,
+        status: visitorMatch.status,
+        message: visitorMatch.status === 'CHECKED_IN' ? 'Visitor currently checked in' : 'Valid gate pass verified',
+        visitor: visitorMatch,
+        resident: hostResident,
+        room: roomInfo,
+      },
+      'QR Gate Pass Verified'
+    );
+  }
+
+  static async verifyVisitorQR(req: Request, res: Response): Promise<Response> {
+    try {
+      const rawToken = req.body?.qrPassToken || req.body?.token || req.body?.code || (req.query?.token as string);
+      return OwnerController.processVisitorQRVerification(rawToken, (req as any).user, res);
+    } catch (error: any) {
+      return sendError(res, error.message || 'QR Verification failed', 500);
+    }
+  }
+
+  static async verifyVisitorQRByToken(req: Request, res: Response): Promise<Response> {
+    try {
+      const rawToken = req.params.token;
+      return OwnerController.processVisitorQRVerification(rawToken, (req as any).user, res);
+    } catch (error: any) {
+      return sendError(res, error.message || 'QR Verification failed', 500);
+    }
   }
 
   static async checkInVisitor(req: AuthRequest, res: Response): Promise<Response> {
-    const vis = DevStore.visitors.find((v) => v.id === req.params.id) || DevStore.visitors[0];
-    if (vis) {
-      vis.status = 'CHECKED_IN';
-      (vis as any).checkInTime = new Date().toLocaleTimeString();
+    const passId = req.params.id;
+    let target = null;
+
+    if (await isDbAvailable()) {
+      try {
+        const existing = await prisma.visitorRequest.findUnique({ where: { id: passId } });
+        if (!existing) {
+          return sendError(res, 'Visitor pass not found', 404);
+        }
+        if (existing.status !== 'APPROVED') {
+          return sendError(res, `Cannot check in visitor with status "${existing.status}". Pass must be in APPROVED status.`, 400);
+        }
+        const updated = await prisma.visitorRequest.update({
+          where: { id: passId },
+          data: { status: 'CHECKED_IN', checkInTime: new Date() },
+        });
+        return sendSuccess(res, updated, 'Visitor checked in successfully');
+      } catch (dbErr) {}
     }
-    return sendSuccess(res, vis, 'Visitor checked in');
+
+    target = DevStore.visitors.find((v) => v.id === passId || v.qrPassToken === passId);
+    if (!target) {
+      return sendError(res, 'Visitor pass not found', 404);
+    }
+    if (target.status !== 'APPROVED') {
+      return sendError(res, `Cannot check in visitor with status "${target.status}". Pass must be in APPROVED status.`, 400);
+    }
+
+    target.status = 'CHECKED_IN';
+    (target as any).checkInTime = new Date().toLocaleTimeString();
+
+    DevStore.auditLogs.unshift({
+      id: `aud-${Date.now()}`,
+      actorName: req.user?.name || 'Gate Security',
+      actorRole: req.user?.role || 'STAFF',
+      action: 'VISITOR_CHECKED_IN',
+      targetEntity: 'VisitorRequest',
+      timestamp: new Date().toISOString(),
+      details: `Visitor ${target.visitorName} checked in at security gate.`,
+    });
+
+    return sendSuccess(res, target, 'Visitor checked in at security gate');
   }
 
   static async checkOutVisitor(req: AuthRequest, res: Response): Promise<Response> {
-    const vis = DevStore.visitors.find((v) => v.id === req.params.id) || DevStore.visitors[0];
-    if (vis) {
-      vis.status = 'CHECKED_OUT';
-      (vis as any).checkOutTime = new Date().toLocaleTimeString();
+    const passId = req.params.id;
+    let target = null;
+
+    if (await isDbAvailable()) {
+      try {
+        const existing = await prisma.visitorRequest.findUnique({ where: { id: passId } });
+        if (!existing) {
+          return sendError(res, 'Visitor pass not found', 404);
+        }
+        if (existing.status !== 'CHECKED_IN') {
+          return sendError(res, `Cannot check out visitor with status "${existing.status}". Visitor must be currently checked in.`, 400);
+        }
+        const updated = await prisma.visitorRequest.update({
+          where: { id: passId },
+          data: { status: 'CHECKED_OUT', checkOutTime: new Date() },
+        });
+        return sendSuccess(res, updated, 'Visitor checked out successfully');
+      } catch (dbErr) {}
     }
-    return sendSuccess(res, vis, 'Visitor checked out');
+
+    target = DevStore.visitors.find((v) => v.id === passId || v.qrPassToken === passId);
+    if (!target) {
+      return sendError(res, 'Visitor pass not found', 404);
+    }
+    if (target.status !== 'CHECKED_IN') {
+      return sendError(res, `Cannot check out visitor with status "${target.status}". Visitor must be currently checked in.`, 400);
+    }
+
+    target.status = 'CHECKED_OUT';
+    (target as any).checkOutTime = new Date().toLocaleTimeString();
+
+    DevStore.auditLogs.unshift({
+      id: `aud-${Date.now()}`,
+      actorName: req.user?.name || 'Gate Security',
+      actorRole: req.user?.role || 'STAFF',
+      action: 'VISITOR_CHECKED_OUT',
+      targetEntity: 'VisitorRequest',
+      timestamp: new Date().toISOString(),
+      details: `Visitor ${target.visitorName} checked out at security gate.`,
+    });
+
+    return sendSuccess(res, target, 'Visitor marked as checked out');
   }
 
   // ==========================================================================

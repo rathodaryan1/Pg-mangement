@@ -61,8 +61,15 @@ app.use(
 // Rate limiting
 app.use('/api', apiLimiter);
 
-// Body Parsers
-app.use(express.json({ limit: '10mb' }));
+// Body Parsers with Raw Body preservation for cryptographic signature verifications (Webhooks)
+app.use(
+  express.json({
+    limit: '10mb',
+    verify: (req: any, _res, buf) => {
+      req.rawBody = buf;
+    },
+  })
+);
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Static file serving for local uploads directory fallback
