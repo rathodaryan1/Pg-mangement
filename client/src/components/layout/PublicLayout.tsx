@@ -224,15 +224,19 @@ export const PublicLayout: React.FC<{ children: React.ReactNode }> = ({ children
           </div>
 
           {/* Bottom Brand Bar */}
-          <div className="border-t border-white/15 pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-300">
-            <div className="flex items-center gap-3">
-              <div className="p-1.5 bg-white/10 rounded-lg inline-block">
-                <UrbanNestLogo variant="horizontal" size="sm" dark />
+          <div className="border-t border-white/15 pt-8 flex flex-col md:flex-row items-center justify-between gap-6 text-xs text-slate-300">
+            <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
+              <div className="p-3 bg-white rounded-2xl shadow-md inline-flex items-center">
+                <UrbanNestLogo variant="horizontal" size="md" />
               </div>
-              <span>© 2026 Urban Nest Technologies Inc.</span>
+              <div className="space-y-0.5">
+                <p className="font-bold text-white text-sm tracking-tight">Urban Nest Operating System</p>
+                <p className="text-slate-300 text-xs">Smart PG & Managed Living Properties</p>
+                <p className="text-slate-400 text-[11px] pt-1">© 2026 Urban Nest Technologies Inc. All rights reserved.</p>
+              </div>
             </div>
 
-            <div className="flex items-center gap-2 font-semibold tracking-wider uppercase text-[11px] text-white">
+            <div className="flex items-center gap-2 font-bold tracking-wider uppercase text-[11px] text-white bg-white/10 px-4 py-2 rounded-xl border border-white/10">
               <span>PEOPLE</span>
               <span className="text-[#C8A45D]">•</span>
               <span>PLACES</span>
