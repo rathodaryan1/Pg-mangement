@@ -28,9 +28,9 @@ export const Button: React.FC<ButtonProps> = ({
     secondary:
       'bg-[#18231F] hover:bg-[#25332E] text-white shadow-xs focus-visible:ring-[#18231F]',
     outline:
-      'border border-[#DDE2DD] dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-[#F8F7F3] dark:hover:bg-slate-800 text-[#18231F] dark:text-slate-200 focus-visible:ring-[#0B4036]',
+      'border border-[#DDE2DD] bg-white hover:bg-[#F8F7F3] text-[#18231F] focus-visible:ring-[#0B4036]',
     ghost:
-      'hover:bg-[#EAF2EE] dark:hover:bg-slate-800 text-[#18231F] dark:text-slate-300 focus-visible:ring-[#0B4036]',
+      'hover:bg-[#EAF2EE] text-[#18231F] focus-visible:ring-[#0B4036]',
     gold:
       'bg-[#C8A45D] hover:bg-[#B9954E] active:bg-[#A8843F] text-[#18231F] font-semibold shadow-xs focus-visible:ring-[#C8A45D]',
     danger:

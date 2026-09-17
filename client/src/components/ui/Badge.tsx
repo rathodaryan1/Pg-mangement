@@ -18,13 +18,13 @@ export const Badge: React.FC<BadgeProps> = ({
   const base = 'inline-flex items-center gap-1.5 font-medium rounded-md select-none';
 
   const variants = {
-    primary: 'bg-[#EAF2EE] text-[#0B4036] dark:bg-emerald-950/60 dark:text-emerald-300 border border-[#0B4036]/20',
-    secondary: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700',
-    success: 'bg-[#EAF2EE] text-[#0B4036] dark:bg-emerald-950/60 dark:text-emerald-300 border border-[#0B4036]/20',
-    warning: 'bg-[#FAF5EB] text-[#B9954E] dark:bg-amber-950/60 dark:text-amber-300 border border-[#C8A45D]/30',
-    danger: 'bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200/60 dark:border-rose-800/40',
-    gold: 'bg-[#FAF5EB] text-[#B9954E] dark:bg-amber-950/60 dark:text-amber-300 border border-[#C8A45D]/40',
-    outline: 'border border-[#DDE2DD] dark:border-slate-700 text-[#18231F] dark:text-slate-300 bg-white dark:bg-slate-900',
+    primary: 'bg-[#EAF2EE] text-[#0B4036] border border-[#0B4036]/20',
+    secondary: 'bg-slate-100 text-slate-700 border border-slate-200',
+    success: 'bg-[#EAF2EE] text-[#0B4036] border border-[#0B4036]/20',
+    warning: 'bg-[#FAF5EB] text-[#B9954E] border border-[#C8A45D]/30',
+    danger: 'bg-rose-50 text-rose-700 border border-rose-200/60',
+    gold: 'bg-[#FAF5EB] text-[#B9954E] border border-[#C8A45D]/40',
+    outline: 'border border-[#DDE2DD] text-[#18231F] bg-white',
   };
 
   const dotColors = {

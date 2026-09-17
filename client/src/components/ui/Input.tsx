@@ -29,7 +29,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+            className="block text-xs font-semibold text-[#18231F]"
           >
             {label}
           </label>
@@ -37,7 +37,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
 
         <div className="relative flex items-center">
           {leftIcon && (
-            <div className="absolute left-3 text-slate-400 pointer-events-none">
+            <div className="absolute left-3 text-[#68736D] pointer-events-none">
               {leftIcon}
             </div>
           )}
@@ -45,7 +45,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           <input
             ref={ref}
             id={inputId}
-            className={`w-full px-3 py-2 text-xs sm:text-sm rounded-lg border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder-slate-400 shadow-xs focus:outline-none focus:ring-2 focus:ring-[#0B4036]/25 focus:border-[#0B4036] dark:focus:ring-[#C8A45D]/30 dark:focus:border-[#C8A45D] transition-colors ${
+            className={`w-full px-3 py-2 text-xs sm:text-sm rounded-lg border bg-white border-[#DDE2DD] text-[#18231F] placeholder-[#8A928D] shadow-xs focus:outline-none focus:ring-2 focus:ring-[#0B4036]/20 focus:border-[#0B4036] transition-colors ${
               leftIcon ? 'pl-9' : ''
             } ${rightIcon ? 'pr-9' : ''} ${
               error ? 'border-rose-500 focus:ring-rose-500/30 focus:border-rose-500' : ''
@@ -54,16 +54,16 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           />
 
           {rightIcon && (
-            <div className="absolute right-3 text-slate-400 pointer-events-none">
+            <div className="absolute right-3 text-[#68736D] pointer-events-none">
               {rightIcon}
             </div>
           )}
         </div>
 
         {error ? (
-          <p className="text-xs font-medium text-rose-600 dark:text-rose-400">{error}</p>
+          <p className="text-xs font-medium text-rose-600">{error}</p>
         ) : helperText ? (
-          <p className="text-xs text-slate-500 dark:text-slate-400">{helperText}</p>
+          <p className="text-xs text-[#68736D]">{helperText}</p>
         ) : null}
       </div>
     );
@@ -96,7 +96,7 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
         {label && (
           <label
             htmlFor={textareaId}
-            className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+            className="block text-xs font-semibold text-[#18231F]"
           >
             {label}
           </label>
@@ -105,16 +105,16 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
         <textarea
           ref={ref}
           id={textareaId}
-          className={`w-full px-3 py-2 text-xs sm:text-sm rounded-lg border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder-slate-400 shadow-xs focus:outline-none focus:ring-2 focus:ring-[#0B4036]/25 focus:border-[#0B4036] dark:focus:ring-[#C8A45D]/30 dark:focus:border-[#C8A45D] transition-colors ${
+          className={`w-full px-3 py-2 text-xs sm:text-sm rounded-lg border bg-white border-[#DDE2DD] text-[#18231F] placeholder-[#8A928D] shadow-xs focus:outline-none focus:ring-2 focus:ring-[#0B4036]/20 focus:border-[#0B4036] transition-colors ${
             error ? 'border-rose-500 focus:ring-rose-500/30 focus:border-rose-500' : ''
           } ${className}`}
           {...props}
         />
 
         {error ? (
-          <p className="text-xs font-medium text-rose-600 dark:text-rose-400">{error}</p>
+          <p className="text-xs font-medium text-rose-600">{error}</p>
         ) : helperText ? (
-          <p className="text-xs text-slate-500 dark:text-slate-400">{helperText}</p>
+          <p className="text-xs text-[#68736D]">{helperText}</p>
         ) : null}
       </div>
     );
@@ -147,7 +147,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
         {label && (
           <label
             htmlFor={selectId}
-            className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+            className="block text-xs font-semibold text-[#18231F]"
           >
             {label}
           </label>
@@ -156,19 +156,19 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
         <select
           ref={ref}
           id={selectId}
-          className={`w-full px-3 py-2 text-xs sm:text-sm rounded-lg border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white shadow-xs focus:outline-none focus:ring-2 focus:ring-[#0B4036]/25 focus:border-[#0B4036] dark:focus:ring-[#C8A45D]/30 dark:focus:border-[#C8A45D] transition-colors ${
+          className={`w-full px-3 py-2 text-xs sm:text-sm rounded-lg border bg-white border-[#DDE2DD] text-[#18231F] shadow-xs focus:outline-none focus:ring-2 focus:ring-[#0B4036]/20 focus:border-[#0B4036] transition-colors ${
             error ? 'border-rose-500' : ''
           } ${className}`}
           {...props}
         >
           {options.map((opt) => (
-            <option key={opt.value} value={opt.value}>
+            <option key={opt.value} value={opt.value} className="bg-white text-[#18231F]">
               {opt.label}
             </option>
           ))}
         </select>
 
-        {error && <p className="text-xs font-medium text-rose-600 dark:text-rose-400">{error}</p>}
+        {error && <p className="text-xs font-medium text-rose-600">{error}</p>}
       </div>
     );
   }
@@ -187,8 +187,8 @@ export const Switch: React.FC<{ checked: boolean; onChange: (checked: boolean) =
         role="switch"
         aria-checked={checked}
         onClick={() => onChange(!checked)}
-        className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#0B4036] dark:focus:ring-[#C8A45D] ${
-          checked ? 'bg-[#0B4036] dark:bg-[#C8A45D]' : 'bg-slate-200 dark:bg-slate-700'
+        className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#0B4036] ${
+          checked ? 'bg-[#0B4036]' : 'bg-slate-200'
         }`}
       >
         <span
@@ -197,7 +197,7 @@ export const Switch: React.FC<{ checked: boolean; onChange: (checked: boolean) =
           }`}
         />
       </button>
-      {label && <span className="text-xs font-medium text-slate-700 dark:text-slate-300">{label}</span>}
+      {label && <span className="text-xs font-medium text-[#18231F]">{label}</span>}
     </label>
   );
 };
