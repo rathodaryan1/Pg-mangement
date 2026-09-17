@@ -24,14 +24,14 @@ export const UrbanNestLogo: React.FC<UrbanNestLogoProps> = ({
   className = '',
   dark = false,
 }) => {
-  // Height sizing: prominent, high-clarity dimensions
+  // Height sizing: scaled up so tagline "PEOPLE • PLACES • BETTER LIVING" and descriptor are clearly legible
   const sizeClasses = {
-    xs: 'h-8 sm:h-9',
-    sm: 'h-10 sm:h-11 md:h-12',
-    md: 'h-14 sm:h-16 md:h-18', // ~56px to 72px - very prominent and clearly readable in header
-    lg: 'h-20 sm:h-24 md:h-28',
-    xl: 'h-28 sm:h-36 md:h-44',
-  }[size] || 'h-14 sm:h-16 md:h-18';
+    xs: 'h-9 sm:h-10',
+    sm: 'h-12 sm:h-14',
+    md: 'h-20 sm:h-22 md:h-26', // ~80px to 104px - tagline & descriptor prominently visible
+    lg: 'h-26 sm:h-30 md:h-36',
+    xl: 'h-36 sm:h-44 md:h-52',
+  }[size] || 'h-20 sm:h-22 md:h-26';
 
   return (
     <div className={`inline-flex items-center select-none ${className}`}>

@@ -27,7 +27,7 @@ export const PublicLayout: React.FC<{ children: React.ReactNode }> = ({ children
     <div className="min-h-screen bg-[#FCFBF8] text-[#18231F] flex flex-col selection:bg-[#0B4036] selection:text-white">
       {/* Top Navbar */}
       <header className="sticky top-0 z-40 bg-[#FCFBF8]/95 backdrop-blur-md border-b border-[#DDE2DD] transition-colors">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-[76px] sm:min-h-[84px] py-2 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-[92px] sm:min-h-[104px] py-2.5 flex items-center justify-between">
           {/* Brand Logo */}
           <Link to="/" className="flex items-center group py-1">
             <UrbanNestLogo variant="horizontal" size="md" />
