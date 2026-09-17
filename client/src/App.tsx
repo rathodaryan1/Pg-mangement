@@ -51,7 +51,7 @@ const ProtectedOwnerRoute: React.FC<{ children: React.ReactNode }> = ({ children
   const { user, isLoading } = useAuth();
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-brand-canvas dark:bg-[#0F1B18] flex flex-col items-center justify-center">
+      <div className="min-h-screen bg-[#FCFBF8] flex flex-col items-center justify-center">
         <div className="w-8 h-8 border-4 border-brand-forest/20 border-t-brand-forest rounded-full animate-spin" />
         <p className="text-xs text-slate-500 mt-2">Loading Urban Nest...</p>
       </div>
@@ -65,8 +65,8 @@ const ProtectedResidentRoute: React.FC<{ children: React.ReactNode }> = ({ child
   const { user, isLoading } = useAuth();
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-brand-canvas dark:bg-[#0F1B18] flex flex-col items-center justify-center">
-        <div className="w-8 h-8 border-4 border-brand-gold/20 border-t-brand-gold rounded-full animate-spin" />
+      <div className="min-h-screen bg-[#FCFBF8] flex flex-col items-center justify-center">
+        <div className="w-8 h-8 border-4 border-brand-forest/20 border-t-brand-forest rounded-full animate-spin" />
         <p className="text-xs text-slate-500 mt-2">Loading Resident Portal...</p>
       </div>
     );

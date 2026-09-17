@@ -144,10 +144,10 @@ export const ResidentVisitorsPage: React.FC = () => {
 
       {/* Visitors List */}
       {visitors.length === 0 ? (
-        <div className="p-12 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center space-y-3 max-w-md mx-auto">
-          <UserCheck className="w-12 h-12 text-slate-400 mx-auto" />
-          <h3 className="text-base font-bold text-slate-900 dark:text-white">No Visitor Passes</h3>
-          <p className="text-xs text-slate-500">
+        <div className="p-12 rounded-2xl bg-white border border-[#DDE2DD] text-center space-y-3 max-w-md mx-auto">
+          <UserCheck className="w-12 h-12 text-[#8A928D] mx-auto" />
+          <h3 className="text-base font-bold text-[#18231F]">No Visitor Passes</h3>
+          <p className="text-xs text-[#68736D]">
             You have not requested any visitor passes yet. Pre-register your guests for seamless gate entry.
           </p>
           <Button
@@ -166,48 +166,48 @@ export const ResidentVisitorsPage: React.FC = () => {
             const isPending = vis.status === 'PENDING';
 
             return (
-              <Card key={vis.id} className="p-5 space-y-3.5">
-                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <Card key={vis.id} className="p-5 space-y-3.5 border-[#DDE2DD]">
+                <div className="flex items-center justify-between border-b border-[#DDE2DD] pb-3">
                   <div>
-                    <h4 className="font-bold text-sm text-slate-900 dark:text-white">{vis.visitorName}</h4>
-                    <p className="text-[11px] text-slate-500">
+                    <h4 className="font-bold text-sm text-[#18231F]">{vis.visitorName}</h4>
+                    <p className="text-[11px] text-[#68736D]">
                       {vis.relation} • {vis.visitorMobile}
                     </p>
                   </div>
                   <StatusBadge status={vis.status} />
                 </div>
 
-                <div className="text-xs space-y-1.5 text-slate-600 dark:text-slate-300">
+                <div className="text-xs space-y-1.5 text-[#68736D]">
                   <p className="flex items-center gap-1.5">
-                    <strong className="text-slate-700 dark:text-slate-200">Purpose:</strong> {vis.purpose || 'Personal'}
+                    <strong className="text-[#18231F]">Purpose:</strong> {vis.purpose || 'Personal'}
                   </p>
                   <p className="flex items-center gap-1.5">
-                    <Calendar className="w-3.5 h-3.5 text-brand-forest dark:text-brand-gold" />
+                    <Calendar className="w-3.5 h-3.5 text-[#0B4036]" />
                     <strong>Date:</strong> {new Date(vis.visitDate).toLocaleDateString()}
                   </p>
                   <p className="flex items-center gap-1.5">
-                    <Clock className="w-3.5 h-3.5 text-emerald-600" />
+                    <Clock className="w-3.5 h-3.5 text-[#0B4036]" />
                     <strong>Entry:</strong> {vis.expectedEntryTime}
                     {vis.expectedExitTime && ` • Exit: ${vis.expectedExitTime}`}
                   </p>
                   {vis.approvedBy && (
-                    <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                    <p className="text-[11px] text-[#0B4036] font-semibold">
                       Approved by {vis.approvedBy}
                     </p>
                   )}
                 </div>
 
-                <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+                <div className="pt-2 border-t border-[#DDE2DD] flex items-center justify-between gap-2">
                   {isApproved && (
                     <Button
                       variant="outline"
                       size="sm"
-                      className="w-full text-brand-forest dark:text-brand-gold border-brand-border dark:border-brand-border-dark bg-brand-surface dark:bg-brand-surface-dark"
+                      className="w-full text-[#0B4036] border-[#DDE2DD] bg-white hover:bg-[#EAF2EE]"
                       onClick={() => {
                         setSelectedVisitor(vis);
                         setQrModalOpen(true);
                       }}
-                      leftIcon={<QrCode className="w-4 h-4 text-brand-forest dark:text-brand-gold" />}
+                      leftIcon={<QrCode className="w-4 h-4 text-[#0B4036]" />}
                     >
                       View Digital QR Gate Pass
                     </Button>
@@ -215,13 +215,13 @@ export const ResidentVisitorsPage: React.FC = () => {
 
                   {isPending && (
                     <div className="w-full flex items-center justify-between">
-                      <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1">
+                      <span className="text-[11px] text-amber-700 font-medium flex items-center gap-1">
                         <Clock className="w-3.5 h-3.5" /> Awaiting Warden Approval
                       </span>
                       <Button
                         variant="secondary"
                         size="xs"
-                        className="text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 border-none"
+                        className="text-rose-600 hover:bg-rose-50 border-none"
                         onClick={() => handleCancelRequest(vis.id)}
                       >
                         Cancel
@@ -230,10 +230,10 @@ export const ResidentVisitorsPage: React.FC = () => {
                   )}
 
                   {vis.status === 'CANCELLED' && (
-                    <span className="text-[11px] text-slate-400">Pass cancelled</span>
+                    <span className="text-[11px] text-[#8A928D]">Pass cancelled</span>
                   )}
                   {vis.status === 'CHECKED_OUT' && (
-                    <span className="text-[11px] text-slate-400">Visit completed & checked out</span>
+                    <span className="text-[11px] text-[#8A928D]">Visit completed & checked out</span>
                   )}
                 </div>
               </Card>

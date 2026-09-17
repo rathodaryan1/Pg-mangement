@@ -173,14 +173,14 @@ const FEATURE_CATEGORIES: FeatureCategory[] = [
 
 export const FeaturesPage: React.FC = () => {
   return (
-    <div className="space-y-16 py-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="space-y-16 py-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 bg-[#FCFBF8]">
       {/* Header */}
-      <div className="text-left space-y-2 border-b border-slate-200 dark:border-slate-800 pb-6">
-        <span className="text-xs font-semibold text-[#0B4036] dark:text-[#C8A45D] uppercase tracking-wider">Product Features</span>
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
+      <div className="text-left space-y-2 border-b border-[#DDE2DD] pb-6">
+        <span className="text-xs font-semibold text-[#0B4036] uppercase tracking-wider">Product Features</span>
+        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-[#18231F]">
           Comprehensive PG Operating Platform
         </h1>
-        <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-2xl leading-relaxed">
+        <p className="text-xs sm:text-sm text-[#68736D] max-w-2xl leading-relaxed">
           Explore every module built into Urban Nest to automate property management, streamline finances, and enhance the resident living experience.
         </p>
       </div>
@@ -191,15 +191,15 @@ export const FeaturesPage: React.FC = () => {
           const Icon = category.icon;
           return (
             <div key={idx} className="space-y-4">
-              <div className="flex items-center gap-2.5 pb-2 border-b border-slate-100 dark:border-slate-800">
-                <div className="w-7 h-7 rounded-lg bg-[#EAF2EE] dark:bg-[#0B4036]/30 text-[#0B4036] dark:text-[#C8A45D] flex items-center justify-center font-bold">
+              <div className="flex items-center gap-2.5 pb-2 border-b border-[#DDE2DD]">
+                <div className="w-7 h-7 rounded-lg bg-[#EAF2EE] text-[#0B4036] flex items-center justify-center font-bold">
                   <Icon className="w-4 h-4" />
                 </div>
                 <div>
-                  <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                  <h2 className="text-sm font-bold text-[#18231F] uppercase tracking-wider">
                     {category.title}
                   </h2>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">{category.subtitle}</p>
+                  <p className="text-xs text-[#68736D]">{category.subtitle}</p>
                 </div>
               </div>
 
@@ -207,13 +207,13 @@ export const FeaturesPage: React.FC = () => {
                 {category.features.map((feature, fIdx) => (
                   <div
                     key={fIdx}
-                    className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs space-y-1.5 text-left hover:border-slate-300 dark:hover:border-slate-700 transition-colors"
+                    className="p-4 bg-white border border-[#DDE2DD] rounded-xl shadow-xs space-y-1.5 text-left hover:border-[#0B4036]/30 transition-colors"
                   >
-                    <h3 className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                      <CheckCircle className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <h3 className="text-xs font-bold text-[#18231F] flex items-center gap-1.5">
+                      <CheckCircle className="w-3.5 h-3.5 text-[#0B4036] shrink-0" />
                       <span>{feature.name}</span>
                     </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                    <p className="text-xs text-[#68736D] leading-relaxed">
                       {feature.description}
                     </p>
                   </div>
@@ -225,19 +225,19 @@ export const FeaturesPage: React.FC = () => {
       </div>
 
       {/* CTA Bottom Banner */}
-      <div className="p-8 bg-slate-900 text-white rounded-xl text-left flex flex-col sm:flex-row items-center justify-between gap-6">
+      <div className="p-8 bg-[#0B4036] text-white rounded-2xl text-left flex flex-col sm:flex-row items-center justify-between gap-6 shadow-sm">
         <div className="space-y-1">
           <h3 className="text-lg font-bold">Ready to modernize your PG operations?</h3>
-          <p className="text-xs text-slate-400">Launch a live demo in seconds with pre-configured sample properties.</p>
+          <p className="text-xs text-[#EAF2EE]">Launch a live demo in seconds with pre-configured sample properties.</p>
         </div>
         <div className="flex items-center gap-3 shrink-0">
           <Link to="/owner/dashboard">
-            <Button variant="primary" size="md" className="font-semibold">
+            <Button variant="gold" size="md" className="font-bold">
               Explore Owner Portal
             </Button>
           </Link>
           <Link to="/pricing">
-            <Button variant="outline" size="md" className="bg-transparent border-slate-700 text-white hover:bg-slate-800">
+            <Button variant="outline" size="md" className="bg-transparent border-white/30 text-white hover:bg-white/10">
               View Pricing
             </Button>
           </Link>

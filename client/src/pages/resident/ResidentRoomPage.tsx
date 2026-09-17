@@ -70,10 +70,10 @@ export const ResidentRoomPage: React.FC = () => {
 
   if (!data.assigned || !data.room) {
     return (
-      <div className="p-12 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center space-y-3 max-w-md mx-auto mt-8">
-        <Home className="w-12 h-12 text-slate-400 mx-auto" />
-        <h3 className="text-base font-bold text-slate-900 dark:text-white">No Room Assigned</h3>
-        <p className="text-xs text-slate-500">
+      <div className="p-12 rounded-2xl bg-white border border-[#DDE2DD] text-center space-y-3 max-w-md mx-auto mt-8">
+        <Home className="w-12 h-12 text-[#8A928D] mx-auto" />
+        <h3 className="text-base font-bold text-[#18231F]">No Room Assigned</h3>
+        <p className="text-xs text-[#68736D]">
           {data.message || 'You have not been assigned to a room yet. Please contact the property manager.'}
         </p>
       </div>
@@ -85,32 +85,32 @@ export const ResidentRoomPage: React.FC = () => {
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">My Room Details</h1>
-        <p className="text-xs text-slate-500">
+        <h1 className="text-2xl font-bold tracking-tight text-[#18231F]">My Room Details</h1>
+        <p className="text-xs text-[#68736D]">
           Allocated room specifications, roommates, amenities, and property contacts
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Room Specifications & Roommates */}
-        <Card className="p-6 md:col-span-2 space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
+        <Card className="p-6 md:col-span-2 space-y-6 border-[#DDE2DD]">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#DDE2DD] pb-4">
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-xl font-black text-slate-900 dark:text-white">
+                <h3 className="text-xl font-black text-[#18231F]">
                   Room {room.roomNumber} • {myBed?.bedNumber || 'Bed A'}
                 </h3>
                 <Badge variant="success">ACTIVE LEASE</Badge>
               </div>
-              <p className="text-xs text-slate-500 mt-1 flex items-center gap-2">
-                <Building className="w-3.5 h-3.5 text-brand-forest dark:text-brand-gold" />
+              <p className="text-xs text-[#68736D] mt-1 flex items-center gap-2">
+                <Building className="w-3.5 h-3.5 text-[#0B4036]" />
                 {room.building}, Floor {room.floor} • {room.roomType}
               </p>
             </div>
 
             <div className="text-right">
-              <span className="text-[11px] text-slate-400 uppercase tracking-wider block">Monthly Rent</span>
-              <span className="text-lg font-black text-brand-forest dark:text-brand-gold">
+              <span className="text-[11px] text-[#8A928D] uppercase tracking-wider block">Monthly Rent</span>
+              <span className="text-lg font-black text-[#0B4036]">
                 ₹{(myBed?.monthlyRent || room.baseRent).toLocaleString()}/mo
               </span>
             </div>
@@ -118,13 +118,13 @@ export const ResidentRoomPage: React.FC = () => {
 
           {/* Roommates Section */}
           <div className="space-y-3">
-            <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
-              <Users className="w-4 h-4 text-brand-forest dark:text-brand-gold" />
+            <h4 className="text-xs font-bold text-[#18231F] uppercase tracking-wider flex items-center gap-1.5">
+              <Users className="w-4 h-4 text-[#0B4036]" />
               Roommates ({roommates.length} {roommates.length === 1 ? 'Person' : 'People'})
             </h4>
 
             {roommates.length === 0 ? (
-              <div className="p-4 rounded-2xl bg-brand-surface dark:bg-brand-surface-dark border border-brand-border dark:border-brand-border-dark text-xs text-brand-text dark:text-slate-300">
+              <div className="p-4 rounded-xl bg-[#EAF2EE] border border-[#0B4036]/20 text-xs text-[#0B4036]">
                 ✨ Single occupancy room or no other residents currently assigned to this room.
               </div>
             ) : (
@@ -132,15 +132,15 @@ export const ResidentRoomPage: React.FC = () => {
                 {roommates.map((mate) => (
                   <div
                     key={mate.id}
-                    className="p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 flex items-center justify-between text-xs"
+                    className="p-3.5 rounded-xl border border-[#DDE2DD] bg-[#FCFBF8] flex items-center justify-between text-xs"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-brand-forest/15 text-brand-forest dark:bg-brand-gold/15 dark:text-brand-gold font-bold flex items-center justify-center text-xs shadow-sm">
+                      <div className="w-9 h-9 rounded-full bg-[#EAF2EE] text-[#0B4036] font-bold flex items-center justify-center text-xs shadow-xs">
                         {mate.name.charAt(0)}
                       </div>
                       <div>
-                        <p className="font-bold text-slate-900 dark:text-white">{mate.name}</p>
-                        <p className="text-[11px] text-slate-500">
+                        <p className="font-bold text-[#18231F]">{mate.name}</p>
+                        <p className="text-[11px] text-[#68736D]">
                           {mate.bedNumber} • Since {new Date(mate.joiningDate).toLocaleDateString()}
                         </p>
                       </div>

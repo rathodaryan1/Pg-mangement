@@ -128,26 +128,26 @@ export const PricingPage: React.FC = () => {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('annual');
 
   return (
-    <div className="space-y-16 py-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-left">
+    <div className="space-y-16 py-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-left bg-[#FCFBF8]">
       {/* Header */}
       <div className="text-center max-w-2xl mx-auto space-y-3">
-        <span className="text-xs font-semibold text-[#0B4036] dark:text-[#C8A45D] uppercase tracking-wider">Commercial Pricing</span>
-        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 dark:text-white">
+        <span className="text-xs font-semibold text-[#0B4036] uppercase tracking-wider">Commercial Pricing</span>
+        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-[#18231F]">
           Simple, predictable pricing for your PG
         </h1>
-        <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+        <p className="text-xs sm:text-sm text-[#68736D]">
           Choose the plan that fits your property portfolio. No hidden commissions or charges.
         </p>
 
         {/* Billing Switcher */}
         <div className="pt-2 flex items-center justify-center gap-2">
-          <div className="inline-flex p-1 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium">
+          <div className="inline-flex p-1 rounded-lg bg-[#F8F7F3] border border-[#DDE2DD] text-xs font-medium">
             <button
               onClick={() => setBillingCycle('monthly')}
               className={`px-3 py-1.5 rounded-md transition-colors ${
                 billingCycle === 'monthly'
-                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs font-semibold'
-                  : 'text-slate-600 dark:text-slate-400'
+                  ? 'bg-white text-[#18231F] shadow-xs font-semibold'
+                  : 'text-[#68736D]'
               }`}
             >
               Monthly Billing
@@ -156,12 +156,12 @@ export const PricingPage: React.FC = () => {
               onClick={() => setBillingCycle('annual')}
               className={`px-3 py-1.5 rounded-md transition-colors flex items-center gap-1.5 ${
                 billingCycle === 'annual'
-                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs font-semibold'
-                  : 'text-slate-600 dark:text-slate-400'
+                  ? 'bg-white text-[#18231F] shadow-xs font-semibold'
+                  : 'text-[#68736D]'
               }`}
             >
               <span>Annual Billing</span>
-              <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded">
+              <span className="text-[10px] font-bold text-[#0B4036] bg-[#EAF2EE] px-1.5 py-0.5 rounded">
                 Save 20%
               </span>
             </button>
@@ -178,40 +178,40 @@ export const PricingPage: React.FC = () => {
               key={tier.id}
               className={`p-6 rounded-xl border flex flex-col justify-between transition-all ${
                 tier.popular
-                  ? 'bg-white dark:bg-slate-900 border-[#0B4036] dark:border-[#C8A45D] shadow-sm ring-1 ring-[#0B4036] dark:ring-[#C8A45D]'
-                  : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-xs'
+                  ? 'bg-white border-[#0B4036] shadow-sm ring-1 ring-[#0B4036]'
+                  : 'bg-white border-[#DDE2DD] shadow-xs'
               }`}
             >
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white">{tier.name}</h3>
+                  <h3 className="text-base font-bold text-[#18231F]">{tier.name}</h3>
                   {tier.popular && (
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-[#EAF2EE] text-[#0B4036] dark:bg-[#0B4036]/30 dark:text-[#C8A45D] border border-[#0B4036]/20 dark:border-[#C8A45D]/30">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-[#EAF2EE] text-[#0B4036] border border-[#0B4036]/20">
                       Most Popular
                     </span>
                   )}
                 </div>
 
-                <p className="text-xs text-slate-500 dark:text-slate-400">{tier.description}</p>
+                <p className="text-xs text-[#68736D]">{tier.description}</p>
 
-                <div className="pt-2 pb-1 border-b border-slate-100 dark:border-slate-800">
+                <div className="pt-2 pb-1 border-b border-[#DDE2DD]">
                   <div className="flex items-baseline gap-1">
-                    <span className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
+                    <span className="text-2xl sm:text-3xl font-bold text-[#18231F]">
                       ₹{price.toLocaleString('en-IN')}
                     </span>
-                    <span className="text-xs text-slate-400">/ month</span>
+                    <span className="text-xs text-[#8A928D]">/ month</span>
                   </div>
-                  <p className="text-[11px] font-semibold text-[#0B4036] dark:text-[#C8A45D] mt-1">{tier.bedLimit}</p>
+                  <p className="text-[11px] font-semibold text-[#0B4036] mt-1">{tier.bedLimit}</p>
                 </div>
 
                 <div className="space-y-2 text-xs">
-                  <p className="font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[10px]">
+                  <p className="font-semibold text-[#18231F] uppercase tracking-wider text-[10px]">
                     Included Features:
                   </p>
-                  <ul className="space-y-2 text-slate-600 dark:text-slate-300">
+                  <ul className="space-y-2 text-[#68736D]">
                     {tier.features.map((feat, idx) => (
                       <li key={idx} className="flex items-start gap-2 text-xs leading-tight">
-                        <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                        <Check className="w-3.5 h-3.5 text-[#0B4036] shrink-0 mt-0.5" />
                         <span>{feat}</span>
                       </li>
                     ))}
@@ -238,48 +238,48 @@ export const PricingPage: React.FC = () => {
       {/* Feature Comparison Matrix */}
       <div className="space-y-6 pt-6">
         <div className="space-y-1">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white">Detailed Plan Comparison</h2>
-          <p className="text-xs text-slate-500">Compare operational capabilities across Urban Nest tiers.</p>
+          <h2 className="text-xl font-bold text-[#18231F]">Detailed Plan Comparison</h2>
+          <p className="text-xs text-[#68736D]">Compare operational capabilities across Urban Nest tiers.</p>
         </div>
 
-        <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 shadow-xs">
+        <div className="overflow-x-auto border border-[#DDE2DD] rounded-xl bg-white shadow-xs">
           <table className="w-full text-xs text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 text-slate-500">
-                <th className="p-3.5 font-semibold text-slate-900 dark:text-white w-1/3">Feature</th>
+              <tr className="bg-[#F8F7F3] border-b border-[#DDE2DD] text-[#68736D]">
+                <th className="p-3.5 font-semibold text-[#18231F] w-1/3">Feature</th>
                 <th className="p-3.5 font-semibold text-center">Starter</th>
-                <th className="p-3.5 font-semibold text-center text-[#0B4036] dark:text-[#C8A45D]">Growth</th>
+                <th className="p-3.5 font-semibold text-center text-[#0B4036] font-bold">Growth</th>
                 <th className="p-3.5 font-semibold text-center">Enterprise</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+            <tbody className="divide-y divide-[#DDE2DD]">
               {COMPARISON_FEATURES.map((cat, catIdx) => (
                 <React.Fragment key={catIdx}>
-                  <tr className="bg-slate-50/50 dark:bg-slate-800/40">
-                    <td colSpan={4} className="px-3.5 py-2 font-bold text-[11px] uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                  <tr className="bg-[#FCFBF8]">
+                    <td colSpan={4} className="px-3.5 py-2 font-bold text-[11px] uppercase tracking-wider text-[#18231F]">
                       {cat.category}
                     </td>
                   </tr>
                   {cat.items.map((item, iIdx) => (
-                    <tr key={iIdx} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30">
-                      <td className="px-3.5 py-2.5 font-medium text-slate-800 dark:text-slate-200">{item.name}</td>
-                      <td className="px-3.5 py-2.5 text-center text-slate-600 dark:text-slate-400">
+                    <tr key={iIdx} className="hover:bg-[#F8F7F3]/60">
+                      <td className="px-3.5 py-2.5 font-medium text-[#18231F]">{item.name}</td>
+                      <td className="px-3.5 py-2.5 text-center text-[#68736D]">
                         {typeof item.starter === 'boolean' ? (
-                          item.starter ? <Check className="w-4 h-4 text-emerald-600 mx-auto" /> : '—'
+                          item.starter ? <Check className="w-4 h-4 text-[#0B4036] mx-auto" /> : '—'
                         ) : (
                           item.starter
                         )}
                       </td>
-                      <td className="px-3.5 py-2.5 text-center font-medium text-slate-800 dark:text-slate-200">
+                      <td className="px-3.5 py-2.5 text-center font-medium text-[#18231F]">
                         {typeof item.growth === 'boolean' ? (
-                          item.growth ? <Check className="w-4 h-4 text-emerald-600 mx-auto" /> : '—'
+                          item.growth ? <Check className="w-4 h-4 text-[#0B4036] mx-auto" /> : '—'
                         ) : (
                           item.growth
                         )}
                       </td>
-                      <td className="px-3.5 py-2.5 text-center text-slate-600 dark:text-slate-400">
+                      <td className="px-3.5 py-2.5 text-center text-[#68736D]">
                         {typeof item.enterprise === 'boolean' ? (
-                          item.enterprise ? <Check className="w-4 h-4 text-emerald-600 mx-auto" /> : '—'
+                          item.enterprise ? <Check className="w-4 h-4 text-[#0B4036] mx-auto" /> : '—'
                         ) : (
                           item.enterprise
                         )}
@@ -294,20 +294,20 @@ export const PricingPage: React.FC = () => {
       </div>
 
       {/* FAQ Section */}
-      <div className="space-y-6 pt-6 border-t border-slate-200 dark:border-slate-800">
+      <div className="space-y-6 pt-6 border-t border-[#DDE2DD]">
         <div className="space-y-1">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white">Frequently Asked Questions</h2>
-          <p className="text-xs text-slate-500">Quick answers about billing, security, and setup.</p>
+          <h2 className="text-xl font-bold text-[#18231F]">Frequently Asked Questions</h2>
+          <p className="text-xs text-[#68736D]">Quick answers about billing, security, and setup.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {FAQS.map((faq, idx) => (
-            <div key={idx} className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-1.5">
-              <h3 className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                <HelpCircle className="w-3.5 h-3.5 text-[#0B4036] dark:text-[#C8A45D] shrink-0" />
+            <div key={idx} className="p-4 rounded-xl border border-[#DDE2DD] bg-white space-y-1.5">
+              <h3 className="text-xs font-bold text-[#18231F] flex items-center gap-1.5">
+                <HelpCircle className="w-3.5 h-3.5 text-[#0B4036] shrink-0" />
                 <span>{faq.q}</span>
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed pl-5">
+              <p className="text-xs text-[#68736D] leading-relaxed pl-5">
                 {faq.a}
               </p>
             </div>
