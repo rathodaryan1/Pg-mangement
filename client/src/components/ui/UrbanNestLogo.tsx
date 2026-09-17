@@ -24,14 +24,14 @@ export const UrbanNestLogo: React.FC<UrbanNestLogoProps> = ({
   className = '',
   dark = false,
 }) => {
-  // Height sizing mapped accurately to prompt specifications:
-  // Desktop: 42–52px, Mobile: 34–42px for header (size="md")
+  // Height sizing: prominent, high-clarity dimensions
   const sizeClasses = {
-    sm: 'h-8 sm:h-9 md:h-10',
-    md: 'h-10 sm:h-11 md:h-12',
-    lg: 'h-16 sm:h-20',
-    xl: 'h-24 sm:h-28 md:h-32',
-  }[size] || 'h-10 sm:h-11 md:h-12';
+    xs: 'h-8 sm:h-9',
+    sm: 'h-10 sm:h-11 md:h-12',
+    md: 'h-14 sm:h-16 md:h-18', // ~56px to 72px - very prominent and clearly readable in header
+    lg: 'h-20 sm:h-24 md:h-28',
+    xl: 'h-28 sm:h-36 md:h-44',
+  }[size] || 'h-14 sm:h-16 md:h-18';
 
   return (
     <div className={`inline-flex items-center select-none ${className}`}>
