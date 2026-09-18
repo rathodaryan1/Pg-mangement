@@ -12,44 +12,39 @@ export class SuperAdminController {
   // -------------------------------------------------------------
   static async getDashboardStats(req: AuthRequest, res: Response): Promise<Response | void> {
     try {
-      const [
-        totalTenants,
-        activeTenants,
-        trialTenants,
-        suspendedTenants,
-        totalProperties,
-        totalOwners,
-        totalResidents,
-        totalStaff,
-        totalRooms,
-        totalBeds,
-        occupiedBeds,
-        recentAuditLogs,
-        tenantsByPlan,
-      ] = await Promise.all([
+      // Fetch tenant statistics with resilient batching
+      const [totalTenants, activeTenants, trialTenants, suspendedTenants] = await Promise.all([
         prisma.tenant.count(),
         prisma.tenant.count({ where: { status: 'ACTIVE' } }),
         prisma.tenant.count({ where: { status: 'TRIAL' } }),
         prisma.tenant.count({ where: { status: 'SUSPENDED' } }),
+      ]);
+
+      const [totalProperties, totalOwners, totalResidents, totalStaff] = await Promise.all([
         prisma.property.count(),
         prisma.user.count({ where: { role: 'OWNER' } }),
         prisma.resident.count({ where: { status: 'ACTIVE' } }),
         prisma.user.count({
           where: { role: { in: ['MANAGER', 'RECEPTIONIST', 'ACCOUNTANT', 'MAINTENANCE'] } },
         }),
+      ]);
+
+      const [totalRooms, totalBeds, occupiedBeds] = await Promise.all([
         prisma.room.count(),
         prisma.bed.count(),
         prisma.bed.count({ where: { status: 'OCCUPIED' } }),
-        prisma.auditLog.findMany({
-          take: 10,
-          orderBy: { timestamp: 'desc' },
-          include: { tenant: { select: { name: true, slug: true } } },
-        }),
-        prisma.tenant.groupBy({
-          by: ['plan'],
-          _count: { id: true },
-        }),
       ]);
+
+      const recentAuditLogs = await prisma.auditLog.findMany({
+        take: 10,
+        orderBy: { timestamp: 'desc' },
+        include: { tenant: { select: { name: true, slug: true } } },
+      }).catch(() => []);
+
+      const tenantsByPlan = await prisma.tenant.groupBy({
+        by: ['plan'],
+        _count: { id: true },
+      }).catch(() => []);
 
       const occupancyRate = totalBeds > 0 ? Math.round((occupiedBeds / totalBeds) * 100) : 0;
 

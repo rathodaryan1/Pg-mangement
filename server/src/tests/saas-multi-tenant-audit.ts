@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 dotenv.config();
+import '../index'; // Start express server instance for testing
 import { prisma } from '../config/prisma';
 import * as bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
