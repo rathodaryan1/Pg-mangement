@@ -18,8 +18,10 @@ import { Input, Select } from '../../components/ui/Input';
 import { Modal } from '../../components/ui/Modal';
 import { QRPassCard } from '../../components/ui/QRPassCard';
 import { residentApi } from '../../services/residentApi';
+import { toast, useToast } from '../../context/ToastContext';
 
 export const ResidentVisitorsPage: React.FC = () => {
+  const { toast } = useToast();
   const [visitors, setVisitors] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -60,7 +62,7 @@ export const ResidentVisitorsPage: React.FC = () => {
   const handleCreateRequest = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!visitorName.trim() || !visitorMobile.trim()) {
-      alert('Please provide visitor name and mobile number.');
+      toast.error('Please provide visitor name and mobile number.');
       return;
     }
 
@@ -83,21 +85,22 @@ export const ResidentVisitorsPage: React.FC = () => {
       setVisitorName('');
       setVisitorMobile('');
       setPurpose('');
+      toast.success('Visitor request submitted for warden review.');
     } catch (err: any) {
       console.error('Failed to create visitor request:', err);
-      alert(err.message || 'Failed to submit visitor request.');
+      toast.error(err.message || 'Failed to submit visitor request.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleCancelRequest = async (visitorId: string) => {
-    if (!confirm('Are you sure you want to cancel this visitor pass?')) return;
     try {
       await residentApi.cancelVisitorRequest(visitorId);
+      toast.success('Visitor pass cancelled.');
       await fetchVisitors();
     } catch (err: any) {
-      alert(err.message || 'Unable to cancel visitor request.');
+      toast.error(err.message || 'Unable to cancel visitor request.');
     }
   };
 

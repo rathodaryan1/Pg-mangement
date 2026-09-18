@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -22,10 +22,12 @@ import {
   LogOut,
   ArrowRightLeft,
   LifeBuoy,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Bell,
+  FileText
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { MOCK_PROPERTIES } from '../../data/mockData';
+import { ownerApi } from '../../services/ownerApi';
 import { Button } from '../ui/Button';
 import { UrbanNestLogo, UrbanNestMark } from '../ui/UrbanNestLogo';
 
@@ -43,7 +45,8 @@ const OWNER_NAV_GROUPS: NavGroup[] = [
   {
     groupName: 'OVERVIEW',
     items: [
-      { label: 'Dashboard', path: '/owner/dashboard', icon: LayoutDashboard }
+      { label: 'Dashboard', path: '/owner/dashboard', icon: LayoutDashboard },
+      { label: 'Noticeboard', path: '/owner/notices', icon: Bell }
     ]
   },
   {
@@ -57,6 +60,7 @@ const OWNER_NAV_GROUPS: NavGroup[] = [
     groupName: 'PEOPLE',
     items: [
       { label: 'Residents', path: '/owner/residents', icon: Users },
+      { label: 'KYC Documents', path: '/owner/documents', icon: FileText },
       { label: 'Resident Lifecycle', path: '/owner/residents/lifecycle', icon: UserCheck },
       { label: 'Staff Management', path: '/owner/staff', icon: ShieldCheck },
       { label: 'Leave Approvals', path: '/owner/leave', icon: Calendar }
@@ -95,6 +99,21 @@ export const OwnerLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [propertyDropdownOpen, setPropertyDropdownOpen] = useState(false);
+  const [propertiesList, setPropertiesList] = useState<any[]>([]);
+
+  useEffect(() => {
+    const loadProps = async () => {
+      try {
+        const res = await ownerApi.getProperties();
+        if (res.data && res.data.length > 0) {
+          setPropertiesList(res.data);
+        }
+      } catch {
+        // Use active property as fallback
+      }
+    };
+    loadProps();
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#F8F7F3] dark:bg-slate-950 text-[#18231F] dark:text-slate-100 flex">
@@ -191,7 +210,7 @@ export const OwnerLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                   <div className="px-3 py-1 text-[10px] font-bold text-[#8A928D] uppercase tracking-wider">
                     Select Active Property
                   </div>
-                  {MOCK_PROPERTIES.map((prop) => (
+                  {(propertiesList.length > 0 ? propertiesList : [activeProperty]).map((prop) => (
                     <button
                       key={prop.id}
                       onClick={() => {

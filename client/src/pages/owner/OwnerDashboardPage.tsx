@@ -1,3 +1,4 @@
+import { toast, useToast } from '../../context/ToastContext';
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
@@ -161,7 +162,7 @@ export const OwnerDashboardPage: React.FC = () => {
       setPropertyForm({ name: '', address: '', city: 'Bengaluru', state: 'Karnataka', pincode: '560034', type: 'COED' });
       fetchDashboard();
     } catch (err: any) {
-      alert(err.message || 'Failed to create property');
+      toast.error(err.message || 'Failed to create property');
     }
   };
 
@@ -181,7 +182,7 @@ export const OwnerDashboardPage: React.FC = () => {
       setRoomForm({ number: '', floor: '1', type: 'DOUBLE', capacity: '2', baseRent: '12000' });
       fetchDashboard();
     } catch (err: any) {
-      alert(err.message || 'Failed to create room');
+      toast.error(err.message || 'Failed to create room');
     }
   };
 
@@ -189,7 +190,7 @@ export const OwnerDashboardPage: React.FC = () => {
     e.preventDefault();
     try {
       if (!chargeForm.residentId || !chargeForm.amount) {
-        alert('Please fill all required fields');
+        toast.error('Please fill all required fields');
         return;
       }
       await ownerApi.createInvoice({
@@ -205,7 +206,7 @@ export const OwnerDashboardPage: React.FC = () => {
       setChargeForm({ residentId: '', category: 'RENT', amount: '', period: 'October 2026', dueDate: new Date().toISOString().split('T')[0], description: '' });
       fetchDashboard();
     } catch (err: any) {
-      alert(err.message || 'Failed to create charge');
+      toast.error(err.message || 'Failed to create charge');
     }
   };
 
@@ -226,7 +227,7 @@ export const OwnerDashboardPage: React.FC = () => {
       setExpenseForm({ title: '', category: 'UTILITIES', amount: '', vendor: '', date: new Date().toISOString().split('T')[0], notes: '' });
       fetchDashboard();
     } catch (err: any) {
-      alert(err.message || 'Failed to record expense');
+      toast.error(err.message || 'Failed to record expense');
     }
   };
 
@@ -247,7 +248,7 @@ export const OwnerDashboardPage: React.FC = () => {
       setStaffForm({ name: '', email: '', mobile: '', role: 'CLEANING', shift: 'MORNING', salary: '18000' });
       fetchDashboard();
     } catch (err: any) {
-      alert(err.message || 'Failed to add staff');
+      toast.error(err.message || 'Failed to add staff');
     }
   };
 
@@ -255,7 +256,7 @@ export const OwnerDashboardPage: React.FC = () => {
     e.preventDefault();
     try {
       if (!noticeForm.title || !noticeForm.content) {
-        alert('Please fill title and content');
+        toast.error('Please fill title and content');
         return;
       }
       await ownerApi.createNotice({
@@ -270,7 +271,7 @@ export const OwnerDashboardPage: React.FC = () => {
       setNoticeForm({ title: '', content: '', category: 'GENERAL', priority: 'NORMAL' });
       fetchDashboard();
     } catch (err: any) {
-      alert(err.message || 'Failed to publish notice');
+      toast.error(err.message || 'Failed to publish notice');
     }
   };
 
@@ -290,7 +291,7 @@ export const OwnerDashboardPage: React.FC = () => {
       setTaskForm({ title: '', category: 'HOUSEKEEPING', priority: 'MEDIUM', dueDate: new Date().toISOString().split('T')[0], description: '' });
       fetchDashboard();
     } catch (err: any) {
-      alert(err.message || 'Failed to create task');
+      toast.error(err.message || 'Failed to create task');
     }
   };
 

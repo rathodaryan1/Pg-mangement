@@ -1,3 +1,4 @@
+import { toast, useToast } from '../../context/ToastContext';
 import React, { useState, useEffect } from 'react';
 import {
   Settings,
@@ -62,7 +63,7 @@ export const OwnerSettingsPage: React.FC = () => {
       setToastMessage('PG operational rules and payment settings saved successfully!');
       setTimeout(() => setToastMessage(null), 3500);
     } catch (err: any) {
-      alert(err.message || 'Failed to save settings');
+      toast.error(err.message || 'Failed to save settings');
     } finally {
       setIsSaving(false);
     }

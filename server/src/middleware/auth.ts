@@ -31,33 +31,14 @@ export const authenticateToken = async (
   }
 
   if (!token) {
-    const referer = req.headers.referer || '';
-    if (referer.includes('/owner')) {
-      req.user = {
-        id: 'usr-owner-1',
-        email: 'owner@pg.com',
-        name: 'Aaryan Sharma (Owner)',
-        role: 'OWNER',
-        propertyId: 'prop-1',
-      };
-      return next();
-    } else if (referer.includes('/resident')) {
-      req.user = {
-        id: 'usr-res-1',
-        email: 'aakash.v@gmail.com',
-        name: 'Aakash Verma',
-        role: 'RESIDENT',
-        propertyId: 'prop-1',
-        residentId: 'res-1',
-        bedId: 'bed-101A',
-      };
-      return next();
-    }
     return sendError(res, 'Authentication required. Please provide a valid access token.', 401, 'UNAUTHORIZED');
   }
 
-  // Support local dev tokens
-  if (token.startsWith('dev-token') || token.startsWith('demo-token') || token.includes('owner') || token.includes('resident')) {
+  // Support local dev tokens ONLY when explicitly enabled in local dev environment
+  const isProd = process.env.NODE_ENV === 'production';
+  const isDemoEnabled = process.env.DEMO_MODE === 'true';
+
+  if (!isProd && isDemoEnabled && (token.startsWith('dev-token') || token.startsWith('demo-token'))) {
     const isResident = token.includes('resident') || token.includes('aakash');
     const authUser: AuthenticatedUser = {
       id: isResident ? 'usr-res-1' : 'usr-owner-1',
@@ -78,6 +59,8 @@ export const authenticateToken = async (
       email: string;
       role: string;
       name?: string;
+      propertyId?: string;
+      residentId?: string;
     };
 
     let user = null;
@@ -96,48 +79,26 @@ export const authenticateToken = async (
         },
       });
     } catch (dbErr: any) {
-      console.warn('[auth.middleware] Database check fallback:', dbErr.message);
+      console.warn('[auth.middleware] Database user lookup failed, using verified token claims:', dbErr.message);
     }
 
     const authUser: AuthenticatedUser = {
       id: user?.id || decoded.id,
       email: user?.email || decoded.email,
       name: user?.name || decoded.name || (decoded.role === 'OWNER' ? 'Owner' : 'Resident'),
-      role: user?.role || decoded.role,
-      propertyId: user?.propertyId || user?.resident?.propertyId || 'prop-1',
-      residentId: user?.resident?.id || (decoded.role === 'RESIDENT' ? 'res-1' : undefined),
-      bedId: user?.resident?.bedId || (decoded.role === 'RESIDENT' ? 'bed-1' : null),
+      role: (user?.role as string) || decoded.role,
+      propertyId: user?.propertyId || user?.resident?.propertyId || decoded.propertyId || 'prop-1',
+      residentId: user?.resident?.id || decoded.residentId || (decoded.role === 'RESIDENT' ? 'res-1' : undefined),
+      bedId: user?.resident?.bedId || (decoded.role === 'RESIDENT' ? 'bed-101A' : null),
     };
 
     req.user = authUser;
     next();
   } catch (error: any) {
-    if (token.includes('owner') || token.includes('admin')) {
-      req.user = {
-        id: 'usr-owner-1',
-        email: 'owner@pg.com',
-        name: 'Aaryan Sharma (Owner)',
-        role: 'OWNER',
-        propertyId: 'prop-1',
-      };
-      return next();
-    }
-    if (token.includes('resident') || token.includes('aakash')) {
-      req.user = {
-        id: 'usr-res-1',
-        email: 'aakash.v@gmail.com',
-        name: 'Aakash Verma',
-        role: 'RESIDENT',
-        propertyId: 'prop-1',
-        residentId: 'res-1',
-        bedId: 'bed-101A',
-      };
-      return next();
-    }
     if (error.name === 'TokenExpiredError') {
       return sendError(res, 'Access token has expired. Please login again.', 401, 'TOKEN_EXPIRED');
     }
-    return sendError(res, 'Invalid access token.', 401, 'INVALID_TOKEN');
+    return sendError(res, 'Invalid access token. Please authenticate again.', 401, 'INVALID_TOKEN');
   }
 };
 

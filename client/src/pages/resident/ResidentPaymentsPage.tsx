@@ -17,6 +17,7 @@ import { Button } from '../../components/ui/Button';
 import { StatusBadge, Badge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
 import { residentApi } from '../../services/residentApi';
+import { toast } from '../../context/ToastContext';
 
 export const ResidentPaymentsPage: React.FC = () => {
   const [payments, setPayments] = useState<any[]>([]);
@@ -83,7 +84,7 @@ export const ResidentPaymentsPage: React.FC = () => {
       setReceiptData(receipt);
       setReceiptModalOpen(true);
     } catch (err: any) {
-      alert(err.message || 'Unable to retrieve receipt for this payment.');
+      toast.error(err.message || 'Unable to retrieve receipt for this payment.');
     }
   };
 
@@ -104,10 +105,11 @@ export const ResidentPaymentsPage: React.FC = () => {
       });
 
       setPaymentSuccessMessage(`Payment of ₹${selectedPayment.amount} confirmed! Receipt #${result.receipt?.receiptNumber || 'RCP-ACTIVE'} generated.`);
+      toast.success('Payment completed successfully.');
       await fetchPayments();
     } catch (err: any) {
       console.error('Payment processing failed:', err);
-      alert(err.message || 'Payment processing failed. Please retry.');
+      toast.error(err.message || 'Payment processing failed. Please retry.');
     } finally {
       setIsProcessingPayment(false);
     }

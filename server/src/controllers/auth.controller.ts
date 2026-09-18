@@ -156,12 +156,19 @@ export class AuthController {
 
       if (user) {
         const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
-        if (!isPasswordValid && password !== 'admin123' && password !== 'password123') {
+        if (!isPasswordValid) {
           return sendError(res, 'Invalid email or password.', 401);
         }
 
         const token = jwt.sign(
-          { id: user.id, email: user.email, role: user.role, name: user.name },
+          {
+            id: user.id,
+            email: user.email,
+            role: user.role,
+            name: user.name,
+            propertyId: user.propertyId || user.resident?.propertyId,
+            residentId: user.resident?.id
+          },
           config.jwtSecret,
           { expiresIn: config.jwtExpiresIn as any }
         );
@@ -198,57 +205,66 @@ export class AuthController {
         );
       }
 
-      // Fallback mode password check
-      if (password !== 'admin123' && password !== 'password123') {
-        return sendError(res, 'Invalid email or password.', 401);
-      }
+      // If user is not found in database, check if explicit dev demo credentials match in non-production
+      const isProd = process.env.NODE_ENV === 'production';
+      const isDemo = process.env.DEMO_MODE === 'true';
 
-      // Dev mode fallback for seeded credentials
-      const cleanEmail = email.toLowerCase().trim();
-      let role: any = 'RESIDENT';
-      let name = 'Aakash Verma';
-      let userId = 'usr-res-1';
-      let residentId: string | undefined = 'res-1';
+      if (!isProd && isDemo && (password === 'admin123' || password === 'password123')) {
+        const cleanEmail = email.toLowerCase().trim();
+        let role: any = 'RESIDENT';
+        let name = 'Aakash Verma';
+        let userId = 'usr-res-1';
+        let residentId: string | undefined = 'res-1';
 
-      if (cleanEmail === 'owner@pg.com' || cleanEmail.includes('owner')) {
-        role = 'OWNER';
-        name = 'Aaryan Sharma (Owner)';
-        userId = 'usr-owner-1';
-        residentId = undefined;
-      } else if (cleanEmail === 'superadmin@pg.com') {
-        role = 'SUPER_ADMIN';
-        name = 'Platform Super Admin';
-        userId = 'usr-super-1';
-        residentId = undefined;
-      } else if (cleanEmail === 'manager@pg.com') {
-        role = 'MANAGER';
-        name = 'Property Manager';
-        userId = 'usr-mgr-1';
-        residentId = undefined;
-      }
+        if (cleanEmail === 'owner@pg.com' || cleanEmail.includes('owner')) {
+          role = 'OWNER';
+          name = 'Aaryan Sharma (Owner)';
+          userId = 'usr-owner-1';
+          residentId = undefined;
+        } else if (cleanEmail === 'superadmin@pg.com') {
+          role = 'SUPER_ADMIN';
+          name = 'Platform Super Admin';
+          userId = 'usr-super-1';
+          residentId = undefined;
+        } else if (cleanEmail === 'manager@pg.com') {
+          role = 'MANAGER';
+          name = 'Property Manager';
+          userId = 'usr-mgr-1';
+          residentId = undefined;
+        } else if (cleanEmail === 'aakash.v@gmail.com' || cleanEmail.includes('resident')) {
+          role = 'RESIDENT';
+          name = 'Aakash Verma';
+          userId = 'usr-res-1';
+          residentId = 'res-1';
+        } else {
+          return sendError(res, 'Invalid email or password.', 401);
+        }
 
-      const token = jwt.sign(
-        { id: userId, email: cleanEmail, role, name, residentId },
-        config.jwtSecret,
-        { expiresIn: config.jwtExpiresIn as any }
-      );
+        const token = jwt.sign(
+          { id: userId, email: cleanEmail, role, name, residentId },
+          config.jwtSecret,
+          { expiresIn: config.jwtExpiresIn as any }
+        );
 
-      return sendSuccess(
-        res,
-        {
-          token,
-          user: {
-            id: userId,
-            name,
-            email: cleanEmail,
-            role,
-            mobile: '9876500001',
-            propertyId: 'prop-1',
-            residentId,
+        return sendSuccess(
+          res,
+          {
+            token,
+            user: {
+              id: userId,
+              name,
+              email: cleanEmail,
+              role,
+              mobile: '9876500001',
+              propertyId: 'prop-1',
+              residentId,
+            },
           },
-        },
-        'Login successful'
-      );
+          'Login successful'
+        );
+      }
+
+      return sendError(res, 'Invalid email or password.', 401);
     } catch (error: any) {
       console.error('[AuthController.login] Error:', error);
       return sendError(res, error.message || 'Login failed', 500);

@@ -17,8 +17,10 @@ import { Input, Select, Textarea } from '../../components/ui/Input';
 import { Modal } from '../../components/ui/Modal';
 import { Timeline } from '../../components/ui/Timeline';
 import { residentApi } from '../../services/residentApi';
+import { toast, useToast } from '../../context/ToastContext';
 
 export const ResidentComplaintsPage: React.FC = () => {
+  const { toast } = useToast();
   const [tickets, setTickets] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -46,7 +48,7 @@ export const ResidentComplaintsPage: React.FC = () => {
       const data = await residentApi.getComplaints();
       setTickets(data || []);
       if (selectedTicket) {
-        const updated = data.find((t: any) => t.id === selectedTicket.id);
+        const updated = (data || []).find((t: any) => t.id === selectedTicket.id);
         if (updated) setSelectedTicket(updated);
       }
     } catch (err: any) {
@@ -64,7 +66,7 @@ export const ResidentComplaintsPage: React.FC = () => {
   const handleCreateTicket = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !description.trim()) {
-      alert('Please fill in both title and description.');
+      toast.error('Please fill in both title and description.');
       return;
     }
 
@@ -81,10 +83,11 @@ export const ResidentComplaintsPage: React.FC = () => {
       setNewModalOpen(false);
       setTitle('');
       setDescription('');
+      toast.success('Complaint ticket registered successfully.');
       await fetchTickets();
     } catch (err: any) {
       console.error('Failed to submit ticket:', err);
-      alert(err.message || 'Failed to submit complaint.');
+      toast.error(err.message || 'Failed to submit complaint.');
     } finally {
       setIsSubmitting(false);
     }
@@ -98,11 +101,12 @@ export const ResidentComplaintsPage: React.FC = () => {
     try {
       await residentApi.addComplaintComment(selectedTicket.id, commentText.trim());
       setCommentText('');
+      toast.success('Comment added to ticket.');
       await fetchTickets();
       const updated = await residentApi.getComplaintById(selectedTicket.id);
       setSelectedTicket(updated);
     } catch (err: any) {
-      alert(err.message || 'Failed to add comment.');
+      toast.error(err.message || 'Failed to add comment.');
     } finally {
       setIsPostingComment(false);
     }

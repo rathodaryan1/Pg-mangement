@@ -14,8 +14,10 @@ import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { Textarea } from '../../components/ui/Input';
 import { residentApi } from '../../services/residentApi';
+import { toast, useToast } from '../../context/ToastContext';
 
 export const ResidentEmergencyPage: React.FC = () => {
+  const { toast } = useToast();
   const [isTriggering, setIsTriggering] = useState(false);
   const [sosActivated, setSosActivated] = useState(false);
   const [sosTimestamp, setSosTimestamp] = useState<string | null>(null);
@@ -30,8 +32,9 @@ export const ResidentEmergencyPage: React.FC = () => {
       setSosTimestamp(new Date().toLocaleTimeString());
       setConfirmModalOpen(false);
       setEmergencyNotes('');
+      toast.success('Emergency SOS broadcasted! Warden alerted.');
     } catch (err: any) {
-      alert(err.message || 'Failed to broadcast SOS event. Please dial 112 directly.');
+      toast.error(err.message || 'Failed to broadcast SOS event. Please dial 112 directly.');
     } finally {
       setIsTriggering(false);
     }

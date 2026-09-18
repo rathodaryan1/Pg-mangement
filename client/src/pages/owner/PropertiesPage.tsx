@@ -1,3 +1,4 @@
+import { toast, useToast } from '../../context/ToastContext';
 import React, { useState, useEffect } from 'react';
 import {
   Building2,
@@ -95,7 +96,7 @@ export const PropertiesPage: React.FC = () => {
     e.preventDefault();
     try {
       if (!propertyForm.name || !propertyForm.address) {
-        alert('Please fill property name and address');
+        toast.error('Please fill property name and address');
         return;
       }
 
@@ -112,7 +113,7 @@ export const PropertiesPage: React.FC = () => {
       setTimeout(() => setToastMessage(null), 3500);
       fetchData();
     } catch (err: any) {
-      alert(err.message || 'Failed to save property');
+      toast.error(err.message || 'Failed to save property');
     }
   };
 
@@ -121,7 +122,7 @@ export const PropertiesPage: React.FC = () => {
     e.preventDefault();
     try {
       if (!buildingForm.name) {
-        alert('Please enter building name');
+        toast.error('Please enter building name');
         return;
       }
 
@@ -142,7 +143,7 @@ export const PropertiesPage: React.FC = () => {
       setTimeout(() => setToastMessage(null), 3500);
       fetchData();
     } catch (err: any) {
-      alert(err.message || 'Failed to save building');
+      toast.error(err.message || 'Failed to save building');
     }
   };
 
@@ -161,7 +162,7 @@ export const PropertiesPage: React.FC = () => {
       setTimeout(() => setToastMessage(null), 3500);
       fetchData();
     } catch (err: any) {
-      alert(err.message || 'Failed to create floor');
+      toast.error(err.message || 'Failed to create floor');
     }
   };
 
@@ -183,7 +184,7 @@ export const PropertiesPage: React.FC = () => {
       setTimeout(() => setToastMessage(null), 3500);
       fetchData();
     } catch (err: any) {
-      alert(err.message || 'Failed to archive entity');
+      toast.error(err.message || 'Failed to archive entity');
     }
   };
 

@@ -6,440 +6,24 @@ import { sendSuccess, sendError } from '../utils/response';
 import { AuthRequest } from '../middleware/auth';
 import { AuditService } from '../services/audit.service';
 
-let dbConnected: boolean | null = null;
-async function isDbAvailable(): Promise<boolean> {
-  if (dbConnected === false) return false;
-  if (dbConnected === true) return true;
-  try {
-    const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 500));
-    await Promise.race([prisma.$queryRaw`SELECT 1`, timeout]);
-    dbConnected = true;
-    return true;
-  } catch {
-    dbConnected = false;
-    setTimeout(() => { dbConnected = null; }, 30000);
-    return false;
-  }
-}
-
-// ============================================================================
-// RESILIENT IN-MEMORY OPERATIONAL DEV STORE (ACTIVE FALLBACK FOR SMOOTH WORKFLOWS)
-// ============================================================================
-class DevStore {
-  static properties = [
-    {
-      id: 'prop-1',
-      name: 'Urban Nest Prime (Gurgaon)',
-      address: 'Plot 42, Sector 45, Near Huda City Centre, Gurugram',
-      city: 'Gurugram',
-      phone: '+91 98765 43210',
-      email: 'gurgaon@urbannestpg.com',
-      upiId: 'urbannest.gurgaon@okaxis',
-      gstNumber: '06AAAAA1111A1Z1',
-      totalRooms: 12,
-      totalBeds: 24,
-      occupiedBeds: 18,
-      activeResidentsCount: 18,
-      monthlyRevenue: 245000,
-      status: 'ACTIVE',
-      buildings: [
-        {
-          id: 'bld-1',
-          name: 'Block A - Executive Wing',
-          code: 'BLK-A',
-          floorsCount: 3,
-          floors: [
-            { id: 'flr-1', floorNumber: 1, totalRooms: 4 },
-            { id: 'flr-2', floorNumber: 2, totalRooms: 4 },
-            { id: 'flr-3', floorNumber: 3, totalRooms: 4 }
-          ]
-        }
-      ]
-    }
-  ];
-
-  static buildings = [
-    {
-      id: 'bld-1',
-      name: 'Block A - Executive Wing',
-      code: 'BLK-A',
-      propertyId: 'prop-1',
-      status: 'ACTIVE',
-      floors: [
-        { id: 'flr-1', floorNumber: 1, buildingId: 'bld-1', totalRooms: 4 },
-        { id: 'flr-2', floorNumber: 2, buildingId: 'bld-1', totalRooms: 4 },
-        { id: 'flr-3', floorNumber: 3, buildingId: 'bld-1', totalRooms: 4 }
-      ]
-    }
-  ];
-
-  static floors = [
-    { id: 'flr-1', floorNumber: 1, buildingId: 'bld-1', buildingName: 'Block A', totalRooms: 4 },
-    { id: 'flr-2', floorNumber: 2, buildingId: 'bld-1', buildingName: 'Block A', totalRooms: 4 },
-    { id: 'flr-3', floorNumber: 3, buildingId: 'bld-1', buildingName: 'Block A', totalRooms: 4 }
-  ];
-
-  static rooms = [
-    {
-      id: 'room-101',
-      number: '101',
-      type: 'Double',
-      capacity: 2,
-      baseRent: 14000,
-      deposit: 28000,
-      status: 'FULL',
-      amenities: ['Attached Washroom', 'AC', 'High-Speed Wi-Fi', 'Wardrobe'],
-      propertyId: 'prop-1',
-      building: 'Block A',
-      floor: 1,
-      occupiedCount: 2,
-      beds: [
-        { id: 'bed-101A', bedNumber: 'Bed 101-A', monthlyRent: 14000, status: 'OCCUPIED', residentId: 'res-1', residentName: 'Aakash Verma', residentMobile: '9812345678' },
-        { id: 'bed-101B', bedNumber: 'Bed 101-B', monthlyRent: 14000, status: 'OCCUPIED', residentId: 'res-2', residentName: 'Rohan Gupta', residentMobile: '9812345679' }
-      ]
-    },
-    {
-      id: 'room-102',
-      number: '102',
-      type: 'Triple',
-      capacity: 3,
-      baseRent: 11000,
-      deposit: 22000,
-      status: 'AVAILABLE',
-      amenities: ['Attached Washroom', 'High-Speed Wi-Fi', 'Study Table'],
-      propertyId: 'prop-1',
-      building: 'Block A',
-      floor: 1,
-      occupiedCount: 2,
-      beds: [
-        { id: 'bed-102A', bedNumber: 'Bed 102-A', monthlyRent: 11000, status: 'OCCUPIED', residentId: 'res-3', residentName: 'Vikram Verma', residentMobile: '9812345680' },
-        { id: 'bed-102B', bedNumber: 'Bed 102-B', monthlyRent: 11000, status: 'OCCUPIED', residentId: 'res-4', residentName: 'Siddharth Nair', residentMobile: '9812345681' },
-        { id: 'bed-102C', bedNumber: 'Bed 102-C', monthlyRent: 11000, status: 'AVAILABLE', residentId: null, residentName: null, residentMobile: null }
-      ]
-    },
-    {
-      id: 'room-201',
-      number: '201',
-      type: 'Single',
-      capacity: 1,
-      baseRent: 21000,
-      deposit: 42000,
-      status: 'AVAILABLE',
-      amenities: ['Private Balcony', 'AC', 'Refrigerator', 'Smart TV'],
-      propertyId: 'prop-1',
-      building: 'Block A',
-      floor: 2,
-      occupiedCount: 0,
-      beds: [
-        { id: 'bed-201A', bedNumber: 'Bed 201-A', monthlyRent: 21000, status: 'AVAILABLE', residentId: null, residentName: null, residentMobile: null }
-      ]
-    }
-  ];
-
-  static residents = [
-    {
-      id: 'res-1',
-      userId: 'usr-res-1',
-      propertyId: 'prop-1',
-      bedId: 'bed-101A',
-      roomNumber: '101',
-      bedNumber: 'Bed 101-A',
-      fullName: 'Aakash Verma',
-      email: 'aakash.v@gmail.com',
-      mobile: '9812345678',
-      gender: 'MALE',
-      emergencyContactName: 'Suresh Verma',
-      emergencyContactRelation: 'Father',
-      emergencyContactPhone: '9812345670',
-      emergencyContact: 'Suresh Verma (Father): 9812345670',
-      kycStatus: 'VERIFIED',
-      joiningDate: '2025-10-15',
-      status: 'ACTIVE',
-      monthlyRent: 14000,
-      securityDeposit: 28000,
-      depositAmount: 28000,
-      permanentAddress: 'House No 43, Sector 12, Karnal, Haryana',
-      address: 'House No 43, Sector 12, Karnal, Haryana',
-      workCompany: 'Tech Mahindra Ltd',
-      documents: [
-        { id: 'doc-1', title: 'Aadhaar Card Front & Back', type: 'AADHAAR', documentType: 'AADHAAR', documentNumber: '9876-5432-1098', status: 'VERIFIED', fileUrl: 'https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=400', uploadedAt: '2025-10-15', createdAt: '2025-10-15' },
-        { id: 'doc-2', title: 'PAN Card', type: 'PAN', documentType: 'PAN', documentNumber: 'ABCDE1234F', status: 'VERIFIED', fileUrl: 'https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=400', uploadedAt: '2025-10-15', createdAt: '2025-10-15' }
-      ],
-      payments: [
-        { id: 'pay-1', category: 'RENT', period: 'September 2026', amount: 14000, dueDate: '2026-09-05', status: 'PAID', method: 'UPI', transactionId: 'TXN-98213-VERIFIED', receiptNumber: 'UN-REC-2026-0901' },
-        { id: 'pay-2', category: 'RENT', period: 'October 2026', amount: 14000, dueDate: '2026-10-05', status: 'PENDING', method: 'UPI' }
-      ],
-      complaints: [
-        { id: 'c-1', ticketNumber: 'TKT-1049', title: 'Geyser heating element slow', category: 'PLUMBING', priority: 'MEDIUM', status: 'IN_PROGRESS' }
-      ],
-      visitors: [
-        { id: 'vis-1', visitorName: 'Aditya Roy', relation: 'Brother', visitDate: '2026-09-20', status: 'PENDING' }
-      ],
-      leaves: [
-        { id: 'lev-1', fromDate: '2026-10-01', toDate: '2026-10-05', reason: 'Diwali Homecoming', status: 'APPROVED' }
-      ]
-    },
-    {
-      id: 'res-2',
-      userId: 'usr-res-2',
-      propertyId: 'prop-1',
-      bedId: 'bed-101B',
-      roomNumber: '101',
-      bedNumber: 'Bed 101-B',
-      fullName: 'Rohan Gupta',
-      email: 'rohan.g@gmail.com',
-      mobile: '9812345679',
-      gender: 'MALE',
-      emergencyContactName: 'Amit Gupta',
-      emergencyContactRelation: 'Father',
-      emergencyContactPhone: '9812345671',
-      emergencyContact: 'Amit Gupta: 9812345671',
-      kycStatus: 'VERIFIED',
-      joiningDate: '2025-11-01',
-      status: 'ACTIVE',
-      monthlyRent: 14000,
-      securityDeposit: 28000,
-      depositAmount: 28000,
-      permanentAddress: 'Delhi NCR',
-      address: 'Delhi NCR',
-      workCompany: 'Amazon India',
-      documents: [],
-      payments: [
-        { id: 'pay-3', category: 'RENT', period: 'September 2026', amount: 14000, dueDate: '2026-09-05', status: 'OVERDUE', method: 'UPI' }
-      ],
-      complaints: [],
-      visitors: [],
-      leaves: []
-    }
-  ];
-
-  static payments = [
-    {
-      id: 'pay-1',
-      residentId: 'res-1',
-      residentName: 'Aakash Verma',
-      roomNumber: '101',
-      propertyId: 'prop-1',
-      category: 'RENT',
-      period: 'September 2026',
-      amount: 14000,
-      dueDate: '2026-09-05',
-      paidDate: '2026-09-04',
-      status: 'PAID',
-      method: 'UPI',
-      transactionId: 'TXN-98213-VERIFIED',
-      receiptNumber: 'UN-REC-2026-0901',
-      notes: 'On-time monthly rent settlement'
-    },
-    {
-      id: 'pay-2',
-      residentId: 'res-1',
-      residentName: 'Aakash Verma',
-      roomNumber: '101',
-      propertyId: 'prop-1',
-      category: 'RENT',
-      period: 'October 2026',
-      amount: 14000,
-      dueDate: '2026-10-05',
-      status: 'PENDING',
-      method: 'UPI',
-      notes: 'Upcoming monthly rent'
-    },
-    {
-      id: 'pay-3',
-      residentId: 'res-2',
-      residentName: 'Rohan Gupta',
-      roomNumber: '101',
-      propertyId: 'prop-1',
-      category: 'RENT',
-      period: 'September 2026',
-      amount: 14000,
-      dueDate: '2026-09-05',
-      status: 'OVERDUE',
-      method: 'UPI',
-      notes: 'Follow-up message dispatched'
-    }
-  ];
-
-  static deposits: Array<{
-    id: string;
-    residentId: string;
-    residentName: string;
-    roomNumber: string;
-    propertyId: string;
-    amount: number;
-    status: string;
-    paidAt: string;
-    deductions: number;
-    refundAmount: number | null;
-    notes: string;
-  }> = [
-    {
-      id: 'dep-1',
-      residentId: 'res-1',
-      residentName: 'Aakash Verma',
-      roomNumber: '101',
-      propertyId: 'prop-1',
-      amount: 28000,
-      status: 'PAID',
-      paidAt: '2025-10-15',
-      deductions: 0,
-      refundAmount: null,
-      notes: 'Initial 2-month security deposit received in full'
-    },
-    {
-      id: 'dep-2',
-      residentId: 'res-2',
-      residentName: 'Rohan Gupta',
-      roomNumber: '101',
-      propertyId: 'prop-1',
-      amount: 28000,
-      status: 'PAID',
-      paidAt: '2025-11-01',
-      deductions: 0,
-      refundAmount: null,
-      notes: 'Initial deposit verified'
-    }
-  ];
-
-  static expenses = [
-    { id: 'exp-1', propertyId: 'prop-1', title: 'Commercial Electricity Bill (DHBVN)', category: 'ELECTRICITY', amount: 14500, vendor: 'DHBVN Gurugram', date: '2026-09-10', description: 'Monthly electricity bill for Block A', status: 'PAID' },
-    { id: 'exp-2', propertyId: 'prop-1', title: 'Airtel Fiber Gigabit Wi-Fi', category: 'INTERNET', amount: 3499, vendor: 'Airtel Broadband', date: '2026-09-01', description: 'High-speed broadband for residents', status: 'PAID' },
-    { id: 'exp-3', propertyId: 'prop-1', title: 'Housekeeping & Cleaning Supplies', category: 'SUPPLIES', amount: 4200, vendor: 'CleanPro Hygiene', date: '2026-09-12', description: 'Floor disinfectants, bin liners, handwash', status: 'PAID' }
-  ];
-
-  static visitors = [
-    {
-      id: 'vis-1',
-      propertyId: 'prop-1',
-      residentId: 'res-1',
-      visitorName: 'Aditya Roy',
-      visitorMobile: '9988776655',
-      relation: 'Brother',
-      purpose: 'Weekend Visit & Luggage Drop',
-      residentName: 'Aakash Verma',
-      roomNumber: '101',
-      visitDate: '2026-09-20',
-      expectedTime: '11:00 AM',
-      expectedEntryTime: '11:00 AM',
-      status: 'PENDING',
-      qrPassToken: 'UN-PASS-9821-APPROVED',
-      qrPassCode: 'UN-PASS-9821-APPROVED'
-    },
-    {
-      id: 'vis-2',
-      propertyId: 'prop-1',
-      residentId: 'res-2',
-      visitorName: 'Pooja Sharma',
-      visitorMobile: '9988776600',
-      relation: 'Friend',
-      purpose: 'College Group Study',
-      residentName: 'Rohan Gupta',
-      roomNumber: '101',
-      visitDate: '2026-09-16',
-      expectedTime: '04:00 PM',
-      expectedEntryTime: '04:00 PM',
-      status: 'APPROVED',
-      qrPassToken: 'UN-PASS-8721-ACTIVE',
-      qrPassCode: 'UN-PASS-8721-ACTIVE'
-    }
-  ];
-
-  static complaints = [
-    {
-      id: 'c-1',
-      ticketNumber: 'TKT-1049',
-      title: 'Geyser heating element slow in Room 101',
-      category: 'PLUMBING',
-      priority: 'HIGH',
-      description: 'Hot water takes over 30 mins to heat up in the morning.',
-      status: 'IN_PROGRESS',
-      residentName: 'Aakash Verma',
-      roomNumber: '101',
-      assignedStaffName: 'Ramesh Kumar (Plumber)',
-      createdAt: new Date().toISOString(),
-      activities: [
-        { id: 'act-1', actorName: 'Owner', action: 'ASSIGNED', comment: 'Assigned to technician Ramesh.', createdAt: new Date().toISOString() }
-      ]
-    },
-    {
-      id: 'c-2',
-      ticketNumber: 'TKT-1050',
-      title: 'Wi-Fi connectivity drop on 2nd Floor corridor',
-      category: 'WIFI_INTERNET',
-      priority: 'MEDIUM',
-      description: 'Repeater showing red LED status.',
-      status: 'REPORTED',
-      residentName: 'Vikram Verma',
-      roomNumber: '102',
-      assignedStaffName: null,
-      createdAt: new Date().toISOString(),
-      activities: [] as any[]
-    }
-  ];
-
-  static staff = [
-    { id: 'stf-1', name: 'Rajesh Sharma', role: 'MANAGER', mobile: '+91 98765 00010', email: 'rajesh.mgr@pg.com', shift: 'Morning (8 AM - 4 PM)', status: 'ACTIVE', salary: 35000, propertyId: 'prop-1' },
-    { id: 'stf-2', name: 'Ramesh Kumar', role: 'MAINTENANCE', mobile: '+91 98765 00011', email: 'ramesh.maint@pg.com', shift: 'General Full Day', status: 'ACTIVE', salary: 24000, propertyId: 'prop-1' },
-    { id: 'stf-3', name: 'Sunita Devi', role: 'HOUSEKEEPING', mobile: '+91 98765 00012', email: 'sunita.hk@pg.com', shift: 'Morning (7 AM - 3 PM)', status: 'ACTIVE', salary: 18000, propertyId: 'prop-1' }
-  ];
-
-  static inventory = [
-    { id: 'inv-1', name: 'Commercial RO Water Purifier 50 LPH', category: 'APPLIANCE', quantity: 2, minQuantity: 2, location: 'Dining Hall', vendor: 'Kent RO Systems', condition: 'EXCELLENT', purchaseDate: '2025-08-10', warrantyExpiry: '2027-08-10', cost: 35000, status: 'EXCELLENT', propertyId: 'prop-1' },
-    { id: 'inv-2', name: 'Split AC 1.5 Ton 5-Star (Daikin)', category: 'APPLIANCE', quantity: 12, minQuantity: 12, location: 'All Rooms', vendor: 'Daikin Direct', condition: 'EXCELLENT', purchaseDate: '2025-06-15', warrantyExpiry: '2028-06-15', cost: 42000, status: 'EXCELLENT', propertyId: 'prop-1' },
-    { id: 'inv-3', name: 'Water Tank Level Sensor Alarm', category: 'PLUMBING', quantity: 1, minQuantity: 2, location: 'Rooftop Tank', vendor: 'AutoFlow India', condition: 'GOOD', purchaseDate: '2025-09-01', warrantyExpiry: '2026-09-01', cost: 4500, status: 'LOW_STOCK', propertyId: 'prop-1' }
-  ];
-
-  static tasks = [
-    { id: 'tsk-1', title: 'Overhead Water Tank Chlorination & Filter Clean', category: 'PLUMBING', priority: 'HIGH', staffName: 'Ramesh Kumar', assignedTo: 'Ramesh Kumar', dueDate: '2026-09-22', status: 'PENDING', propertyId: 'prop-1', notes: 'Quarterly compliance check' },
-    { id: 'tsk-2', title: 'Fire Extinguisher Pressure Inspection (All Floors)', category: 'SECURITY', priority: 'MEDIUM', staffName: 'Rajesh Sharma', assignedTo: 'Rajesh Sharma', dueDate: '2026-09-25', status: 'PENDING', propertyId: 'prop-1', notes: 'Safety audit' }
-  ];
-
-  static notices = [
-    { id: 'not-1', title: 'Bi-Monthly Water Tank Cleaning Schedule', content: 'Water supply will be paused from 10:00 AM to 1:00 PM on Sunday for preventive hygiene maintenance.', category: 'MAINTENANCE', priority: 'NORMAL', isImportant: false, target: 'ALL', propertyId: 'prop-1', publisherName: 'Urban Nest Management', publishedAt: new Date().toISOString() },
-    { id: 'not-2', title: 'Diwali Festive Dinner & Common Room Celebration', content: 'Special buffet dinner scheduled in the central cafeteria this Friday at 8:00 PM.', category: 'GENERAL', priority: 'NORMAL', isImportant: true, target: 'ALL', propertyId: 'prop-1', publisherName: 'Urban Nest Management', publishedAt: new Date().toISOString() }
-  ];
-
-  static leaveRequests = [
-    { id: 'lev-1', residentId: 'res-1', residentName: 'Aakash Verma', roomNumber: '101', fromDate: '2026-10-01', toDate: '2026-10-05', reason: 'Diwali Homecoming & Family Celebration', status: 'APPROVED', propertyId: 'prop-1', appliedAt: '2026-09-12' },
-    { id: 'lev-2', residentId: 'res-2', residentName: 'Rohan Gupta', roomNumber: '101', fromDate: '2026-09-25', toDate: '2026-09-28', reason: 'College Project Workshop in Jaipur', status: 'PENDING', propertyId: 'prop-1', appliedAt: '2026-09-15' }
-  ];
-
-  static sosEvents = [
-    { id: 'sos-1', residentId: 'res-1', residentName: 'Aakash Verma', roomNumber: '101', status: 'RESOLVED', triggeredAt: '2026-09-02T14:30:00Z', resolvedAt: '2026-09-02T14:45:00Z', notes: 'Accidental trigger during app testing', propertyId: 'prop-1' }
-  ];
-
-  static settings = {
-    curfewTime: '10:30 PM',
-    visitorPassExpiry: '24 Hours',
-    noticePeriodDays: 30,
-    lateFeePerDay: 100,
-    wifiSsid: 'UrbanNest_HighSpeed_5G',
-    emergencyContact: '+91 98765 00000',
-    allowOvernightGuests: false,
-    autoInvoiceGenerationDay: 1,
-    rentDueDay: 5,
-    upiId: 'urbannest.gurgaon@okaxis',
-    bankAccount: 'HDFC0001234 - 50200098765432'
-  };
-
-  static auditLogs = [
-    { id: 'aud-1', actorName: 'Aaryan Sharma (Owner)', actorRole: 'OWNER', action: 'SYSTEM_LOGIN', targetEntity: 'Auth', timestamp: new Date().toISOString(), details: 'Admin logged into PG operations dashboard.' },
-    { id: 'aud-2', actorName: 'Aaryan Sharma (Owner)', actorRole: 'OWNER', action: 'ROOM_MATRIX_VIEW', targetEntity: 'Room', timestamp: new Date(Date.now() - 3600000).toISOString(), details: 'Inspected real-time bed availability matrix.' }
-  ];
-}
+const isProd = process.env.NODE_ENV === 'production';
+const isDemoMode = process.env.DEMO_MODE === 'true';
 
 export class OwnerController {
-  private static async resolvePropertyScope(req: AuthRequest, targetPropertyId?: string): Promise<string> {
-    if (targetPropertyId) return targetPropertyId;
-    if (req.user?.propertyId) return req.user.propertyId;
+  private static async resolvePropertyScope(req: AuthRequest, targetPropertyId?: string): Promise<string | undefined> {
+    if (targetPropertyId && targetPropertyId !== 'ALL' && targetPropertyId !== 'undefined') {
+      return targetPropertyId;
+    }
+    if (req.user?.propertyId && req.user.propertyId !== 'prop-1') {
+      return req.user.propertyId;
+    }
     try {
       const firstProp = await prisma.property.findFirst();
       if (firstProp) return firstProp.id;
     } catch {
-      // Fallback
+      // ignore
     }
-    return 'prop-1';
+    return undefined;
   }
 
   // ==========================================================================
@@ -448,119 +32,108 @@ export class OwnerController {
   static async getDashboard(req: AuthRequest, res: Response): Promise<Response> {
     try {
       const propertyId = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
+      const propFilter = propertyId ? { propertyId } : {};
 
-      try {
-        const [properties, totalBuildings, rooms, beds, residents, payments, deposits, complaints, visitors, inventoryItems, staffMembers, recentNotices, tasks] = await Promise.all([
-          prisma.property.findMany({ where: propertyId ? { id: propertyId } : {}, include: { buildings: true } }),
-          prisma.building.count({ where: propertyId ? { propertyId } : {} }),
-          prisma.room.findMany({ where: propertyId ? { propertyId } : {}, include: { beds: true } }),
-          prisma.bed.findMany({ where: propertyId ? { room: { propertyId } } : {} }),
-          prisma.resident.findMany({ where: propertyId ? { propertyId } : {}, include: { bed: { include: { room: true } } } }),
-          prisma.payment.findMany({ where: propertyId ? { propertyId } : {}, include: { resident: true }, orderBy: { createdAt: 'desc' } }),
-          prisma.securityDeposit.findMany({ where: propertyId ? { propertyId } : {} }),
-          prisma.complaint.findMany({ where: propertyId ? { propertyId } : {}, include: { resident: true }, orderBy: { createdAt: 'desc' } }),
-          prisma.visitorRequest.findMany({ where: propertyId ? { propertyId } : {}, include: { resident: true }, orderBy: { createdAt: 'desc' } }),
-          prisma.inventoryItem.findMany({ where: propertyId ? { propertyId } : {} }),
-          prisma.user.findMany({ where: { role: { in: ['MANAGER', 'RECEPTIONIST', 'ACCOUNTANT', 'MAINTENANCE'] } } }),
-          prisma.notice.findMany({ where: propertyId ? { propertyId } : {}, orderBy: { publishedAt: 'desc' }, take: 5 }),
-          prisma.operationalTask.findMany({ where: propertyId ? { propertyId } : {}, take: 5 }),
-        ]);
+      const [
+        properties,
+        totalBuildings,
+        rooms,
+        beds,
+        residents,
+        payments,
+        deposits,
+        complaints,
+        visitors,
+        inventoryItems,
+        staffMembers,
+        recentNotices,
+        tasks,
+      ] = await Promise.all([
+        prisma.property.findMany({
+          where: propertyId ? { id: propertyId } : {},
+          include: { buildings: true, rooms: true, residents: true },
+        }),
+        prisma.building.count({ where: propFilter }),
+        prisma.room.findMany({ where: propFilter, include: { beds: true } }),
+        prisma.bed.findMany({ where: propertyId ? { room: { propertyId } } : {} }),
+        prisma.resident.findMany({
+          where: propFilter,
+          include: { bed: { include: { room: true } } },
+        }),
+        prisma.payment.findMany({
+          where: propFilter,
+          include: { resident: true },
+          orderBy: { createdAt: 'desc' },
+        }),
+        prisma.securityDeposit.findMany({ where: propFilter }),
+        prisma.complaint.findMany({
+          where: propFilter,
+          include: { resident: true },
+          orderBy: { createdAt: 'desc' },
+        }),
+        prisma.visitorRequest.findMany({
+          where: propFilter,
+          include: { resident: true },
+          orderBy: { createdAt: 'desc' },
+        }),
+        prisma.inventoryItem.findMany({ where: propFilter }),
+        prisma.user.findMany({
+          where: { role: { in: ['MANAGER', 'RECEPTIONIST', 'ACCOUNTANT', 'MAINTENANCE', 'SUPER_ADMIN'] } },
+        }),
+        prisma.notice.findMany({ where: propFilter, orderBy: { publishedAt: 'desc' }, take: 5 }),
+        prisma.operationalTask.findMany({ where: propFilter, take: 5 }),
+      ]);
 
-        const totalBedsCount = beds.length;
-        const occupiedBedsCount = beds.filter((b) => b.status === 'OCCUPIED').length;
-        const availableBedsCount = beds.filter((b) => b.status === 'AVAILABLE').length;
-        const occupancyRate = totalBedsCount > 0 ? Math.round((occupiedBedsCount / totalBedsCount) * 100) : 0;
-        const paidPayments = payments.filter((p) => p.status === 'PAID');
-        const pendingPayments = payments.filter((p) => p.status === 'PENDING' || p.status === 'OVERDUE');
-        const overduePayments = payments.filter((p) => p.status === 'OVERDUE');
-
-        return sendSuccess(res, {
-          kpis: {
-            totalProperties: properties.length,
-            totalBuildings,
-            totalRooms: rooms.length,
-            totalBeds: totalBedsCount,
-            occupiedBeds: occupiedBedsCount,
-            availableBeds: availableBedsCount,
-            occupancyRate,
-            totalOccupancyPercentage: occupancyRate,
-            activeResidentsCount: residents.filter((r) => r.status === 'ACTIVE').length,
-            activeResidents: residents.filter((r) => r.status === 'ACTIVE').length,
-            monthlyRevenue: paidPayments.reduce((sum, p) => sum + p.amount, 0),
-            totalRevenueCollected: paidPayments.reduce((sum, p) => sum + p.amount, 0),
-            outstandingRent: pendingPayments.reduce((sum, p) => sum + p.amount, 0),
-            totalOutstandingRent: pendingPayments.reduce((sum, p) => sum + p.amount, 0),
-            totalDeposits: deposits.reduce((sum, d) => sum + d.amount, 0),
-            openComplaints: complaints.filter((c) => c.status !== 'RESOLVED' && c.status !== 'CLOSED').length,
-            pendingVisitors: visitors.filter((v) => v.status === 'PENDING').length,
-            staffCount: staffMembers.length,
-            lowInventoryAlerts: inventoryItems.filter((i) => i.quantity <= i.minQuantity).length,
-          },
-          recentPayments: payments.slice(0, 5),
-          recentComplaints: complaints.slice(0, 5),
-          recentVisitors: visitors.slice(0, 5),
-          recentNotices,
-          recentTasks: tasks,
-          allResidents: residents.map((r) => ({ id: r.id, fullName: r.fullName, roomNumber: r.bed?.room?.number || 'N/A' })),
-          actionRequired: {
-            overdueRentsCount: overduePayments.length,
-            pendingVisitorsCount: visitors.filter((v) => v.status === 'PENDING').length,
-            openMaintenanceCount: complaints.filter((c) => c.status !== 'RESOLVED' && c.status !== 'CLOSED').length,
-            lowStockCount: inventoryItems.filter((i) => i.quantity <= i.minQuantity).length,
-          }
-        });
-      } catch (dbErr) {
-        // Fallback to DevStore
-      }
-
-      const rooms = DevStore.rooms;
-      const allBeds = rooms.flatMap((r) => r.beds);
-      const totalBeds = allBeds.length;
-      const occupiedBeds = allBeds.filter((b) => b.status === 'OCCUPIED').length;
-      const availableBeds = allBeds.filter((b) => b.status === 'AVAILABLE').length;
-      const occupancyRate = totalBeds > 0 ? Math.round((occupiedBeds / totalBeds) * 100) : 0;
-      const overduePays = DevStore.payments.filter((p) => p.status === 'OVERDUE');
-      const paidPays = DevStore.payments.filter((p) => p.status === 'PAID');
-      const pendingPays = DevStore.payments.filter((p) => p.status === 'PENDING' || p.status === 'OVERDUE');
+      const totalBedsCount = beds.length;
+      const occupiedBedsCount = beds.filter((b) => b.status === 'OCCUPIED').length;
+      const availableBedsCount = beds.filter((b) => b.status === 'AVAILABLE').length;
+      const occupancyRate = totalBedsCount > 0 ? Math.round((occupiedBedsCount / totalBedsCount) * 100) : 0;
+      const paidPayments = payments.filter((p) => p.status === 'PAID');
+      const pendingPayments = payments.filter((p) => p.status === 'PENDING' || p.status === 'OVERDUE');
+      const overduePayments = payments.filter((p) => p.status === 'OVERDUE');
 
       return sendSuccess(res, {
         kpis: {
-          totalProperties: DevStore.properties.length,
-          totalBuildings: 1,
+          totalProperties: properties.length,
+          totalBuildings,
           totalRooms: rooms.length,
-          totalBeds,
-          occupiedBeds,
-          availableBeds,
+          totalBeds: totalBedsCount,
+          occupiedBeds: occupiedBedsCount,
+          availableBeds: availableBedsCount,
           occupancyRate,
           totalOccupancyPercentage: occupancyRate,
-          activeResidentsCount: DevStore.residents.filter((r) => r.status === 'ACTIVE').length,
-          activeResidents: DevStore.residents.filter((r) => r.status === 'ACTIVE').length,
-          monthlyRevenue: paidPays.reduce((sum, p) => sum + p.amount, 0),
-          totalRevenueCollected: paidPays.reduce((sum, p) => sum + p.amount, 0),
-          outstandingRent: pendingPays.reduce((sum, p) => sum + p.amount, 0),
-          totalOutstandingRent: pendingPays.reduce((sum, p) => sum + p.amount, 0),
-          totalDeposits: 56000,
-          openComplaints: DevStore.complaints.filter((c) => c.status !== 'RESOLVED' && c.status !== 'CLOSED').length,
-          pendingVisitors: DevStore.visitors.filter((v) => v.status === 'PENDING').length,
-          staffCount: DevStore.staff.length,
-          lowInventoryAlerts: DevStore.inventory.filter((i) => i.quantity <= i.minQuantity).length,
+          activeResidentsCount: residents.filter((r) => r.status === 'ACTIVE').length,
+          activeResidents: residents.filter((r) => r.status === 'ACTIVE').length,
+          monthlyRevenue: paidPayments.reduce((sum, p) => sum + p.amount, 0),
+          totalRevenueCollected: paidPayments.reduce((sum, p) => sum + p.amount, 0),
+          outstandingRent: pendingPayments.reduce((sum, p) => sum + p.amount, 0),
+          totalOutstandingRent: pendingPayments.reduce((sum, p) => sum + p.amount, 0),
+          totalDeposits: deposits.reduce((sum, d) => sum + d.amount, 0),
+          openComplaints: complaints.filter((c) => c.status !== 'RESOLVED' && c.status !== 'CLOSED').length,
+          pendingVisitors: visitors.filter((v) => v.status === 'PENDING').length,
+          staffCount: staffMembers.length,
+          lowInventoryAlerts: inventoryItems.filter((i) => i.quantity <= i.minQuantity).length,
         },
-        recentPayments: DevStore.payments,
-        recentComplaints: DevStore.complaints,
-        recentVisitors: DevStore.visitors,
-        recentNotices: DevStore.notices,
-        recentTasks: DevStore.tasks,
-        allResidents: DevStore.residents.map((r) => ({ id: r.id, fullName: r.fullName, roomNumber: r.roomNumber })),
+        recentPayments: payments.slice(0, 5),
+        recentComplaints: complaints.slice(0, 5),
+        recentVisitors: visitors.slice(0, 5),
+        recentNotices,
+        recentTasks: tasks,
+        allResidents: residents.map((r) => ({
+          id: r.id,
+          fullName: r.fullName,
+          roomNumber: r.bed?.room?.number || 'N/A',
+        })),
         actionRequired: {
-          overdueRentsCount: overduePays.length,
-          pendingVisitorsCount: DevStore.visitors.filter((v) => v.status === 'PENDING').length,
-          openMaintenanceCount: DevStore.complaints.filter((c) => c.status !== 'RESOLVED' && c.status !== 'CLOSED').length,
-          lowStockCount: DevStore.inventory.filter((i) => i.quantity <= i.minQuantity).length,
-        }
+          overdueRentsCount: overduePayments.length,
+          pendingVisitorsCount: visitors.filter((v) => v.status === 'PENDING').length,
+          openMaintenanceCount: complaints.filter((c) => c.status !== 'RESOLVED' && c.status !== 'CLOSED').length,
+          lowStockCount: inventoryItems.filter((i) => i.quantity <= i.minQuantity).length,
+        },
       });
     } catch (error: any) {
       console.error('[OwnerController.getDashboard] Error:', error);
-      return sendError(res, error.message || 'Failed to fetch dashboard', 500);
+      return sendError(res, error.message || 'Failed to load dashboard statistics', 500);
     }
   }
 
@@ -569,54 +142,67 @@ export class OwnerController {
   // ==========================================================================
   static async getProperties(req: AuthRequest, res: Response): Promise<Response> {
     try {
-      try {
-        const properties = await prisma.property.findMany({
-          include: {
-            buildings: {
-              include: {
-                floors: {
-                  include: {
-                    rooms: {
-                      include: {
-                        beds: true
-                      }
-                    }
-                  }
-                }
-              }
+      const properties = await prisma.property.findMany({
+        include: {
+          buildings: {
+            include: {
+              floors: {
+                include: {
+                  rooms: {
+                    include: { beds: true },
+                  },
+                },
+              },
             },
-            rooms: true,
-            residents: true
-          }
-        });
-        if (properties.length > 0) {
-          const formatted = properties.map((p) => ({
-            id: p.id,
-            name: p.name,
-            address: p.address,
-            city: p.city,
-            phone: p.phone,
-            email: p.email,
-            upiId: p.upiId,
-            gstNumber: p.gstNumber,
-            totalRooms: p.rooms.length,
-            totalBeds: p.rooms.reduce((acc, r) => acc + (r.capacity || 0), 0),
-            occupiedBeds: p.residents.filter((r) => r.status === 'ACTIVE').length,
-            activeResidentsCount: p.residents.filter((r) => r.status === 'ACTIVE').length,
-            buildings: p.buildings
-          }));
-          return sendSuccess(res, formatted);
-        }
-      } catch {}
-      return sendSuccess(res, DevStore.properties);
+          },
+          rooms: { include: { beds: true } },
+          residents: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      const formatted = properties.map((p) => ({
+        id: p.id,
+        name: p.name,
+        address: p.address,
+        city: p.city,
+        phone: p.phone,
+        email: p.email,
+        upiId: p.upiId,
+        gstNumber: p.gstNumber,
+        totalRooms: p.rooms.length,
+        totalBeds: p.rooms.reduce((acc, r) => acc + (r.beds?.length || r.capacity || 0), 0),
+        occupiedBeds: p.residents.filter((r) => r.status === 'ACTIVE').length,
+        activeResidentsCount: p.residents.filter((r) => r.status === 'ACTIVE').length,
+        buildings: p.buildings,
+      }));
+
+      return sendSuccess(res, formatted);
     } catch (error: any) {
-      return sendError(res, error.message, 500);
+      console.error('[OwnerController.getProperties] Error:', error);
+      return sendError(res, error.message || 'Failed to fetch properties', 500);
     }
   }
 
   static async getPropertyById(req: AuthRequest, res: Response): Promise<Response> {
-    const prop = DevStore.properties.find((p) => p.id === req.params.id) || DevStore.properties[0];
-    return sendSuccess(res, prop);
+    try {
+      const property = await prisma.property.findUnique({
+        where: { id: req.params.id },
+        include: {
+          buildings: { include: { floors: { include: { rooms: { include: { beds: true } } } } } },
+          rooms: { include: { beds: true } },
+          residents: true,
+        },
+      });
+
+      if (!property) {
+        return sendError(res, 'Property not found', 404);
+      }
+
+      return sendSuccess(res, property);
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to fetch property', 500);
+    }
   }
 
   static async createProperty(req: AuthRequest, res: Response): Promise<Response> {
@@ -626,53 +212,31 @@ export class OwnerController {
         return sendError(res, 'Property name and address are required', 400);
       }
 
-      let createdProp: any = null;
-      try {
-        createdProp = await prisma.property.create({
-          data: {
-            name: name.trim(),
-            address: address.trim(),
-            city: city || 'Bengaluru',
-            phone: phone || null,
-            email: email || null,
-            upiId: upiId || null,
-            gstNumber: gstNumber || null
-          }
-        });
-      } catch {}
-
-      if (!createdProp) {
-        createdProp = {
-          id: `prop-${Date.now()}`,
+      const created = await prisma.property.create({
+        data: {
           name: name.trim(),
           address: address.trim(),
-          city: city || 'Bengaluru',
-          phone: phone || '+91 98765 43210',
-          email: email || 'contact@urbannestpg.com',
-          upiId: upiId || 'pg@upi',
-          gstNumber: gstNumber || '',
-          totalRooms: 0,
-          totalBeds: 0,
-          occupiedBeds: 0,
-          activeResidentsCount: 0,
-          monthlyRevenue: 0,
-          status: 'ACTIVE',
-          buildings: []
-        };
-        DevStore.properties.push(createdProp);
-      }
-
-      DevStore.auditLogs.unshift({
-        id: `aud-${Date.now()}`,
-        actorName: req.user?.name || 'Owner',
-        actorRole: 'OWNER',
-        action: 'PROPERTY_CREATED',
-        targetEntity: 'Property',
-        timestamp: new Date().toISOString(),
-        details: `Created property: ${createdProp.name}`
+          city: city || 'Gurugram',
+          phone: phone || null,
+          email: email || null,
+          upiId: upiId || null,
+          gstNumber: gstNumber || null,
+        },
       });
 
-      return sendSuccess(res, createdProp, 'Property created successfully', 201);
+      await AuditService.log({
+        propertyId: created.id,
+        actorId: req.user?.id,
+        actorName: req.user?.name || 'Owner',
+        actorRole: req.user?.role || 'OWNER',
+        action: 'PROPERTY_CREATED',
+        entity: 'Property',
+        entityId: created.id,
+        ipAddress: req.ip,
+        details: `Created property: ${created.name}`,
+      });
+
+      return sendSuccess(res, created, 'Property created successfully', 201);
     } catch (error: any) {
       return sendError(res, error.message || 'Failed to create property', 500);
     }
@@ -680,42 +244,48 @@ export class OwnerController {
 
   static async updateProperty(req: AuthRequest, res: Response): Promise<Response> {
     try {
-      const propId = req.params.id;
-      const data = req.body;
+      const { name, address, city, phone, email, upiId, gstNumber } = req.body;
+      const updated = await prisma.property.update({
+        where: { id: req.params.id },
+        data: {
+          ...(name && { name: name.trim() }),
+          ...(address && { address: address.trim() }),
+          ...(city && { city: city.trim() }),
+          ...(phone !== undefined && { phone }),
+          ...(email !== undefined && { email }),
+          ...(upiId !== undefined && { upiId }),
+          ...(gstNumber !== undefined && { gstNumber }),
+        },
+      });
 
-      try {
-        const updated = await prisma.property.update({
-          where: { id: propId },
-          data
-        });
-        if (updated) return sendSuccess(res, updated, 'Property updated successfully');
-      } catch {}
+      await AuditService.log({
+        propertyId: updated.id,
+        actorId: req.user?.id,
+        actorName: req.user?.name || 'Owner',
+        actorRole: req.user?.role || 'OWNER',
+        action: 'PROPERTY_UPDATED',
+        entity: 'Property',
+        entityId: updated.id,
+        ipAddress: req.ip,
+        details: `Updated property: ${updated.name}`,
+      });
 
-      const p = DevStore.properties.find((prop) => prop.id === propId) || DevStore.properties[0];
-      if (p) Object.assign(p, data);
-
-      return sendSuccess(res, p, 'Property updated successfully');
+      return sendSuccess(res, updated, 'Property updated successfully');
     } catch (error: any) {
       return sendError(res, error.message || 'Failed to update property', 500);
     }
   }
 
   static async archiveProperty(req: AuthRequest, res: Response): Promise<Response> {
-    const propId = req.params.id;
-    const p = DevStore.properties.find((prop) => prop.id === propId);
-    if (p) (p as any).status = 'ARCHIVED';
+    try {
+      await prisma.property.delete({
+        where: { id: req.params.id },
+      });
 
-    DevStore.auditLogs.unshift({
-      id: `aud-${Date.now()}`,
-      actorName: req.user?.name || 'Owner',
-      actorRole: 'OWNER',
-      action: 'PROPERTY_ARCHIVED',
-      targetEntity: 'Property',
-      timestamp: new Date().toISOString(),
-      details: `Archived property ${propId}`
-    });
-
-    return sendSuccess(res, { id: propId, status: 'ARCHIVED' }, 'Property archived successfully');
+      return sendSuccess(res, null, 'Property archived successfully');
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to archive property', 500);
+    }
   }
 
   // ==========================================================================
@@ -723,1414 +293,1807 @@ export class OwnerController {
   // ==========================================================================
   static async getBuildings(req: AuthRequest, res: Response): Promise<Response> {
     try {
-      try {
-        const buildings = await prisma.building.findMany({
-          include: { floors: { include: { rooms: { include: { beds: true } } } } }
-        });
-        if (buildings.length > 0) return sendSuccess(res, buildings);
-      } catch {}
-      return sendSuccess(res, DevStore.buildings);
+      const propertyId = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
+      const buildings = await prisma.building.findMany({
+        where: propertyId ? { propertyId } : {},
+        include: {
+          floors: {
+            include: { rooms: { include: { beds: true } } },
+          },
+          property: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+      return sendSuccess(res, buildings);
     } catch (error: any) {
-      return sendError(res, error.message, 500);
+      return sendError(res, error.message || 'Failed to fetch buildings', 500);
     }
   }
 
   static async createBuilding(req: AuthRequest, res: Response): Promise<Response> {
-    const { propertyId, name, code, numberOfFloors } = req.body;
-    const numFloors = parseInt(numberOfFloors || '3', 10);
+    try {
+      const { propertyId, name, numberOfFloors } = req.body;
+      if (!name) return sendError(res, 'Building name is required', 400);
 
-    const generatedFloors = [];
-    for (let f = 1; f <= numFloors; f++) {
-      generatedFloors.push({ id: `flr-${Date.now()}-${f}`, floorNumber: f, totalRooms: 0 });
+      const propId = propertyId || (await OwnerController.resolvePropertyScope(req));
+      if (!propId) return sendError(res, 'Property ID is required', 400);
+
+      const building = await prisma.building.create({
+        data: {
+          propertyId: propId,
+          name: name.trim(),
+        },
+      });
+
+      const floorCount = parseInt(numberOfFloors || '1', 10);
+      if (floorCount > 0) {
+        for (let i = 1; i <= floorCount; i++) {
+          await prisma.floor.create({
+            data: {
+              buildingId: building.id,
+              floorNumber: i,
+            },
+          });
+        }
+      }
+
+      return sendSuccess(res, building, 'Building created successfully', 201);
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to create building', 500);
     }
-
-    const bld = {
-      id: `bld-${Date.now()}`,
-      propertyId: propertyId || 'prop-1',
-      name: name || 'Block B',
-      code: code || 'BLK-B',
-      status: 'ACTIVE',
-      floors: generatedFloors
-    };
-    DevStore.buildings.push(bld as any);
-    return sendSuccess(res, bld, 'Building created successfully', 201);
   }
 
   static async updateBuilding(req: AuthRequest, res: Response): Promise<Response> {
-    const bld = DevStore.buildings.find((b) => b.id === req.params.id);
-    if (bld) Object.assign(bld, req.body);
-    return sendSuccess(res, bld, 'Building updated successfully');
+    try {
+      const { name } = req.body;
+      const updated = await prisma.building.update({
+        where: { id: req.params.id },
+        data: { ...(name && { name: name.trim() }) },
+      });
+      return sendSuccess(res, updated, 'Building updated successfully');
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to update building', 500);
+    }
   }
 
   static async archiveBuilding(req: AuthRequest, res: Response): Promise<Response> {
-    const bld = DevStore.buildings.find((b) => b.id === req.params.id);
-    if (bld) (bld as any).status = 'ARCHIVED';
-    return sendSuccess(res, { id: req.params.id, status: 'ARCHIVED' }, 'Building archived');
+    try {
+      await prisma.building.delete({ where: { id: req.params.id } });
+      return sendSuccess(res, null, 'Building archived successfully');
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to delete building', 500);
+    }
   }
 
   static async getFloors(req: AuthRequest, res: Response): Promise<Response> {
-    return sendSuccess(res, DevStore.floors);
+    try {
+      const floors = await prisma.floor.findMany({
+        include: { building: true, rooms: true },
+        orderBy: { floorNumber: 'asc' },
+      });
+      return sendSuccess(res, floors);
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to fetch floors', 500);
+    }
   }
 
   static async createFloor(req: AuthRequest, res: Response): Promise<Response> {
-    const newFloor = {
-      id: `flr-${Date.now()}`,
-      floorNumber: parseInt(req.body.floorNumber || '1', 10),
-      buildingId: req.body.buildingId || 'bld-1',
-      buildingName: req.body.buildingName || 'Block A',
-      totalRooms: 0
-    };
-    DevStore.floors.push(newFloor);
-    return sendSuccess(res, newFloor, 'Floor added successfully', 201);
+    try {
+      const { buildingId, floorNumber } = req.body;
+      if (!buildingId || floorNumber === undefined) {
+        return sendError(res, 'Building ID and Floor Number are required', 400);
+      }
+
+      const floor = await prisma.floor.create({
+        data: {
+          buildingId,
+          floorNumber: parseInt(floorNumber, 10),
+        },
+      });
+      return sendSuccess(res, floor, 'Floor created successfully', 201);
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to create floor', 500);
+    }
   }
 
   static async archiveFloor(req: AuthRequest, res: Response): Promise<Response> {
-    DevStore.floors = DevStore.floors.filter((f) => f.id !== req.params.id);
-    return sendSuccess(res, { id: req.params.id }, 'Floor archived');
+    try {
+      await prisma.floor.delete({ where: { id: req.params.id } });
+      return sendSuccess(res, null, 'Floor archived successfully');
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to delete floor', 500);
+    }
   }
 
   // ==========================================================================
-  // 4. ROOMS & BEDS (CRUD & ATOMIC BED MATRIX)
+  // 4. ROOMS & BEDS (CRUD)
   // ==========================================================================
   static async getRooms(req: AuthRequest, res: Response): Promise<Response> {
     try {
-      try {
-        const rooms = await prisma.room.findMany({
-          include: { floor: { include: { building: true } }, beds: { include: { resident: true } } }
-        });
-        if (rooms.length > 0) {
-          const formatted = rooms.map((r) => ({
-            id: r.id,
-            number: r.number,
-            type: r.type,
-            capacity: r.capacity,
-            baseRent: r.baseRent,
-            deposit: r.deposit,
-            status: r.status,
-            amenities: r.amenities ? r.amenities.split(',').map((a) => a.trim()).filter(Boolean) : [],
-            propertyId: r.propertyId,
-            building: r.floor?.building?.name || 'Block A',
-            floor: r.floor?.floorNumber || 1,
-            occupiedCount: r.beds.filter((b) => b.status === 'OCCUPIED' || b.resident).length,
-            beds: r.beds.map((b) => ({
-              id: b.id,
-              bedNumber: b.bedNumber,
-              monthlyRent: b.monthlyRent,
-              status: b.status,
-              residentId: b.resident?.id,
-              residentName: b.resident?.fullName,
-            }))
-          }));
-          return sendSuccess(res, formatted);
-        }
-      } catch {}
-      return sendSuccess(res, DevStore.rooms);
+      const propertyId = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
+      const rooms = await prisma.room.findMany({
+        where: propertyId ? { propertyId } : {},
+        include: {
+          floor: { include: { building: true } },
+          beds: { include: { resident: true } },
+        },
+        orderBy: { number: 'asc' },
+      });
+
+      const formatted = rooms.map((r) => ({
+        id: r.id,
+        number: r.number,
+        type: r.type,
+        capacity: r.capacity,
+        baseRent: r.baseRent,
+        deposit: r.deposit,
+        status: r.status,
+        amenities: r.amenities ? r.amenities.split(',').map((a) => a.trim()).filter(Boolean) : [],
+        propertyId: r.propertyId,
+        building: r.floor?.building?.name || 'Block A',
+        floor: r.floor?.floorNumber || 1,
+        occupiedCount: r.beds.filter((b) => b.status === 'OCCUPIED' || b.resident).length,
+        beds: r.beds.map((b) => ({
+          id: b.id,
+          bedNumber: b.bedNumber,
+          monthlyRent: b.monthlyRent,
+          status: b.status,
+          residentId: b.resident?.id,
+          residentName: b.resident?.fullName,
+        })),
+      }));
+
+      return sendSuccess(res, formatted);
     } catch (error: any) {
-      return sendError(res, error.message, 500);
+      return sendError(res, error.message || 'Failed to fetch rooms', 500);
     }
   }
 
   static async getRoomById(req: AuthRequest, res: Response): Promise<Response> {
-    const room = DevStore.rooms.find((r) => r.id === req.params.id) || DevStore.rooms[0];
-    return sendSuccess(res, room);
+    try {
+      const room = await prisma.room.findUnique({
+        where: { id: req.params.id },
+        include: {
+          beds: { include: { resident: true } },
+          floor: { include: { building: true } },
+          property: true,
+        },
+      });
+      if (!room) return sendError(res, 'Room not found', 404);
+      return sendSuccess(res, room);
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to fetch room', 500);
+    }
   }
 
   static async createRoom(req: AuthRequest, res: Response): Promise<Response> {
     try {
-      const { propertyId, number, type, capacity, baseRent, deposit, amenities } = req.body;
+      const { propertyId, number, type, capacity, baseRent, deposit, amenities, floorId } = req.body;
+      if (!number) return sendError(res, 'Room number is required', 400);
+
+      const propId = propertyId || (await OwnerController.resolvePropertyScope(req));
+      if (!propId) return sendError(res, 'Property ID is required', 400);
+
       const cap = parseInt(capacity || '2', 10);
       const rent = parseFloat(baseRent || '14000');
       const dep = deposit ? parseFloat(deposit) : rent * 2;
+      const amenitiesStr = Array.isArray(amenities) ? amenities.join(', ') : amenities || '';
 
-      const generatedBeds = [];
-      for (let i = 0; i < cap; i++) {
-        const char = String.fromCharCode(65 + i);
-        generatedBeds.push({
-          id: `bed-${number}-${char}-${Date.now()}`,
-          bedNumber: `Bed ${number}-${char}`,
-          monthlyRent: rent,
-          status: 'AVAILABLE',
-          residentId: null,
-          residentName: null,
-          residentMobile: null
+      const room = await prisma.$transaction(async (tx) => {
+        const createdRoom = await tx.room.create({
+          data: {
+            propertyId: propId,
+            number: String(number).trim(),
+            type: type || 'Double',
+            capacity: cap,
+            baseRent: rent,
+            deposit: dep,
+            amenities: amenitiesStr,
+            floorId: floorId || null,
+          },
         });
-      }
 
-      const newRoom = {
-        id: `room-${number}-${Date.now()}`,
-        number: String(number).trim(),
-        type: type || 'Double',
-        capacity: cap,
-        baseRent: rent,
-        deposit: dep,
-        status: 'AVAILABLE',
-        amenities: Array.isArray(amenities) ? amenities : String(amenities || '').split(',').map((s) => s.trim()).filter(Boolean),
-        propertyId: propertyId || 'prop-1',
-        building: req.body.building || 'Block A',
-        floor: parseInt(req.body.floor || '1', 10),
-        occupiedCount: 0,
-        beds: generatedBeds
-      };
+        for (let i = 0; i < cap; i++) {
+          const char = String.fromCharCode(65 + i);
+          await tx.bed.create({
+            data: {
+              roomId: createdRoom.id,
+              bedNumber: `Bed ${number}-${char}`,
+              monthlyRent: rent,
+              status: 'AVAILABLE',
+            },
+          });
+        }
 
-      DevStore.rooms.unshift(newRoom as any);
-
-      DevStore.auditLogs.unshift({
-        id: `aud-${Date.now()}`,
-        actorName: req.user?.name || 'Owner',
-        actorRole: req.user?.role || 'OWNER',
-        action: 'ROOM_CREATED',
-        targetEntity: 'Room',
-        timestamp: new Date().toISOString(),
-        details: `Created Room ${newRoom.number} (${cap} beds, ₹${rent}/mo)`
+        return tx.room.findUnique({
+          where: { id: createdRoom.id },
+          include: { beds: true, floor: { include: { building: true } } },
+        });
       });
 
-      return sendSuccess(res, newRoom, `Room ${newRoom.number} and ${cap} beds created successfully`, 201);
+      return sendSuccess(res, room, `Room ${number} and ${cap} beds created successfully`, 201);
     } catch (error: any) {
       return sendError(res, error.message || 'Failed to create room', 500);
     }
   }
 
   static async updateRoom(req: AuthRequest, res: Response): Promise<Response> {
-    const room = DevStore.rooms.find((r) => r.id === req.params.id);
-    if (room) {
-      if (req.body.number) room.number = req.body.number;
-      if (req.body.type) room.type = req.body.type;
-      if (req.body.baseRent) room.baseRent = parseFloat(req.body.baseRent);
-      if (req.body.deposit) room.deposit = parseFloat(req.body.deposit);
-      if (req.body.status) room.status = req.body.status;
-      if (req.body.building) (room as any).building = req.body.building;
-      if (req.body.floor) (room as any).floor = parseInt(req.body.floor);
-      if (req.body.amenities) {
-        room.amenities = Array.isArray(req.body.amenities)
-          ? req.body.amenities
-          : String(req.body.amenities).split(',').map((s) => s.trim()).filter(Boolean);
-      }
+    try {
+      const { number, type, baseRent, deposit, status, amenities } = req.body;
+      const updated = await prisma.room.update({
+        where: { id: req.params.id },
+        data: {
+          ...(number && { number: String(number).trim() }),
+          ...(type && { type }),
+          ...(baseRent !== undefined && { baseRent: parseFloat(baseRent) }),
+          ...(deposit !== undefined && { deposit: parseFloat(deposit) }),
+          ...(status && { status }),
+          ...(amenities !== undefined && {
+            amenities: Array.isArray(amenities) ? amenities.join(', ') : amenities,
+          }),
+        },
+        include: { beds: true },
+      });
+      return sendSuccess(res, updated, 'Room updated successfully');
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to update room', 500);
     }
-    return sendSuccess(res, room, 'Room updated successfully');
   }
 
   static async archiveRoom(req: AuthRequest, res: Response): Promise<Response> {
-    const roomId = req.params.id;
-    const room = DevStore.rooms.find((r) => r.id === roomId);
-    if (room) {
-      if (room.occupiedCount > 0) {
-        return sendError(res, 'Cannot archive an occupied room. Please move out residents first.', 400);
-      }
-      room.status = 'MAINTENANCE';
+    try {
+      await prisma.room.delete({ where: { id: req.params.id } });
+      return sendSuccess(res, null, 'Room archived successfully');
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to delete room', 500);
     }
-    return sendSuccess(res, { id: roomId, status: 'ARCHIVED' }, 'Room archived');
   }
 
   static async updateBedStatus(req: AuthRequest, res: Response): Promise<Response> {
-    const bedId = req.params.id;
-    const { status, monthlyRent } = req.body;
-    for (const r of DevStore.rooms) {
-      const b = r.beds.find((bed) => bed.id === bedId);
-      if (b) {
-        if (status) b.status = status;
-        if (monthlyRent) b.monthlyRent = parseFloat(monthlyRent);
-        return sendSuccess(res, b, `Bed status updated to ${status}`);
-      }
+    try {
+      const { status, monthlyRent } = req.body;
+      const updated = await prisma.bed.update({
+        where: { id: req.params.id },
+        data: {
+          ...(status && { status }),
+          ...(monthlyRent !== undefined && { monthlyRent: parseFloat(monthlyRent) }),
+        },
+        include: { resident: true, room: true },
+      });
+      return sendSuccess(res, updated, 'Bed updated successfully');
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to update bed status', 500);
     }
-    return sendSuccess(res, { id: bedId, status }, 'Bed status updated');
   }
 
   // ==========================================================================
-  // 5. RESIDENTS & FULL DOSSIER (CRUD)
+  // 5. RESIDENTS & LIFECYCLE (MOVE-IN, NOTICE PERIOD, MOVE-OUT)
   // ==========================================================================
   static async getResidents(req: AuthRequest, res: Response): Promise<Response> {
-    return sendSuccess(res, DevStore.residents);
+    try {
+      const propertyId = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
+      const residents = await prisma.resident.findMany({
+        where: propertyId ? { propertyId } : {},
+        include: {
+          bed: { include: { room: { include: { floor: { include: { building: true } } } } } },
+          documents: true,
+          payments: { orderBy: { dueDate: 'desc' }, take: 5 },
+          agreements: true,
+          securityDeposits: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      const formatted = residents.map((r) => ({
+        id: r.id,
+        userId: r.userId,
+        propertyId: r.propertyId,
+        bedId: r.bedId,
+        roomNumber: r.bed?.room?.number || 'N/A',
+        bedNumber: r.bed?.bedNumber || 'N/A',
+        buildingName: r.bed?.room?.floor?.building?.name || 'Main Wing',
+        floorNumber: r.bed?.room?.floor?.floorNumber || 1,
+        fullName: r.fullName,
+        email: r.email,
+        mobile: r.mobile,
+        alternateMobile: r.alternateMobile,
+        gender: r.gender,
+        emergencyContactName: r.emergencyContactName,
+        emergencyContactRelation: r.emergencyContactRelation,
+        emergencyContactPhone: r.emergencyContactPhone,
+        emergencyContact: `${r.emergencyContactName} (${r.emergencyContactRelation}): ${r.emergencyContactPhone}`,
+        kycStatus: r.kycStatus,
+        kycDocumentType: r.kycDocumentType,
+        kycDocumentNumber: r.kycDocumentNumber,
+        joiningDate: r.joiningDate,
+        expectedMoveOutDate: r.expectedMoveOutDate,
+        status: r.status,
+        monthlyRent: r.bed?.monthlyRent || 0,
+        securityDeposit: r.securityDeposits[0]?.amount || 0,
+        depositAmount: r.securityDeposits[0]?.amount || 0,
+        permanentAddress: r.permanentAddress,
+        address: r.permanentAddress,
+        workCompany: r.workCompany,
+        documents: r.documents,
+        payments: r.payments,
+      }));
+
+      return sendSuccess(res, formatted);
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to fetch residents', 500);
+    }
   }
 
   static async getResidentById(req: AuthRequest, res: Response): Promise<Response> {
-    const resident = DevStore.residents.find((r) => r.id === req.params.id) || DevStore.residents[0];
-    return sendSuccess(res, resident);
+    try {
+      const resident = await prisma.resident.findUnique({
+        where: { id: req.params.id },
+        include: {
+          bed: { include: { room: { include: { floor: { include: { building: true } } } } } },
+          documents: true,
+          payments: { orderBy: { dueDate: 'desc' } },
+          agreements: true,
+          securityDeposits: true,
+          complaints: true,
+          visitorRequests: true,
+          leaveRequests: true,
+          property: true,
+        },
+      });
+
+      if (!resident) return sendError(res, 'Resident not found', 404);
+      return sendSuccess(res, resident);
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to fetch resident details', 500);
+    }
   }
 
   static async createResident(req: AuthRequest, res: Response): Promise<Response> {
     return OwnerController.moveInResident(req, res);
   }
 
-  static async updateResident(req: AuthRequest, res: Response): Promise<Response> {
-    const resObj = DevStore.residents.find((r) => r.id === req.params.id);
-    if (resObj) {
-      Object.assign(resObj, req.body);
-      if (req.body.monthlyRent) resObj.monthlyRent = parseFloat(req.body.monthlyRent);
-      if (req.body.securityDeposit) resObj.securityDeposit = parseFloat(req.body.securityDeposit);
-    }
-    return sendSuccess(res, resObj, 'Resident profile updated successfully');
-  }
-
-  static async archiveResident(req: AuthRequest, res: Response): Promise<Response> {
-    const resident = DevStore.residents.find((r) => r.id === req.params.id);
-    if (resident) {
-      resident.status = 'INACTIVE';
-      for (const r of DevStore.rooms) {
-        const b = r.beds.find((bed) => bed.residentId === resident.id);
-        if (b) {
-          b.status = 'AVAILABLE';
-          b.residentId = null;
-          b.residentName = null;
-          r.occupiedCount = r.beds.filter((bed) => bed.status === 'OCCUPIED').length;
-        }
-      }
-    }
-    return sendSuccess(res, { id: req.params.id, status: 'INACTIVE' }, 'Resident deactivated');
-  }
-
-  // ==========================================================================
-  // 6. RESIDENT 3-STAGE LIFECYCLE (MOVE-IN, NOTICE, MOVE-OUT)
-  // ==========================================================================
   static async moveInResident(req: AuthRequest, res: Response): Promise<Response> {
     try {
-      const { bedId, fullName, email, mobile, monthlyRent, depositAmount, leaseStartDate, leaseEndDate } = req.body;
+      const {
+        propertyId,
+        bedId,
+        fullName,
+        email,
+        mobile,
+        gender,
+        emergencyContactName,
+        emergencyContactRelation,
+        emergencyContactPhone,
+        joiningDate,
+        monthlyRent,
+        depositAmount,
+        securityDepositAmount,
+        permanentAddress,
+        workCompany,
+      } = req.body;
 
-      if (!fullName || !mobile) {
-        return sendError(res, 'Resident full name and mobile are required', 400);
+      if (!fullName || !email || !mobile) {
+        return sendError(res, 'Full name, email, and mobile number are required', 400);
       }
 
-      let targetRoomNum = '102';
-      let targetBedNum = 'Bed 102-C';
+      const propId = propertyId || (await OwnerController.resolvePropertyScope(req));
+      if (!propId) return sendError(res, 'Property ID is required', 400);
 
-      for (const r of DevStore.rooms) {
-        const b = r.beds.find((bed) => bed.id === bedId || (bed.status === 'AVAILABLE' && !bedId));
-        if (b) {
-          b.status = 'OCCUPIED';
-          b.residentName = fullName;
-          b.residentMobile = mobile;
-          targetRoomNum = r.number;
-          targetBedNum = b.bedNumber;
-          r.occupiedCount = r.beds.filter((bed) => bed.status === 'OCCUPIED').length;
-          break;
+      const salt = await bcrypt.genSalt(10);
+      const defaultHash = await bcrypt.hash('admin123', salt);
+
+      const result = await prisma.$transaction(async (tx) => {
+        // 1. Create or find User
+        let user = await tx.user.findUnique({ where: { email: email.toLowerCase().trim() } });
+        if (!user) {
+          user = await tx.user.create({
+            data: {
+              email: email.toLowerCase().trim(),
+              passwordHash: defaultHash,
+              name: fullName.trim(),
+              role: 'RESIDENT',
+              mobile: mobile.trim(),
+              propertyId: propId,
+            },
+          });
         }
-      }
 
-      const rent = parseFloat(monthlyRent || '14000');
-      const dep = parseFloat(depositAmount || '28000');
+        // 2. Create Resident Profile
+        const resident = await tx.resident.create({
+          data: {
+            userId: user.id,
+            propertyId: propId,
+            bedId: bedId || null,
+            fullName: fullName.trim(),
+            email: email.toLowerCase().trim(),
+            mobile: mobile.trim(),
+            gender: gender || 'MALE',
+            emergencyContactName: emergencyContactName || 'Guardian',
+            emergencyContactRelation: emergencyContactRelation || 'Parent',
+            emergencyContactPhone: emergencyContactPhone || mobile.trim(),
+            joiningDate: joiningDate ? new Date(joiningDate) : new Date(),
+            status: 'ACTIVE',
+            kycStatus: 'PENDING',
+            permanentAddress: permanentAddress || null,
+            workCompany: workCompany || null,
+          },
+        });
 
-      const newResident = {
-        id: `res-${Date.now()}`,
-        userId: `usr-${Date.now()}`,
-        propertyId: 'prop-1',
-        bedId: bedId || 'bed-new',
-        roomNumber: targetRoomNum,
-        bedNumber: targetBedNum,
-        fullName: fullName.trim(),
-        email: (email || `${fullName.toLowerCase().replace(/\s+/g, '.')}@example.com`).trim(),
-        mobile: mobile.trim(),
-        gender: req.body.gender || 'MALE',
-        emergencyContactName: req.body.emergencyContactName || 'Guardian',
-        emergencyContactRelation: req.body.emergencyContactRelation || 'Parent',
-        emergencyContactPhone: req.body.emergencyContactPhone || '9876543210',
-        emergencyContact: `${req.body.emergencyContactName || 'Guardian'}: ${req.body.emergencyContactPhone || '9876543210'}`,
-        kycStatus: 'PENDING',
-        joiningDate: leaseStartDate || new Date().toISOString().split('T')[0],
-        status: 'ACTIVE',
-        monthlyRent: rent,
-        securityDeposit: dep,
-        depositAmount: dep,
-        permanentAddress: req.body.permanentAddress || 'Not provided',
-        address: req.body.permanentAddress || 'Not provided',
-        workCompany: req.body.workCompany || 'Self Employed',
-        documents: [],
-        payments: [
-          { id: `pay-${Date.now()}`, category: 'RENT', period: 'Current Month', amount: rent, dueDate: '2026-10-05', status: 'PENDING' }
-        ],
-        complaints: [],
-        visitors: [],
-        leaves: []
-      };
+        // 3. Mark Bed Occupied if assigned
+        if (bedId) {
+          await tx.bed.update({
+            where: { id: bedId },
+            data: {
+              status: 'OCCUPIED',
+              ...(monthlyRent && { monthlyRent: parseFloat(monthlyRent) }),
+            },
+          });
+        }
 
-      DevStore.residents.unshift(newResident as any);
+        // 4. Create Security Deposit
+        const depositVal = parseFloat(securityDepositAmount || depositAmount || '0');
+        if (depositVal > 0) {
+          await tx.securityDeposit.create({
+            data: {
+              residentId: resident.id,
+              propertyId: propId,
+              amount: depositVal,
+              status: 'PAID',
+              paidAt: new Date(),
+            },
+          });
+        }
 
-      DevStore.deposits.unshift({
-        id: `dep-${Date.now()}`,
-        residentId: newResident.id,
-        residentName: newResident.fullName,
-        roomNumber: targetRoomNum,
-        propertyId: 'prop-1',
-        amount: dep,
-        status: 'PAID',
-        paidAt: new Date().toISOString().split('T')[0],
-        deductions: 0,
-        refundAmount: null,
-        notes: 'Initial move-in security deposit'
+        // 5. Create Initial Rent Invoice
+        const rentVal = parseFloat(monthlyRent || '14000');
+        await tx.payment.create({
+          data: {
+            residentId: resident.id,
+            propertyId: propId,
+            amount: rentVal,
+            category: 'RENT',
+            period: new Date().toLocaleString('default', { month: 'long', year: 'numeric' }),
+            dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
+            status: 'PENDING',
+          },
+        });
+
+        return resident;
       });
 
-      DevStore.auditLogs.unshift({
-        id: `aud-${Date.now()}`,
+      await AuditService.log({
+        propertyId: propId,
+        actorId: req.user?.id,
         actorName: req.user?.name || 'Owner',
         actorRole: req.user?.role || 'OWNER',
-        action: 'RESIDENT_MOVE_IN',
-        targetEntity: 'Resident',
-        timestamp: new Date().toISOString(),
-        details: `Completed move-in for ${newResident.fullName} into ${targetBedNum} (Rm ${targetRoomNum})`
+        action: 'RESIDENT_ONBOARDED',
+        entity: 'Resident',
+        entityId: result.id,
+        ipAddress: req.ip,
+        details: `Onboarded resident ${result.fullName} (${result.email})`,
       });
 
-      return sendSuccess(res, { resident: newResident }, 'Resident move-in completed successfully', 201);
+      return sendSuccess(res, result, 'Resident onboarded successfully', 201);
     } catch (error: any) {
-      return sendError(res, error.message || 'Move-in failed', 500);
+      console.error('[OwnerController.moveInResident] Error:', error);
+      return sendError(res, error.message || 'Failed to onboard resident', 500);
     }
   }
 
   static async placeOnNoticePeriod(req: AuthRequest, res: Response): Promise<Response> {
-    const resident = DevStore.residents.find((r) => r.id === req.params.id);
-    if (resident) {
-      resident.status = 'NOTICE_PERIOD';
-      (resident as any).expectedMoveOutDate = req.body.expectedMoveOutDate || req.body.noticeEndDate || new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
-
-      DevStore.auditLogs.unshift({
-        id: `aud-${Date.now()}`,
-        actorName: req.user?.name || 'Owner',
-        actorRole: 'OWNER',
-        action: 'RESIDENT_NOTICE_PERIOD',
-        targetEntity: 'Resident',
-        timestamp: new Date().toISOString(),
-        details: `Placed resident ${resident.fullName} on notice period.`
+    try {
+      const { expectedMoveOutDate, reason } = req.body;
+      const resident = await prisma.resident.update({
+        where: { id: req.params.id },
+        data: {
+          status: 'NOTICE_PERIOD',
+          expectedMoveOutDate: expectedMoveOutDate ? new Date(expectedMoveOutDate) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        },
       });
-      return sendSuccess(res, resident, 'Resident placed on notice period');
+
+      await AuditService.log({
+        propertyId: resident.propertyId,
+        actorId: req.user?.id,
+        actorName: req.user?.name || 'Owner',
+        actorRole: req.user?.role || 'OWNER',
+        action: 'RESIDENT_NOTICE_PERIOD',
+        entity: 'Resident',
+        entityId: resident.id,
+        ipAddress: req.ip,
+        details: `Placed resident ${resident.fullName} on notice period. Reason: ${reason || 'Notice served'}`,
+      });
+
+      return sendSuccess(res, resident, 'Resident placed on notice period successfully');
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to place on notice period', 500);
     }
-    return sendSuccess(res, { id: req.params.id, status: 'NOTICE_PERIOD' }, 'Notice period recorded');
   }
 
   static async moveOutResident(req: AuthRequest, res: Response): Promise<Response> {
-    const resident = DevStore.residents.find((r) => r.id === req.params.id);
-    if (resident) {
-      resident.status = 'MOVED_OUT';
-      // Release bed
-      for (const r of DevStore.rooms) {
-        const b = r.beds.find((bed) => bed.residentId === resident.id || bed.id === resident.bedId);
-        if (b) {
-          b.status = 'AVAILABLE';
-          b.residentId = null;
-          b.residentName = null;
-          r.occupiedCount = r.beds.filter((bed) => bed.status === 'OCCUPIED').length;
+    try {
+      const { deductions, deductionNotes, refundAmount } = req.body;
+      const residentId = req.params.id;
+
+      const resident = await prisma.resident.findUnique({ where: { id: residentId } });
+      if (!resident) return sendError(res, 'Resident not found', 404);
+
+      await prisma.$transaction(async (tx) => {
+        // 1. Release Bed
+        if (resident.bedId) {
+          await tx.bed.update({
+            where: { id: resident.bedId },
+            data: { status: 'AVAILABLE' },
+          });
         }
-      }
 
-      // Update deposit settlement
-      const dep = DevStore.deposits.find((d) => d.residentId === resident.id);
-      if (dep) {
-        dep.status = 'REFUNDED';
-        dep.deductions = parseFloat(req.body.deductions || '0');
-        dep.refundAmount = parseFloat(req.body.refundAmount || (dep.amount - (dep.deductions || 0)).toString());
-        dep.notes = req.body.remarks || req.body.deductionNotes || 'Deposit settled upon move-out';
-      }
+        // 2. Mark Resident as MOVED_OUT
+        await tx.resident.update({
+          where: { id: residentId },
+          data: {
+            status: 'MOVED_OUT',
+            bedId: null,
+          },
+        });
 
-      DevStore.auditLogs.unshift({
-        id: `aud-${Date.now()}`,
-        actorName: req.user?.name || 'Owner',
-        actorRole: 'OWNER',
-        action: 'RESIDENT_MOVE_OUT',
-        targetEntity: 'Resident',
-        timestamp: new Date().toISOString(),
-        details: `Move-out completed for ${resident.fullName}. Bed released and deposit settled.`
+        // 3. Settle Security Deposit
+        const existingDeposit = await tx.securityDeposit.findFirst({
+          where: { residentId },
+        });
+        if (existingDeposit) {
+          await tx.securityDeposit.update({
+            where: { id: existingDeposit.id },
+            data: {
+              status: 'REFUNDED',
+              deductions: deductions ? parseFloat(deductions) : 0,
+              refundAmount: refundAmount ? parseFloat(refundAmount) : existingDeposit.amount - (deductions || 0),
+              notes: deductionNotes || 'Move-out clearance completed',
+            },
+          });
+        }
       });
 
-      return sendSuccess(res, resident, 'Move-out settlement completed and bed released.');
+      return sendSuccess(res, null, 'Resident move-out completed and bed released.');
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to complete move-out', 500);
     }
-    return sendSuccess(res, { id: req.params.id, status: 'MOVED_OUT' }, 'Move-out completed');
+  }
+
+  static async updateResident(req: AuthRequest, res: Response): Promise<Response> {
+    try {
+      const { fullName, email, mobile, emergencyContactName, emergencyContactPhone, workCompany, permanentAddress } = req.body;
+      const updated = await prisma.resident.update({
+        where: { id: req.params.id },
+        data: {
+          ...(fullName && { fullName: fullName.trim() }),
+          ...(email && { email: email.toLowerCase().trim() }),
+          ...(mobile && { mobile: mobile.trim() }),
+          ...(emergencyContactName && { emergencyContactName }),
+          ...(emergencyContactPhone && { emergencyContactPhone }),
+          ...(workCompany !== undefined && { workCompany }),
+          ...(permanentAddress !== undefined && { permanentAddress }),
+        },
+      });
+      return sendSuccess(res, updated, 'Resident updated successfully');
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to update resident', 500);
+    }
+  }
+
+  static async archiveResident(req: AuthRequest, res: Response): Promise<Response> {
+    try {
+      await prisma.resident.update({
+        where: { id: req.params.id },
+        data: { status: 'INACTIVE' },
+      });
+      return sendSuccess(res, null, 'Resident archived');
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to archive resident', 500);
+    }
   }
 
   // ==========================================================================
-  // 7. PAYMENTS & INVOICES (FINANCE)
+  // 6. PAYMENTS, INVOICES & DEPOSITS
   // ==========================================================================
   static async getPayments(req: AuthRequest, res: Response): Promise<Response> {
-    return sendSuccess(res, DevStore.payments);
+    try {
+      const propertyId = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
+      const payments = await prisma.payment.findMany({
+        where: propertyId ? { propertyId } : {},
+        include: {
+          resident: { include: { bed: { include: { room: true } } } },
+          receipt: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      const formatted = payments.map((p) => ({
+        id: p.id,
+        residentId: p.residentId,
+        residentName: p.resident?.fullName || 'Resident',
+        roomNumber: p.resident?.bed?.room?.number || '101',
+        bedNumber: p.resident?.bed?.bedNumber || 'A',
+        amount: p.amount,
+        category: p.category,
+        period: p.period,
+        dueDate: p.dueDate,
+        paidDate: p.paidDate,
+        status: p.status,
+        method: p.method,
+        transactionId: p.transactionId,
+        receiptNumber: p.receipt?.receiptNumber,
+        notes: p.notes,
+      }));
+
+      return sendSuccess(res, formatted);
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to fetch payments', 500);
+    }
   }
 
   static async recordManualPayment(req: AuthRequest, res: Response): Promise<Response> {
-    const { paymentId, method, transactionId, notes, amount } = req.body;
-    const pay = DevStore.payments.find((p) => p.id === paymentId) || DevStore.payments[0];
-    if (pay) {
-      pay.status = 'PAID';
-      pay.method = method || 'UPI';
-      pay.transactionId = transactionId || `TXN-${Date.now()}`;
-      pay.receiptNumber = `UN-REC-${Date.now().toString().slice(-6)}`;
-      (pay as any).paidDate = new Date().toISOString().split('T')[0];
+    try {
+      const { paymentId, amount, paymentMethod, method, transactionId, note, notes } = req.body;
+      if (!paymentId) return sendError(res, 'Payment ID is required', 400);
+
+      const targetPayment = await prisma.payment.findUnique({ where: { id: paymentId } });
+      if (!targetPayment) return sendError(res, 'Payment invoice not found', 404);
+
+      const chosenMethod = (paymentMethod || method || 'UPI') as any;
+      const txn = transactionId || `MANUAL-${Date.now()}`;
+      const receiptNo = `UN-REC-${Date.now().toString().slice(-6)}`;
+
+      const result = await prisma.$transaction(async (tx) => {
+        const updated = await tx.payment.update({
+          where: { id: paymentId },
+          data: {
+            status: 'PAID',
+            paidDate: new Date(),
+            method: chosenMethod,
+            transactionId: txn,
+            notes: note || notes || targetPayment.notes,
+            ...(amount && { amount: parseFloat(amount) }),
+          },
+        });
+
+        const receipt = await tx.paymentReceipt.upsert({
+          where: { paymentId },
+          create: {
+            paymentId,
+            receiptNumber: receiptNo,
+          },
+          update: {
+            receiptNumber: receiptNo,
+          },
+        });
+
+        return { payment: updated, receipt };
+      });
+
+      return sendSuccess(res, result, 'Manual payment recorded successfully');
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to record payment', 500);
     }
-
-    DevStore.auditLogs.unshift({
-      id: `aud-${Date.now()}`,
-      actorName: req.user?.name || 'Owner',
-      actorRole: 'OWNER',
-      action: 'PAYMENT_RECORDED',
-      targetEntity: 'Payment',
-      timestamp: new Date().toISOString(),
-      details: `Recorded payment of ₹${pay.amount} for ${pay.residentName}`
-    });
-
-    return sendSuccess(res, pay, 'Payment recorded successfully');
   }
 
   static async createInvoice(req: AuthRequest, res: Response): Promise<Response> {
-    const { residentId, amount, category, period, dueDate, description } = req.body;
-    const resObj = DevStore.residents.find((r) => r.id === residentId);
-    const newInvoice = {
-      id: `pay-${Date.now()}`,
-      residentId,
-      residentName: resObj?.fullName || 'Resident',
-      roomNumber: resObj?.roomNumber || '101',
-      propertyId: 'prop-1',
-      category: category || 'RENT',
-      period: period || 'October 2026',
-      amount: parseFloat(amount || '14000'),
-      dueDate: dueDate || '2026-10-05',
-      status: 'PENDING',
-      notes: description
-    };
-    DevStore.payments.unshift(newInvoice as any);
+    try {
+      const { residentId, amount, category, period, dueDate, notes } = req.body;
+      if (!residentId || !amount || !period) {
+        return sendError(res, 'Resident ID, amount, and billing period are required', 400);
+      }
 
-    DevStore.auditLogs.unshift({
-      id: `aud-${Date.now()}`,
-      actorName: req.user?.name || 'Owner',
-      actorRole: 'OWNER',
-      action: 'INVOICE_GENERATED',
-      targetEntity: 'Payment',
-      timestamp: new Date().toISOString(),
-      details: `Generated ${newInvoice.category} invoice of ₹${newInvoice.amount} for ${newInvoice.residentName}`
-    });
+      const resident = await prisma.resident.findUnique({ where: { id: residentId } });
+      if (!resident) return sendError(res, 'Resident not found', 404);
 
-    return sendSuccess(res, newInvoice, 'Invoice created', 201);
+      const payment = await prisma.payment.create({
+        data: {
+          residentId,
+          propertyId: resident.propertyId,
+          amount: parseFloat(amount),
+          category: (category || 'RENT') as any,
+          period: period.trim(),
+          dueDate: dueDate ? new Date(dueDate) : new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
+          status: 'PENDING',
+          notes: notes || null,
+        },
+      });
+
+      return sendSuccess(res, payment, 'Invoice generated successfully', 201);
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to create invoice', 500);
+    }
   }
 
   static async updatePayment(req: AuthRequest, res: Response): Promise<Response> {
-    const pay = DevStore.payments.find((p) => p.id === req.params.id);
-    if (pay) {
-      if (pay.status === 'PAID') {
-        return sendError(res, 'Paid financial records cannot be modified.', 400);
-      }
-      Object.assign(pay, req.body);
+    try {
+      const { status, amount, period } = req.body;
+      const updated = await prisma.payment.update({
+        where: { id: req.params.id },
+        data: {
+          ...(status && { status }),
+          ...(amount !== undefined && { amount: parseFloat(amount) }),
+          ...(period && { period }),
+        },
+      });
+      return sendSuccess(res, updated, 'Payment updated');
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to update payment', 500);
     }
-    return sendSuccess(res, pay, 'Invoice updated');
   }
 
   static async cancelPayment(req: AuthRequest, res: Response): Promise<Response> {
-    const pay = DevStore.payments.find((p) => p.id === req.params.id);
-    if (pay) {
-      if (pay.status === 'PAID') {
-        return sendError(res, 'Cannot cancel a verified paid transaction.', 400);
-      }
-      pay.status = 'CANCELLED' as any;
+    try {
+      await prisma.payment.delete({ where: { id: req.params.id } });
+      return sendSuccess(res, null, 'Payment invoice cancelled');
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to cancel payment', 500);
     }
-    return sendSuccess(res, { id: req.params.id, status: 'CANCELLED' }, 'Charge cancelled');
   }
 
   static async getPaymentReceipt(req: AuthRequest, res: Response): Promise<Response> {
-    const pay = DevStore.payments.find((p) => p.id === req.params.id) || DevStore.payments[0];
-    return sendSuccess(res, {
-      receiptNumber: pay.receiptNumber || 'UN-REC-2026-0001',
-      payment: pay,
-      issuedAt: pay.paidDate || new Date().toISOString()
-    });
+    try {
+      const payment = await prisma.payment.findUnique({
+        where: { id: req.params.id },
+        include: {
+          resident: {
+            include: {
+              bed: { include: { room: true } },
+              property: true,
+            },
+          },
+          receipt: true,
+        },
+      });
+
+      if (!payment) return sendError(res, 'Payment not found', 404);
+
+      return sendSuccess(res, {
+        receiptNumber: payment.receipt?.receiptNumber || `UN-REC-${payment.id.slice(-6).toUpperCase()}`,
+        generatedAt: payment.receipt?.generatedAt || payment.paidDate || new Date(),
+        residentDetails: {
+          name: payment.resident?.fullName,
+          email: payment.resident?.email,
+          mobile: payment.resident?.mobile,
+          room: payment.resident?.bed?.room?.number || '101',
+          bed: payment.resident?.bed?.bedNumber || 'A',
+          property: payment.resident?.property?.name || 'Urban Nest',
+        },
+        paymentDetails: {
+          period: payment.period,
+          category: payment.category,
+          amount: payment.amount,
+          transactionId: payment.transactionId || 'OFFICIAL-PAID',
+          paidDate: payment.paidDate,
+          method: payment.method,
+        },
+      });
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to generate receipt', 500);
+    }
   }
 
-  // ==========================================================================
-  // 8. SECURITY DEPOSITS
-  // ==========================================================================
   static async getDeposits(req: AuthRequest, res: Response): Promise<Response> {
-    return sendSuccess(res, DevStore.deposits);
+    try {
+      const deposits = await prisma.securityDeposit.findMany({
+        include: {
+          resident: { include: { bed: { include: { room: true } } } },
+          property: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+      return sendSuccess(res, deposits);
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to fetch deposits', 500);
+    }
   }
 
   static async createDeposit(req: AuthRequest, res: Response): Promise<Response> {
-    const newDep = {
-      id: `dep-${Date.now()}`,
-      residentId: req.body.residentId,
-      residentName: req.body.residentName || 'Resident',
-      roomNumber: req.body.roomNumber || '101',
-      propertyId: 'prop-1',
-      amount: parseFloat(req.body.amount || '28000'),
-      status: 'PAID',
-      paidAt: new Date().toISOString().split('T')[0],
-      deductions: 0,
-      refundAmount: null,
-      notes: req.body.notes || 'Security deposit recorded'
-    };
-    DevStore.deposits.unshift(newDep);
-    return sendSuccess(res, newDep, 'Deposit logged', 201);
+    try {
+      const { residentId, amount, status } = req.body;
+      const resident = await prisma.resident.findUnique({ where: { id: residentId } });
+      if (!resident) return sendError(res, 'Resident not found', 404);
+
+      const deposit = await prisma.securityDeposit.create({
+        data: {
+          residentId,
+          propertyId: resident.propertyId,
+          amount: parseFloat(amount),
+          status: status || 'PAID',
+          paidAt: new Date(),
+        },
+      });
+      return sendSuccess(res, deposit, 'Deposit recorded', 201);
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to record deposit', 500);
+    }
   }
 
   static async settleDeposit(req: AuthRequest, res: Response): Promise<Response> {
-    const dep = DevStore.deposits.find((d) => d.id === req.params.id);
-    if (dep) {
-      dep.status = 'REFUNDED';
-      dep.deductions = parseFloat(req.body.deductions || '0');
-      dep.refundAmount = parseFloat(req.body.refundAmount || (dep.amount - (dep.deductions || 0)).toString());
-      dep.notes = req.body.notes || 'Deposit refunded';
+    try {
+      const { deductions, refundAmount, notes } = req.body;
+      const updated = await prisma.securityDeposit.update({
+        where: { id: req.params.id },
+        data: {
+          status: 'REFUNDED',
+          deductions: deductions ? parseFloat(deductions) : 0,
+          refundAmount: refundAmount ? parseFloat(refundAmount) : undefined,
+          notes: notes || 'Deposit settled',
+        },
+      });
+      return sendSuccess(res, updated, 'Deposit settlement completed');
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to settle deposit', 500);
     }
-    return sendSuccess(res, dep, 'Deposit settled');
   }
 
   // ==========================================================================
-  // 9. OPERATING EXPENSES (CRUD)
+  // 7. EXPENSES (CRUD)
   // ==========================================================================
   static async getExpenses(req: AuthRequest, res: Response): Promise<Response> {
-    return sendSuccess(res, DevStore.expenses);
+    try {
+      const propertyId = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
+      const expenses = await prisma.expense.findMany({
+        where: propertyId ? { propertyId } : {},
+        orderBy: { date: 'desc' },
+      });
+      return sendSuccess(res, expenses);
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to fetch expenses', 500);
+    }
   }
 
   static async createExpense(req: AuthRequest, res: Response): Promise<Response> {
-    const newExp = {
-      id: `exp-${Date.now()}`,
-      propertyId: req.body.propertyId || 'prop-1',
-      title: req.body.title,
-      category: req.body.category || 'OTHER',
-      amount: parseFloat(req.body.amount || '0'),
-      vendor: req.body.vendor || 'Direct',
-      date: req.body.date || new Date().toISOString().split('T')[0],
-      description: req.body.description || req.body.notes,
-      status: 'PAID'
-    };
-    DevStore.expenses.unshift(newExp as any);
+    try {
+      const { propertyId, title, category, amount, vendor, date, notes } = req.body;
+      if (!title || !amount) return sendError(res, 'Title and amount are required', 400);
 
-    DevStore.auditLogs.unshift({
-      id: `aud-${Date.now()}`,
-      actorName: req.user?.name || 'Owner',
-      actorRole: 'OWNER',
-      action: 'EXPENSE_LOGGED',
-      targetEntity: 'Expense',
-      timestamp: new Date().toISOString(),
-      details: `Logged expense ₹${newExp.amount}: ${newExp.title}`
-    });
+      const propId = propertyId || (await OwnerController.resolvePropertyScope(req));
+      if (!propId) return sendError(res, 'Property ID is required', 400);
 
-    return sendSuccess(res, newExp, 'Expense logged', 201);
+      const expense = await prisma.expense.create({
+        data: {
+          propertyId: propId,
+          title: title.trim(),
+          category: (category || 'OTHER') as any,
+          amount: parseFloat(amount),
+          vendor: vendor || null,
+          date: date ? new Date(date) : new Date(),
+          notes: notes || null,
+        },
+      });
+      return sendSuccess(res, expense, 'Expense logged successfully', 201);
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to log expense', 500);
+    }
   }
 
   static async updateExpense(req: AuthRequest, res: Response): Promise<Response> {
-    const exp = DevStore.expenses.find((e) => e.id === req.params.id);
-    if (exp) Object.assign(exp, req.body);
-    return sendSuccess(res, exp, 'Expense updated');
+    try {
+      const { title, amount, category, vendor, notes } = req.body;
+      const updated = await prisma.expense.update({
+        where: { id: req.params.id },
+        data: {
+          ...(title && { title: title.trim() }),
+          ...(amount !== undefined && { amount: parseFloat(amount) }),
+          ...(category && { category }),
+          ...(vendor !== undefined && { vendor }),
+          ...(notes !== undefined && { notes }),
+        },
+      });
+      return sendSuccess(res, updated, 'Expense updated');
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to update expense', 500);
+    }
   }
 
   static async archiveExpense(req: AuthRequest, res: Response): Promise<Response> {
-    DevStore.expenses = DevStore.expenses.filter((e) => e.id !== req.params.id);
-    return sendSuccess(res, { id: req.params.id }, 'Expense archived');
-  }
-
-  // ==========================================================================
-  // 10. VISITOR DESK & SECURE QR VERIFICATION (CRUD & LIFECYCLE)
-  // ==========================================================================
-  private static extractPassToken(rawInput: string): string {
-    if (!rawInput) return '';
-    let cleaned = String(rawInput).trim();
-    if (cleaned.includes('/gate/verify/')) {
-      const parts = cleaned.split('/gate/verify/');
-      cleaned = parts[parts.length - 1];
-    } else if (cleaned.includes('verify/')) {
-      const parts = cleaned.split('verify/');
-      cleaned = parts[parts.length - 1];
+    try {
+      await prisma.expense.delete({ where: { id: req.params.id } });
+      return sendSuccess(res, null, 'Expense entry archived');
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to delete expense', 500);
     }
-    return decodeURIComponent(cleaned).split('?')[0].split('#')[0].trim();
   }
 
+  // ==========================================================================
+  // 8. VISITORS & GATE QR PASS
+  // ==========================================================================
   static async getVisitors(req: AuthRequest, res: Response): Promise<Response> {
-    if (await isDbAvailable()) {
-      try {
-        const propertyId = req.query.propertyId || req.user?.propertyId;
-        const visitors = await prisma.visitorRequest.findMany({
-          where: propertyId ? { propertyId: String(propertyId) } : {},
-          include: {
-            resident: {
-              include: {
-                bed: {
-                  include: {
-                    room: true,
-                  },
-                },
-              },
-            },
-          },
-          orderBy: { visitDate: 'desc' },
-        });
+    try {
+      const propertyId = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
+      const visitors = await prisma.visitorRequest.findMany({
+        where: propertyId ? { propertyId } : {},
+        include: {
+          resident: { include: { bed: { include: { room: true } } } },
+        },
+        orderBy: { visitDate: 'desc' },
+      });
 
-        if (visitors.length > 0) {
-          const mapped = visitors.map((v) => ({
-            id: v.id,
-            propertyId: v.propertyId,
-            residentId: v.residentId,
-            visitorName: v.visitorName,
-            visitorMobile: v.visitorMobile,
-            relation: v.relation,
-            purpose: v.purpose,
-            residentName: v.resident?.fullName || 'Resident',
-            roomNumber: v.resident?.bed?.room?.number || '101',
-            visitDate: v.visitDate,
-            expectedTime: v.expectedEntryTime,
-            expectedEntryTime: v.expectedEntryTime,
-            expectedExitTime: v.expectedExitTime,
-            status: v.status,
-            approvedBy: v.approvedBy,
-            qrPassToken: v.qrPassToken,
-            checkInTime: v.checkInTime,
-            checkOutTime: v.checkOutTime,
-          }));
-          return sendSuccess(res, mapped);
-        }
-      } catch (dbErr) {
-        console.warn('[OwnerController.getVisitors] DB fallback:', dbErr);
-      }
+      const formatted = visitors.map((v) => ({
+        id: v.id,
+        propertyId: v.propertyId,
+        residentId: v.residentId,
+        visitorName: v.visitorName,
+        visitorMobile: v.visitorMobile,
+        relation: v.relation,
+        purpose: v.purpose,
+        residentName: v.resident?.fullName || 'Resident',
+        roomNumber: v.resident?.bed?.room?.number || '101',
+        visitDate: v.visitDate,
+        expectedTime: v.expectedEntryTime,
+        expectedEntryTime: v.expectedEntryTime,
+        expectedExitTime: v.expectedExitTime,
+        status: v.status,
+        approvedBy: v.approvedBy,
+        qrPassToken: v.qrPassToken,
+        checkInTime: v.checkInTime,
+        checkOutTime: v.checkOutTime,
+      }));
+
+      return sendSuccess(res, formatted);
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to fetch visitors', 500);
     }
-    return sendSuccess(res, DevStore.visitors);
   }
 
   static async createVisitor(req: AuthRequest, res: Response): Promise<Response> {
-    const { residentId, visitorName, visitorMobile, relation, purpose, visitDate, expectedTime, propertyId } = req.body;
-    if (!visitorName || !visitorMobile) {
-      return sendError(res, 'Visitor name and mobile number are required', 400);
-    }
-
-    const qrPassToken = `VPASS-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
-    const targetPropId = propertyId || req.user?.propertyId || 'prop-1';
-
-    if (await isDbAvailable()) {
-      try {
-        const created = await prisma.visitorRequest.create({
-          data: {
-            propertyId: targetPropId,
-            residentId: residentId || 'res-1',
-            visitorName: visitorName.trim(),
-            visitorMobile: visitorMobile.trim(),
-            relation: relation ? relation.trim() : 'Friend',
-            purpose: purpose ? purpose.trim() : 'Visit',
-            visitDate: visitDate ? new Date(visitDate) : new Date(),
-            expectedEntryTime: expectedTime || '04:00 PM',
-            status: 'APPROVED',
-            approvedBy: req.user?.name || 'Property Warden',
-            qrPassToken,
-          },
-        });
-        return sendSuccess(res, created, 'Visitor pass created successfully', 201);
-      } catch (dbErr) {
-        console.warn('[OwnerController.createVisitor] DB fallback:', dbErr);
+    try {
+      const { residentId, visitorName, visitorMobile, relation, purpose, visitDate, expectedTime, propertyId } = req.body;
+      if (!visitorName || !visitorMobile) {
+        return sendError(res, 'Visitor name and mobile number are required', 400);
       }
-    }
 
-    const newVis = {
-      id: `vis-${Date.now()}`,
-      propertyId: targetPropId,
-      residentId: residentId || 'res-1',
-      visitorName: visitorName.trim(),
-      visitorMobile: visitorMobile.trim(),
-      relation: relation || 'Friend',
-      purpose: purpose || 'Visit',
-      residentName: req.body.residentName || 'Aakash Verma',
-      roomNumber: req.body.roomNumber || '101',
-      visitDate: visitDate || new Date().toISOString().split('T')[0],
-      expectedTime: expectedTime || '04:00 PM',
-      expectedEntryTime: expectedTime || '04:00 PM',
-      status: 'APPROVED',
-      approvedBy: req.user?.name || 'Property Warden',
-      qrPassToken,
-    };
-    DevStore.visitors.unshift(newVis as any);
-    return sendSuccess(res, newVis, 'Visitor pass created', 201);
+      const propId = propertyId || (await OwnerController.resolvePropertyScope(req));
+      if (!propId) return sendError(res, 'Property ID is required', 400);
+
+      const qrPassToken = `VPASS-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+
+      const created = await prisma.visitorRequest.create({
+        data: {
+          propertyId: propId,
+          residentId: residentId || (await prisma.resident.findFirst({ where: { propertyId: propId } }))?.id || 'res-1',
+          visitorName: visitorName.trim(),
+          visitorMobile: visitorMobile.trim(),
+          relation: relation ? relation.trim() : 'Guest',
+          purpose: purpose ? purpose.trim() : 'Visit',
+          visitDate: visitDate ? new Date(visitDate) : new Date(),
+          expectedEntryTime: expectedTime || '04:00 PM',
+          status: 'APPROVED',
+          approvedBy: req.user?.name || 'Owner Desk',
+          qrPassToken,
+        },
+      });
+
+      return sendSuccess(res, created, 'Visitor pass created successfully', 201);
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to create visitor pass', 500);
+    }
   }
 
   static async approveVisitor(req: AuthRequest, res: Response): Promise<Response> {
-    const passId = req.params.id;
-    if (await isDbAvailable()) {
-      try {
-        const updated = await prisma.visitorRequest.update({
-          where: { id: passId },
-          data: { status: 'APPROVED', approvedBy: req.user?.name || 'Property Warden' },
-        });
-        return sendSuccess(res, updated, 'Visitor request approved');
-      } catch (dbErr) {}
+    try {
+      const updated = await prisma.visitorRequest.update({
+        where: { id: req.params.id },
+        data: {
+          status: 'APPROVED',
+          approvedBy: req.user?.name || 'Owner Approval',
+        },
+      });
+      return sendSuccess(res, updated, 'Visitor request approved');
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to approve visitor', 500);
     }
-    const vis = DevStore.visitors.find((v) => v.id === passId || v.qrPassToken === passId);
-    if (!vis) {
-      return sendError(res, 'Visitor request not found', 404);
-    }
-    vis.status = 'APPROVED';
-    (vis as any).approvedBy = req.user?.name || 'Property Warden';
-    return sendSuccess(res, vis, 'Visitor request approved');
   }
 
   static async rejectVisitor(req: AuthRequest, res: Response): Promise<Response> {
-    const passId = req.params.id;
-    if (await isDbAvailable()) {
-      try {
-        const updated = await prisma.visitorRequest.update({
-          where: { id: passId },
-          data: { status: 'REJECTED' },
-        });
-        return sendSuccess(res, updated, 'Visitor request rejected');
-      } catch (dbErr) {}
-    }
-    const vis = DevStore.visitors.find((v) => v.id === passId || v.qrPassToken === passId);
-    if (!vis) {
-      return sendError(res, 'Visitor request not found', 404);
-    }
-    vis.status = 'REJECTED';
-    return sendSuccess(res, vis, 'Visitor request rejected');
-  }
-
-  static async processVisitorQRVerification(rawToken: string, user: any, res: Response): Promise<Response> {
-    const token = OwnerController.extractPassToken(rawToken);
-    if (!token) {
-      return sendSuccess(res, { valid: false, reason: 'MISSING_TOKEN', message: 'No QR pass token provided' });
-    }
-
-    let visitorMatch: any = null;
-    let hostResident: any = null;
-    let roomInfo: any = null;
-
-    if (await isDbAvailable()) {
-      try {
-        const dbVis = await prisma.visitorRequest.findFirst({
-          where: {
-            OR: [
-              { qrPassToken: token },
-              { id: token },
-            ],
-          },
-          include: {
-            resident: {
-              include: {
-                bed: {
-                  include: {
-                    room: {
-                      include: {
-                        floor: {
-                          include: {
-                            building: true,
-                          },
-                        },
-                      },
-                    },
-                  },
-                },
-              },
-            },
-            property: true,
-          },
-        });
-
-        if (dbVis) {
-          visitorMatch = {
-            id: dbVis.id,
-            propertyId: dbVis.propertyId,
-            residentId: dbVis.residentId,
-            visitorName: dbVis.visitorName,
-            visitorMobile: dbVis.visitorMobile,
-            relation: dbVis.relation,
-            purpose: dbVis.purpose,
-            visitDate: dbVis.visitDate,
-            expectedEntryTime: dbVis.expectedEntryTime,
-            expectedExitTime: dbVis.expectedExitTime,
-            status: dbVis.status,
-            qrPassToken: dbVis.qrPassToken,
-            checkInTime: dbVis.checkInTime,
-            checkOutTime: dbVis.checkOutTime,
-          };
-          if (dbVis.resident) {
-            hostResident = {
-              id: dbVis.resident.id,
-              fullName: dbVis.resident.fullName,
-              mobile: dbVis.resident.mobile,
-            };
-            const rm = dbVis.resident.bed?.room;
-            if (rm) {
-              roomInfo = {
-                roomNumber: rm.number,
-                buildingName: rm.floor?.building?.name || 'Main Block',
-                floorNumber: rm.floor?.floorNumber || 1,
-              };
-            }
-          }
-        }
-      } catch (dbErr) {
-        console.warn('[OwnerController.verifyVisitorQR] DB query fallback:', dbErr);
-      }
-    }
-
-    if (!visitorMatch) {
-      const devMatch = DevStore.visitors.find(
-        (v) =>
-          v.qrPassToken === token ||
-          (v as any).qrPassCode === token ||
-          v.id === token
-      );
-      if (devMatch) {
-        visitorMatch = { ...devMatch };
-        hostResident = {
-          id: 'res-1',
-          fullName: (devMatch as any).residentName || 'Aakash Verma',
-          mobile: '+91 98123 45678',
-        };
-        roomInfo = {
-          roomNumber: (devMatch as any).roomNumber || '101',
-          buildingName: 'Block A - Executive Wing',
-          floorNumber: 1,
-        };
-      }
-    }
-
-    if (!visitorMatch) {
-      return sendSuccess(res, {
-        valid: false,
-        reason: 'INVALID_PASS',
-        message: 'No visitor gate pass found with this QR token.',
+    try {
+      const updated = await prisma.visitorRequest.update({
+        where: { id: req.params.id },
+        data: { status: 'REJECTED' },
       });
+      return sendSuccess(res, updated, 'Visitor request rejected');
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to reject visitor', 500);
     }
-
-    // Property Isolation Guard
-    if (user && user.propertyId && user.role !== 'SUPER_ADMIN' && visitorMatch.propertyId && visitorMatch.propertyId !== user.propertyId) {
-      return sendSuccess(res, {
-        valid: false,
-        reason: 'CROSS_PROPERTY_UNAUTHORIZED',
-        message: 'Security Alert: This visitor pass belongs to a different Urban Nest property.',
-      });
-    }
-
-    // Lifecycle Status Checks
-    if (visitorMatch.status === 'PENDING') {
-      return sendSuccess(res, {
-        valid: false,
-        reason: 'NOT_APPROVED',
-        message: 'Visitor pass is pending resident/management approval.',
-        status: 'PENDING',
-        visitor: visitorMatch,
-        resident: hostResident,
-        room: roomInfo,
-      });
-    }
-
-    if (visitorMatch.status === 'REJECTED') {
-      return sendSuccess(res, {
-        valid: false,
-        reason: 'REJECTED_PASS',
-        message: 'This visitor pass was rejected and entry is not permitted.',
-        status: 'REJECTED',
-        visitor: visitorMatch,
-      });
-    }
-
-    if (visitorMatch.status === 'CANCELLED') {
-      return sendSuccess(res, {
-        valid: false,
-        reason: 'CANCELLED_PASS',
-        message: 'This visitor pass has been cancelled by the resident.',
-        status: 'CANCELLED',
-        visitor: visitorMatch,
-      });
-    }
-
-    if (visitorMatch.status === 'CHECKED_OUT') {
-      return sendSuccess(res, {
-        valid: false,
-        reason: 'ALREADY_CHECKED_OUT',
-        message: 'This visitor pass was already used and checked out. Reuse is prohibited.',
-        status: 'CHECKED_OUT',
-        visitor: visitorMatch,
-        resident: hostResident,
-      });
-    }
-
-    // Pass is Valid (APPROVED or currently CHECKED_IN)
-    return sendSuccess(
-      res,
-      {
-        valid: true,
-        status: visitorMatch.status,
-        message: visitorMatch.status === 'CHECKED_IN' ? 'Visitor currently checked in' : 'Valid gate pass verified',
-        visitor: visitorMatch,
-        resident: hostResident,
-        room: roomInfo,
-      },
-      'QR Gate Pass Verified'
-    );
   }
 
   static async verifyVisitorQR(req: Request, res: Response): Promise<Response> {
     try {
-      const rawToken = req.body?.qrPassToken || req.body?.token || req.body?.code || (req.query?.token as string);
-      return OwnerController.processVisitorQRVerification(rawToken, (req as any).user, res);
+      const token = req.body?.qrPassToken || req.body?.token;
+      return OwnerController.verifyTokenInternal(token, res);
     } catch (error: any) {
-      return sendError(res, error.message || 'QR Verification failed', 500);
+      return sendError(res, error.message || 'Verification error', 500);
     }
   }
 
   static async verifyVisitorQRByToken(req: Request, res: Response): Promise<Response> {
     try {
-      const rawToken = req.params.token;
-      return OwnerController.processVisitorQRVerification(rawToken, (req as any).user, res);
+      const token = req.params?.token;
+      return OwnerController.verifyTokenInternal(token, res);
     } catch (error: any) {
-      return sendError(res, error.message || 'QR Verification failed', 500);
+      return sendError(res, error.message || 'Verification error', 500);
     }
+  }
+
+  private static async verifyTokenInternal(rawToken: string, res: Response): Promise<Response> {
+    if (!rawToken) return sendError(res, 'QR Pass token is required', 400);
+
+    const token = decodeURIComponent(rawToken).trim();
+    const visitor = await prisma.visitorRequest.findFirst({
+      where: {
+        OR: [{ qrPassToken: token }, { id: token }],
+      },
+      include: {
+        resident: { include: { bed: { include: { room: true } } } },
+        property: true,
+      },
+    });
+
+    if (!visitor) {
+      return sendSuccess(res, {
+        valid: false,
+        status: 'INVALID',
+        message: 'Invalid or forged QR pass token.',
+      });
+    }
+
+    return sendSuccess(res, {
+      valid: visitor.status === 'APPROVED' || visitor.status === 'CHECKED_IN',
+      status: visitor.status,
+      visitorName: visitor.visitorName,
+      visitorMobile: visitor.visitorMobile,
+      relation: visitor.relation,
+      purpose: visitor.purpose,
+      visitDate: visitor.visitDate,
+      expectedTime: visitor.expectedEntryTime,
+      residentName: visitor.resident?.fullName,
+      roomNumber: visitor.resident?.bed?.room?.number,
+      propertyName: visitor.property?.name,
+      checkInTime: visitor.checkInTime,
+      checkOutTime: visitor.checkOutTime,
+      passId: visitor.id,
+      message:
+        visitor.status === 'APPROVED'
+          ? 'Valid visitor gate pass verified.'
+          : `Visitor pass is currently ${visitor.status}.`,
+    });
   }
 
   static async checkInVisitor(req: AuthRequest, res: Response): Promise<Response> {
-    const passId = req.params.id;
-    let target = null;
-
-    if (await isDbAvailable()) {
-      try {
-        const existing = await prisma.visitorRequest.findUnique({ where: { id: passId } });
-        if (!existing) {
-          return sendError(res, 'Visitor pass not found', 404);
-        }
-        if (existing.status !== 'APPROVED') {
-          return sendError(res, `Cannot check in visitor with status "${existing.status}". Pass must be in APPROVED status.`, 400);
-        }
-        const updated = await prisma.visitorRequest.update({
-          where: { id: passId },
-          data: { status: 'CHECKED_IN', checkInTime: new Date() },
-        });
-        return sendSuccess(res, updated, 'Visitor checked in successfully');
-      } catch (dbErr) {}
+    try {
+      const updated = await prisma.visitorRequest.update({
+        where: { id: req.params.id },
+        data: {
+          status: 'CHECKED_IN',
+          checkInTime: new Date(),
+        },
+      });
+      return sendSuccess(res, updated, 'Visitor checked in successfully');
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to check in visitor', 500);
     }
-
-    target = DevStore.visitors.find((v) => v.id === passId || v.qrPassToken === passId);
-    if (!target) {
-      return sendError(res, 'Visitor pass not found', 404);
-    }
-    if (target.status !== 'APPROVED') {
-      return sendError(res, `Cannot check in visitor with status "${target.status}". Pass must be in APPROVED status.`, 400);
-    }
-
-    target.status = 'CHECKED_IN';
-    (target as any).checkInTime = new Date().toLocaleTimeString();
-
-    DevStore.auditLogs.unshift({
-      id: `aud-${Date.now()}`,
-      actorName: req.user?.name || 'Gate Security',
-      actorRole: req.user?.role || 'STAFF',
-      action: 'VISITOR_CHECKED_IN',
-      targetEntity: 'VisitorRequest',
-      timestamp: new Date().toISOString(),
-      details: `Visitor ${target.visitorName} checked in at security gate.`,
-    });
-
-    return sendSuccess(res, target, 'Visitor checked in at security gate');
   }
 
   static async checkOutVisitor(req: AuthRequest, res: Response): Promise<Response> {
-    const passId = req.params.id;
-    let target = null;
-
-    if (await isDbAvailable()) {
-      try {
-        const existing = await prisma.visitorRequest.findUnique({ where: { id: passId } });
-        if (!existing) {
-          return sendError(res, 'Visitor pass not found', 404);
-        }
-        if (existing.status !== 'CHECKED_IN') {
-          return sendError(res, `Cannot check out visitor with status "${existing.status}". Visitor must be currently checked in.`, 400);
-        }
-        const updated = await prisma.visitorRequest.update({
-          where: { id: passId },
-          data: { status: 'CHECKED_OUT', checkOutTime: new Date() },
-        });
-        return sendSuccess(res, updated, 'Visitor checked out successfully');
-      } catch (dbErr) {}
+    try {
+      const updated = await prisma.visitorRequest.update({
+        where: { id: req.params.id },
+        data: {
+          status: 'CHECKED_OUT',
+          checkOutTime: new Date(),
+        },
+      });
+      return sendSuccess(res, updated, 'Visitor checked out');
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to check out visitor', 500);
     }
-
-    target = DevStore.visitors.find((v) => v.id === passId || v.qrPassToken === passId);
-    if (!target) {
-      return sendError(res, 'Visitor pass not found', 404);
-    }
-    if (target.status !== 'CHECKED_IN') {
-      return sendError(res, `Cannot check out visitor with status "${target.status}". Visitor must be currently checked in.`, 400);
-    }
-
-    target.status = 'CHECKED_OUT';
-    (target as any).checkOutTime = new Date().toLocaleTimeString();
-
-    DevStore.auditLogs.unshift({
-      id: `aud-${Date.now()}`,
-      actorName: req.user?.name || 'Gate Security',
-      actorRole: req.user?.role || 'STAFF',
-      action: 'VISITOR_CHECKED_OUT',
-      targetEntity: 'VisitorRequest',
-      timestamp: new Date().toISOString(),
-      details: `Visitor ${target.visitorName} checked out at security gate.`,
-    });
-
-    return sendSuccess(res, target, 'Visitor marked as checked out');
   }
 
   // ==========================================================================
-  // 11. MAINTENANCE & COMPLAINTS (WORKFLOW & ACTIVITY TRAIL)
+  // 9. MAINTENANCE & COMPLAINTS
   // ==========================================================================
   static async getComplaints(req: AuthRequest, res: Response): Promise<Response> {
-    return sendSuccess(res, DevStore.complaints);
+    try {
+      const propertyId = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
+      const complaints = await prisma.complaint.findMany({
+        where: propertyId ? { propertyId } : {},
+        include: {
+          resident: { include: { bed: { include: { room: true } } } },
+          activities: { orderBy: { timestamp: 'desc' } },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      const formatted = complaints.map((c) => ({
+        id: c.id,
+        ticketNumber: c.ticketNumber,
+        title: c.title,
+        description: c.description,
+        category: c.category,
+        priority: c.priority,
+        status: c.status,
+        residentName: c.resident?.fullName || 'Resident',
+        roomNumber: c.resident?.bed?.room?.number || '101',
+        assignedStaff: c.assignedStaff || 'Unassigned',
+        createdAt: c.createdAt,
+        resolvedAt: c.resolvedAt,
+        comments: c.activities.map((a) => ({
+          id: a.id,
+          authorName: a.updatedBy,
+          comment: a.comment,
+          createdAt: a.timestamp,
+        })),
+      }));
+
+      return sendSuccess(res, formatted);
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to fetch complaints', 500);
+    }
   }
 
   static async createComplaint(req: AuthRequest, res: Response): Promise<Response> {
-    const newComp = {
-      id: `c-${Date.now()}`,
-      ticketNumber: `TKT-${Math.floor(1000 + Math.random() * 9000)}`,
-      title: req.body.title,
-      category: req.body.category || 'PLUMBING',
-      priority: req.body.priority || 'MEDIUM',
-      description: req.body.description || '',
-      status: 'REPORTED',
-      residentName: req.body.residentName || 'Management Logged',
-      roomNumber: req.body.roomNumber || 'Common Area',
-      assignedStaffName: null,
-      createdAt: new Date().toISOString(),
-      activities: []
-    };
-    DevStore.complaints.unshift(newComp as any);
-    return sendSuccess(res, newComp, 'Complaint logged', 201);
+    try {
+      const { residentId, propertyId, title, description, category, priority } = req.body;
+      if (!title || !description) return sendError(res, 'Title and description are required', 400);
+
+      const propId = propertyId || (await OwnerController.resolvePropertyScope(req));
+      if (!propId) return sendError(res, 'Property ID is required', 400);
+
+      const ticketNumber = `TKT-${Math.floor(1000 + Math.random() * 9000)}`;
+
+      const complaint = await prisma.complaint.create({
+        data: {
+          ticketNumber,
+          residentId: residentId || (await prisma.resident.findFirst({ where: { propertyId: propId } }))?.id || 'res-1',
+          propertyId: propId,
+          title: title.trim(),
+          description: description.trim(),
+          category: (category || 'OTHER') as any,
+          priority: (priority || 'MEDIUM') as any,
+          status: 'REPORTED',
+        },
+      });
+
+      return sendSuccess(res, complaint, 'Complaint ticket logged', 201);
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to create complaint', 500);
+    }
   }
 
   static async updateComplaintStatus(req: AuthRequest, res: Response): Promise<Response> {
-    const { status, comment, assignedStaff, assignedStaffId } = req.body;
-    const complaint = DevStore.complaints.find((c) => c.id === req.params.id) || DevStore.complaints[0];
-    if (complaint) {
-      complaint.status = status;
-      if (assignedStaff || assignedStaffId) {
-        const s = DevStore.staff.find((st) => st.id === assignedStaffId || st.id === assignedStaff);
-        complaint.assignedStaffName = s ? s.name : (assignedStaff || 'Technician');
-      }
-      complaint.activities.push({
-        id: `act-${Date.now()}`,
-        actorName: req.user?.name || 'Owner',
-        action: status,
-        comment: comment || `Status updated to ${status}`,
-        createdAt: new Date().toISOString()
+    try {
+      const { status, assignedStaff, comment } = req.body;
+      const complaintId = req.params.id;
+
+      const updated = await prisma.$transaction(async (tx) => {
+        const comp = await tx.complaint.update({
+          where: { id: complaintId },
+          data: {
+            ...(status && { status }),
+            ...(assignedStaff !== undefined && { assignedStaff }),
+            ...(status === 'RESOLVED' && { resolvedAt: new Date() }),
+          },
+        });
+
+        if (comment) {
+          await tx.maintenanceActivity.create({
+            data: {
+              complaintId,
+              status: (status || comp.status) as any,
+              updatedBy: req.user?.name || 'Owner',
+              comment: comment.trim(),
+            },
+          });
+        }
+
+        return comp;
       });
+
+      return sendSuccess(res, updated, 'Complaint status updated');
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to update complaint', 500);
     }
-    return sendSuccess(res, complaint, `Complaint updated to ${status}`);
   }
 
   static async addComplaintComment(req: AuthRequest, res: Response): Promise<Response> {
-    const complaint = DevStore.complaints.find((c) => c.id === req.params.id);
-    if (complaint) {
-      complaint.activities.push({
-        id: `act-${Date.now()}`,
-        actorName: req.user?.name || 'Owner',
-        action: 'NOTE',
-        comment: req.body.comment,
-        createdAt: new Date().toISOString()
+    try {
+      const { comment } = req.body;
+      if (!comment) return sendError(res, 'Comment text is required', 400);
+
+      const comp = await prisma.complaint.findUnique({ where: { id: req.params.id } });
+      if (!comp) return sendError(res, 'Complaint not found', 404);
+
+      const activity = await prisma.maintenanceActivity.create({
+        data: {
+          complaintId: req.params.id,
+          status: comp.status,
+          updatedBy: req.user?.name || 'Owner',
+          comment: comment.trim(),
+        },
       });
+
+      return sendSuccess(res, activity, 'Comment added');
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to add comment', 500);
     }
-    return sendSuccess(res, complaint, 'Note added');
   }
 
   // ==========================================================================
-  // 12. STAFF MANAGEMENT (CRUD)
+  // 10. STAFF MANAGEMENT
   // ==========================================================================
   static async getStaff(req: AuthRequest, res: Response): Promise<Response> {
-    return sendSuccess(res, DevStore.staff);
+    try {
+      const staff = await prisma.user.findMany({
+        where: {
+          role: { in: ['MANAGER', 'RECEPTIONIST', 'ACCOUNTANT', 'MAINTENANCE', 'SUPER_ADMIN'] },
+        },
+        include: { property: true },
+        orderBy: { createdAt: 'desc' },
+      });
+      return sendSuccess(res, staff);
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to fetch staff', 500);
+    }
   }
 
   static async createStaff(req: AuthRequest, res: Response): Promise<Response> {
-    const newStaff = {
-      id: `stf-${Date.now()}`,
-      name: req.body.name,
-      role: req.body.role || 'MAINTENANCE',
-      mobile: req.body.mobile,
-      email: req.body.email || `${req.body.name.toLowerCase().replace(/\s+/g, '.')}@pg.com`,
-      shift: req.body.shift || 'Morning (8 AM - 4 PM)',
-      status: 'ACTIVE',
-      salary: parseFloat(req.body.salary || '22000'),
-      propertyId: 'prop-1'
-    };
-    DevStore.staff.unshift(newStaff as any);
+    try {
+      const { name, email, mobile, role, propertyId } = req.body;
+      if (!name || !role) return sendError(res, 'Name and role are required', 400);
 
-    DevStore.auditLogs.unshift({
-      id: `aud-${Date.now()}`,
-      actorName: req.user?.name || 'Owner',
-      actorRole: 'OWNER',
-      action: 'STAFF_ONBOARDED',
-      targetEntity: 'Staff',
-      timestamp: new Date().toISOString(),
-      details: `Onboarded ${newStaff.name} as ${newStaff.role}`
-    });
+      const staffEmail = email ? email.toLowerCase().trim() : `staff_${Date.now()}@pg.com`;
+      const salt = await bcrypt.genSalt(10);
+      const passwordHash = await bcrypt.hash('admin123', salt);
 
-    return sendSuccess(res, newStaff, 'Staff registered', 201);
+      const user = await prisma.user.create({
+        data: {
+          name: name.trim(),
+          email: staffEmail,
+          passwordHash,
+          role: role as any,
+          mobile: mobile || null,
+          propertyId: propertyId || null,
+        },
+      });
+
+      return sendSuccess(res, user, 'Staff member created', 201);
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to create staff', 500);
+    }
   }
 
   static async updateStaff(req: AuthRequest, res: Response): Promise<Response> {
-    const s = DevStore.staff.find((st) => st.id === req.params.id);
-    if (s) Object.assign(s, req.body);
-    return sendSuccess(res, s, 'Staff updated');
+    try {
+      const { name, mobile, role, propertyId } = req.body;
+      const updated = await prisma.user.update({
+        where: { id: req.params.id },
+        data: {
+          ...(name && { name: name.trim() }),
+          ...(mobile !== undefined && { mobile }),
+          ...(role && { role: role as any }),
+          ...(propertyId !== undefined && { propertyId }),
+        },
+      });
+      return sendSuccess(res, updated, 'Staff updated');
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to update staff', 500);
+    }
   }
 
   static async archiveStaff(req: AuthRequest, res: Response): Promise<Response> {
-    const s = DevStore.staff.find((st) => st.id === req.params.id);
-    if (s) s.status = 'INACTIVE';
-    return sendSuccess(res, { id: req.params.id, status: 'INACTIVE' }, 'Staff deactivated');
+    try {
+      await prisma.user.delete({ where: { id: req.params.id } });
+      return sendSuccess(res, null, 'Staff deactivated');
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to deactivate staff', 500);
+    }
   }
 
   // ==========================================================================
-  // 13. INVENTORY & ASSETS (CRUD & STOCK IN/OUT)
+  // 11. INVENTORY & STOCK
   // ==========================================================================
   static async getInventory(req: AuthRequest, res: Response): Promise<Response> {
-    return sendSuccess(res, DevStore.inventory);
+    try {
+      const propertyId = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
+      const items = await prisma.inventoryItem.findMany({
+        where: propertyId ? { propertyId } : {},
+        orderBy: { createdAt: 'desc' },
+      });
+      return sendSuccess(res, items);
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to fetch inventory', 500);
+    }
   }
 
   static async createInventoryItem(req: AuthRequest, res: Response): Promise<Response> {
-    const qty = parseInt(req.body.quantity || '1', 10);
-    const minQty = parseInt(req.body.minQuantity || '2', 10);
-    const newItem = {
-      id: `inv-${Date.now()}`,
-      name: req.body.name,
-      category: req.body.category || 'APPLIANCE',
-      quantity: qty,
-      minQuantity: minQty,
-      location: req.body.location || 'Property Level',
-      vendor: req.body.vendor || 'Direct Purchase',
-      condition: req.body.condition || (qty <= minQty ? 'LOW_STOCK' : 'EXCELLENT'),
-      status: qty <= minQty ? 'LOW_STOCK' : 'GOOD',
-      purchaseDate: new Date().toISOString().split('T')[0],
-      warrantyExpiry: req.body.warrantyExpiry || null,
-      cost: parseFloat(req.body.cost || '0'),
-      propertyId: 'prop-1'
-    };
-    DevStore.inventory.unshift(newItem as any);
-    return sendSuccess(res, newItem, 'Asset logged', 201);
+    try {
+      const { propertyId, name, category, quantity, minQuantity, location, cost, vendor } = req.body;
+      if (!name) return sendError(res, 'Item name is required', 400);
+
+      const propId = propertyId || (await OwnerController.resolvePropertyScope(req));
+      if (!propId) return sendError(res, 'Property ID is required', 400);
+
+      const item = await prisma.inventoryItem.create({
+        data: {
+          propertyId: propId,
+          name: name.trim(),
+          category: category || 'General',
+          quantity: parseInt(quantity || '1', 10),
+          minQuantity: parseInt(minQuantity || '2', 10),
+          location: location || 'Storage',
+          cost: cost ? parseFloat(cost) : null,
+          vendor: vendor || null,
+        },
+      });
+      return sendSuccess(res, item, 'Inventory item added', 201);
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to add inventory item', 500);
+    }
   }
 
   static async updateInventoryItem(req: AuthRequest, res: Response): Promise<Response> {
-    const item = DevStore.inventory.find((i) => i.id === req.params.id);
-    if (item) {
-      Object.assign(item, req.body);
-      if (item.quantity <= item.minQuantity) item.status = 'LOW_STOCK';
+    try {
+      const { name, category, quantity, minQuantity, location, cost, vendor } = req.body;
+      const updated = await prisma.inventoryItem.update({
+        where: { id: req.params.id },
+        data: {
+          ...(name && { name: name.trim() }),
+          ...(category && { category }),
+          ...(quantity !== undefined && { quantity: parseInt(quantity, 10) }),
+          ...(minQuantity !== undefined && { minQuantity: parseInt(minQuantity, 10) }),
+          ...(location !== undefined && { location }),
+          ...(cost !== undefined && { cost: parseFloat(cost) }),
+          ...(vendor !== undefined && { vendor }),
+        },
+      });
+      return sendSuccess(res, updated, 'Item updated');
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to update inventory', 500);
     }
-    return sendSuccess(res, item, 'Asset updated');
   }
 
   static async updateStock(req: AuthRequest, res: Response): Promise<Response> {
-    const { delta, type, note } = req.body;
-    const item = DevStore.inventory.find((i) => i.id === req.params.id);
-    if (item) {
-      const change = parseInt(delta || '1', 10);
-      if (type === 'OUT' || type === 'STOCK_OUT') {
-        item.quantity = Math.max(0, item.quantity - change);
-      } else {
-        item.quantity += change;
-      }
-      item.status = item.quantity <= item.minQuantity ? 'LOW_STOCK' : 'GOOD';
+    try {
+      const { delta, type } = req.body;
+      const change = parseInt(delta || '1', 10) * (type === 'OUT' ? -1 : 1);
+
+      const item = await prisma.inventoryItem.findUnique({ where: { id: req.params.id } });
+      if (!item) return sendError(res, 'Item not found', 404);
+
+      const newQty = Math.max(0, item.quantity + change);
+      const updated = await prisma.inventoryItem.update({
+        where: { id: req.params.id },
+        data: { quantity: newQty },
+      });
+
+      return sendSuccess(res, updated, `Stock updated to ${newQty}`);
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to adjust stock', 500);
     }
-    return sendSuccess(res, item, `Stock updated: ${item?.quantity} in inventory`);
   }
 
   static async archiveInventoryItem(req: AuthRequest, res: Response): Promise<Response> {
-    DevStore.inventory = DevStore.inventory.filter((i) => i.id !== req.params.id);
-    return sendSuccess(res, { id: req.params.id }, 'Asset archived');
+    try {
+      await prisma.inventoryItem.delete({ where: { id: req.params.id } });
+      return sendSuccess(res, null, 'Item archived');
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to delete item', 500);
+    }
   }
 
   // ==========================================================================
-  // 14. OPERATIONAL TASKS & HOUSEKEEPING
+  // 12. TASKS & OPERATIONS
   // ==========================================================================
   static async getTasks(req: AuthRequest, res: Response): Promise<Response> {
-    return sendSuccess(res, DevStore.tasks);
+    try {
+      const propertyId = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
+      const tasks = await prisma.operationalTask.findMany({
+        where: propertyId ? { propertyId } : {},
+        orderBy: { createdAt: 'desc' },
+      });
+      return sendSuccess(res, tasks);
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to fetch tasks', 500);
+    }
   }
 
   static async createTask(req: AuthRequest, res: Response): Promise<Response> {
-    const newTask = {
-      id: `tsk-${Date.now()}`,
-      title: req.body.title,
-      category: req.body.category || 'HOUSEKEEPING',
-      priority: req.body.priority || 'MEDIUM',
-      staffName: req.body.assignedTo || 'Assigned Staff',
-      assignedTo: req.body.assignedTo || 'Assigned Staff',
-      dueDate: req.body.dueDate || new Date().toISOString().split('T')[0],
-      status: 'PENDING',
-      propertyId: 'prop-1',
-      notes: req.body.notes || ''
-    };
-    DevStore.tasks.unshift(newTask as any);
-    return sendSuccess(res, newTask, 'Task assigned', 201);
+    try {
+      const { propertyId, title, category, priority, assignedTo, dueDate, notes } = req.body;
+      if (!title) return sendError(res, 'Task title is required', 400);
+
+      const propId = propertyId || (await OwnerController.resolvePropertyScope(req));
+      if (!propId) return sendError(res, 'Property ID is required', 400);
+
+      const task = await prisma.operationalTask.create({
+        data: {
+          propertyId: propId,
+          title: title.trim(),
+          category: category || 'GENERAL',
+          priority: (priority || 'MEDIUM') as any,
+          assignedTo: assignedTo || null,
+          dueDate: dueDate ? new Date(dueDate) : null,
+          notes: notes || null,
+          status: 'PENDING',
+        },
+      });
+      return sendSuccess(res, task, 'Task created', 201);
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to create task', 500);
+    }
   }
 
   static async updateTask(req: AuthRequest, res: Response): Promise<Response> {
-    const t = DevStore.tasks.find((task) => task.id === req.params.id);
-    if (t) Object.assign(t, req.body);
-    return sendSuccess(res, t, 'Task updated');
+    try {
+      const { status, title, assignedTo, priority } = req.body;
+      const updated = await prisma.operationalTask.update({
+        where: { id: req.params.id },
+        data: {
+          ...(status && { status }),
+          ...(title && { title: title.trim() }),
+          ...(assignedTo !== undefined && { assignedTo }),
+          ...(priority && { priority }),
+        },
+      });
+      return sendSuccess(res, updated, 'Task updated');
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to update task', 500);
+    }
   }
 
   static async archiveTask(req: AuthRequest, res: Response): Promise<Response> {
-    DevStore.tasks = DevStore.tasks.filter((t) => t.id !== req.params.id);
-    return sendSuccess(res, { id: req.params.id }, 'Task archived');
+    try {
+      await prisma.operationalTask.delete({ where: { id: req.params.id } });
+      return sendSuccess(res, null, 'Task deleted');
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to delete task', 500);
+    }
   }
 
   // ==========================================================================
-  // 15. DOCUMENTS & KYC VERIFICATION
+  // 13. DOCUMENTS & KYC
   // ==========================================================================
   static async getDocuments(req: AuthRequest, res: Response): Promise<Response> {
-    const docs = DevStore.residents.flatMap((r) =>
-      (r.documents || []).map((d: any) => ({
-        ...d,
-        residentName: r.fullName,
-        residentId: r.id,
-        roomNumber: r.roomNumber
-      }))
-    );
-    return sendSuccess(res, docs);
+    try {
+      const propertyId = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
+      const docs = await prisma.document.findMany({
+        where: propertyId ? { propertyId } : {},
+        include: {
+          resident: { include: { bed: { include: { room: true } } } },
+        },
+        orderBy: { uploadedAt: 'desc' },
+      });
+      return sendSuccess(res, docs);
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to fetch documents', 500);
+    }
   }
 
   static async verifyDocument(req: AuthRequest, res: Response): Promise<Response> {
-    const { status, rejectionReason } = req.body;
-    for (const r of DevStore.residents) {
-      const d = r.documents.find((doc: any) => doc.id === req.params.id);
-      if (d) {
-        d.status = status;
-        (d as any).rejectionReason = rejectionReason;
-        if (status === 'VERIFIED') r.kycStatus = 'VERIFIED';
-        return sendSuccess(res, d, `Document marked as ${status}`);
+    try {
+      const { status, rejectionReason } = req.body;
+      const updated = await prisma.document.update({
+        where: { id: req.params.id },
+        data: {
+          status: status as any,
+          rejectionReason: rejectionReason || null,
+        },
+      });
+
+      // Update resident KYC status if needed
+      if (status === 'VERIFIED') {
+        await prisma.resident.update({
+          where: { id: updated.residentId },
+          data: { kycStatus: 'VERIFIED' },
+        });
       }
+
+      return sendSuccess(res, updated, `Document marked as ${status}`);
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to verify document', 500);
     }
-    return sendSuccess(res, { id: req.params.id, status }, 'Document status updated');
   }
 
   // ==========================================================================
-  // 16. NOTICES & BROADCASTS (CRUD)
+  // 14. NOTICES
   // ==========================================================================
   static async getNotices(req: AuthRequest, res: Response): Promise<Response> {
-    return sendSuccess(res, DevStore.notices);
+    try {
+      const propertyId = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
+      const notices = await prisma.notice.findMany({
+        where: propertyId ? { propertyId } : {},
+        orderBy: { publishedAt: 'desc' },
+      });
+      return sendSuccess(res, notices);
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to fetch notices', 500);
+    }
   }
 
   static async createNotice(req: AuthRequest, res: Response): Promise<Response> {
-    const newNotice = {
-      id: `not-${Date.now()}`,
-      title: req.body.title,
-      content: req.body.content,
-      category: req.body.category || 'GENERAL',
-      priority: req.body.priority || 'NORMAL',
-      isImportant: req.body.isImportant || req.body.priority === 'URGENT',
-      target: req.body.target || 'ALL',
-      publisherName: req.user?.name || 'Urban Nest Management',
-      propertyId: 'prop-1',
-      publishedAt: new Date().toISOString()
-    };
-    DevStore.notices.unshift(newNotice as any);
+    try {
+      const { propertyId, title, content, category, isImportant } = req.body;
+      if (!title || !content) return sendError(res, 'Title and content are required', 400);
 
-    DevStore.auditLogs.unshift({
-      id: `aud-${Date.now()}`,
-      actorName: req.user?.name || 'Owner',
-      actorRole: 'OWNER',
-      action: 'NOTICE_PUBLISHED',
-      targetEntity: 'Notice',
-      timestamp: new Date().toISOString(),
-      details: `Broadcast notice: ${newNotice.title}`
-    });
+      const propId = propertyId || (await OwnerController.resolvePropertyScope(req));
+      if (!propId) return sendError(res, 'Property ID is required', 400);
 
-    return sendSuccess(res, newNotice, 'Notice published', 201);
+      const notice = await prisma.notice.create({
+        data: {
+          propertyId: propId,
+          title: title.trim(),
+          content: content.trim(),
+          category: (category || 'GENERAL') as any,
+          isImportant: Boolean(isImportant),
+          publisherName: req.user?.name || 'PG Management',
+        },
+      });
+
+      return sendSuccess(res, notice, 'Notice published successfully', 201);
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to publish notice', 500);
+    }
   }
 
   static async updateNotice(req: AuthRequest, res: Response): Promise<Response> {
-    const not = DevStore.notices.find((n) => n.id === req.params.id);
-    if (not) Object.assign(not, req.body);
-    return sendSuccess(res, not, 'Notice updated');
+    try {
+      const { title, content, category, isImportant } = req.body;
+      const updated = await prisma.notice.update({
+        where: { id: req.params.id },
+        data: {
+          ...(title && { title: title.trim() }),
+          ...(content && { content: content.trim() }),
+          ...(category && { category }),
+          ...(isImportant !== undefined && { isImportant }),
+        },
+      });
+      return sendSuccess(res, updated, 'Notice updated');
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to update notice', 500);
+    }
   }
 
   static async archiveNotice(req: AuthRequest, res: Response): Promise<Response> {
-    DevStore.notices = DevStore.notices.filter((n) => n.id !== req.params.id);
-    return sendSuccess(res, { id: req.params.id }, 'Notice removed');
+    try {
+      await prisma.notice.delete({ where: { id: req.params.id } });
+      return sendSuccess(res, null, 'Notice archived');
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to delete notice', 500);
+    }
   }
 
   // ==========================================================================
-  // 17. LEAVE REQUESTS
+  // 15. LEAVE REQUESTS
   // ==========================================================================
   static async getLeaveRequests(req: AuthRequest, res: Response): Promise<Response> {
-    return sendSuccess(res, DevStore.leaveRequests);
+    try {
+      const propertyId = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
+      const leaves = await prisma.leaveRequest.findMany({
+        where: propertyId ? { propertyId } : {},
+        include: {
+          resident: { include: { bed: { include: { room: true } } } },
+        },
+        orderBy: { appliedAt: 'desc' },
+      });
+      return sendSuccess(res, leaves);
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to fetch leave requests', 500);
+    }
   }
 
   static async approveLeave(req: AuthRequest, res: Response): Promise<Response> {
-    const lev = DevStore.leaveRequests.find((l) => l.id === req.params.id);
-    if (lev) lev.status = 'APPROVED';
-    return sendSuccess(res, lev, 'Leave request approved');
+    try {
+      const updated = await prisma.leaveRequest.update({
+        where: { id: req.params.id },
+        data: {
+          status: 'APPROVED',
+          approvedBy: req.user?.name || 'Owner',
+        },
+      });
+      return sendSuccess(res, updated, 'Leave request approved');
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to approve leave', 500);
+    }
   }
 
   static async rejectLeave(req: AuthRequest, res: Response): Promise<Response> {
-    const lev = DevStore.leaveRequests.find((l) => l.id === req.params.id);
-    if (lev) {
-      lev.status = 'REJECTED';
-      (lev as any).rejectionReason = req.body.reason || 'Management decision';
+    try {
+      const updated = await prisma.leaveRequest.update({
+        where: { id: req.params.id },
+        data: {
+          status: 'REJECTED',
+          approvedBy: req.user?.name || 'Owner',
+        },
+      });
+      return sendSuccess(res, updated, 'Leave request rejected');
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to reject leave', 500);
     }
-    return sendSuccess(res, lev, 'Leave request rejected');
   }
 
   // ==========================================================================
-  // 18. EMERGENCY / SOS INCIDENTS
+  // 16. EMERGENCY SOS EVENTS
   // ==========================================================================
   static async getSOSEvents(req: AuthRequest, res: Response): Promise<Response> {
-    return sendSuccess(res, DevStore.sosEvents);
+    try {
+      const propertyId = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
+      const sos = await prisma.sOSEvent.findMany({
+        where: propertyId ? { propertyId } : {},
+        include: {
+          resident: { include: { bed: { include: { room: true } } } },
+        },
+        orderBy: { triggeredAt: 'desc' },
+      });
+      return sendSuccess(res, sos);
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to fetch SOS events', 500);
+    }
   }
 
   static async acknowledgeSOS(req: AuthRequest, res: Response): Promise<Response> {
-    const sos = DevStore.sosEvents.find((s) => s.id === req.params.id) || DevStore.sosEvents[0];
-    if (sos) {
-      sos.status = 'ACKNOWLEDGED' as any;
-      (sos as any).acknowledgedBy = req.user?.name || 'Owner';
+    try {
+      const updated = await prisma.sOSEvent.update({
+        where: { id: req.params.id },
+        data: {
+          status: 'ACKNOWLEDGED',
+          acknowledgedBy: req.user?.name || 'Security Warden',
+        },
+      });
+      return sendSuccess(res, updated, 'SOS event acknowledged');
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to acknowledge SOS', 500);
     }
-    return sendSuccess(res, sos, 'SOS event acknowledged');
   }
 
   static async resolveSOS(req: AuthRequest, res: Response): Promise<Response> {
-    const sos = DevStore.sosEvents.find((s) => s.id === req.params.id) || DevStore.sosEvents[0];
-    if (sos) {
-      sos.status = 'RESOLVED';
-      sos.resolvedAt = new Date().toISOString();
-      sos.notes = req.body.notes || 'Emergency attended and resolved';
+    try {
+      const { notes } = req.body;
+      const updated = await prisma.sOSEvent.update({
+        where: { id: req.params.id },
+        data: {
+          status: 'RESOLVED',
+          resolvedAt: new Date(),
+          notes: notes || 'Incident attended and resolved',
+        },
+      });
+      return sendSuccess(res, updated, 'SOS event resolved');
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to resolve SOS', 500);
     }
-    return sendSuccess(res, sos, 'SOS event marked as resolved');
   }
 
   // ==========================================================================
-  // 19. REPORTS & ANALYTICS
+  // 17. REPORTS & ANALYTICS
   // ==========================================================================
   static async getReports(req: AuthRequest, res: Response): Promise<Response> {
-    const rooms = DevStore.rooms;
-    const allBeds = rooms.flatMap((r) => r.beds);
-    const totalBeds = allBeds.length;
-    const occupiedBeds = allBeds.filter((b) => b.status === 'OCCUPIED').length;
-    const occupancyRate = totalBeds > 0 ? Math.round((occupiedBeds / totalBeds) * 100) : 0;
-    const totalCollected = DevStore.payments.filter((p) => p.status === 'PAID').reduce((sum, p) => sum + p.amount, 0);
-    const totalOutstanding = DevStore.payments.filter((p) => p.status === 'OVERDUE' || p.status === 'PENDING').reduce((sum, p) => sum + p.amount, 0);
-    const totalExpenses = DevStore.expenses.reduce((sum, e) => sum + e.amount, 0);
-    const netOperatingIncome = totalCollected - totalExpenses;
+    try {
+      const propertyId = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
+      const propFilter = propertyId ? { propertyId } : {};
 
-    return sendSuccess(res, {
-      summary: {
-        occupancyRate,
-        totalBeds,
-        occupiedBeds,
-        availableBeds: totalBeds - occupiedBeds,
-        totalCollected,
-        totalOutstanding,
-        totalExpenses,
-        netOperatingIncome,
-        activeResidentsCount: DevStore.residents.filter((r) => r.status === 'ACTIVE').length
-      },
-      revenueByMonth: [
-        { month: 'Jun 2026', revenue: 210000, expenses: 22000 },
-        { month: 'Jul 2026', revenue: 235000, expenses: 24500 },
-        { month: 'Aug 2026', revenue: 242000, expenses: 21000 },
-        { month: 'Sep 2026', revenue: totalCollected, expenses: totalExpenses }
-      ],
-      occupancyTrend: [
-        { month: 'Jun', occupancy: 70 },
-        { month: 'Jul', occupancy: 75 },
-        { month: 'Aug', occupancy: 82 },
-        { month: 'Sep', occupancy: occupancyRate }
-      ],
-      expenseCategories: [
-        { category: 'Electricity', amount: 14500 },
-        { category: 'Internet', amount: 3499 },
-        { category: 'Supplies', amount: 4200 }
-      ]
-    });
+      const [payments, expenses, rooms, beds, residents] = await Promise.all([
+        prisma.payment.findMany({ where: propFilter }),
+        prisma.expense.findMany({ where: propFilter }),
+        prisma.room.findMany({ where: propFilter }),
+        prisma.bed.findMany({ where: propertyId ? { room: { propertyId } } : {} }),
+        prisma.resident.findMany({ where: propFilter }),
+      ]);
+
+      const totalRevenue = payments.filter((p) => p.status === 'PAID').reduce((sum, p) => sum + p.amount, 0);
+      const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
+      const netProfit = totalRevenue - totalExpenses;
+      const totalBeds = beds.length;
+      const occupiedBeds = beds.filter((b) => b.status === 'OCCUPIED').length;
+      const occupancyRate = totalBeds > 0 ? Math.round((occupiedBeds / totalBeds) * 100) : 0;
+
+      return sendSuccess(res, {
+        summary: {
+          totalRevenue,
+          totalExpenses,
+          netProfit,
+          totalBeds,
+          occupiedBeds,
+          availableBeds: totalBeds - occupiedBeds,
+          occupancyRate,
+          totalResidents: residents.filter((r) => r.status === 'ACTIVE').length,
+        },
+        monthlyBreakdown: [
+          { month: 'Jun', revenue: Math.round(totalRevenue * 0.2), expenses: Math.round(totalExpenses * 0.2) },
+          { month: 'Jul', revenue: Math.round(totalRevenue * 0.25), expenses: Math.round(totalExpenses * 0.25) },
+          { month: 'Aug', revenue: Math.round(totalRevenue * 0.25), expenses: Math.round(totalExpenses * 0.25) },
+          { month: 'Sep', revenue: Math.round(totalRevenue * 0.3), expenses: Math.round(totalExpenses * 0.3) },
+        ],
+        paymentsList: payments.slice(0, 20),
+        expensesList: expenses.slice(0, 20),
+      });
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to generate reports', 500);
+    }
   }
 
   // ==========================================================================
-  // 20. AUDIT LOGS & SETTINGS
+  // 18. AUDIT LOGS & SETTINGS
   // ==========================================================================
   static async getAuditLogs(req: AuthRequest, res: Response): Promise<Response> {
-    return sendSuccess(res, DevStore.auditLogs);
+    try {
+      const propertyId = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
+      const logs = await prisma.auditLog.findMany({
+        where: propertyId ? { propertyId } : {},
+        orderBy: { timestamp: 'desc' },
+        take: 100,
+      });
+      return sendSuccess(res, logs);
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to fetch audit logs', 500);
+    }
   }
 
   static async getSettings(req: AuthRequest, res: Response): Promise<Response> {
-    return sendSuccess(res, DevStore.settings);
+    try {
+      const propertyId = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
+      const [settingsRows, property] = await Promise.all([
+        prisma.setting.findMany(),
+        propertyId ? prisma.property.findUnique({ where: { id: propertyId } }) : null,
+      ]);
+
+      const settingsMap: Record<string, any> = {};
+      settingsRows.forEach((s) => {
+        settingsMap[s.key] = s.value;
+      });
+
+      return sendSuccess(res, {
+        rentDueDay: settingsMap['rent_due_day'] || '5',
+        lateFeePerDay: settingsMap['late_fee_per_day'] || '100',
+        noticePeriodDays: settingsMap['notice_period_days'] || '30',
+        visitorCutoffTime: settingsMap['visitor_cutoff_time'] || '22:00',
+        upiId: property?.upiId || settingsMap['primary_upi_id'] || 'urbannest@axis',
+        gstNumber: property?.gstNumber || settingsMap['gst_number'] || '',
+        propertyPhone: property?.phone || '+91 98765 43210',
+        propertyEmail: property?.email || 'contact@urbannestpg.com',
+      });
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to fetch settings', 500);
+    }
   }
 
   static async updateSettings(req: AuthRequest, res: Response): Promise<Response> {
-    Object.assign(DevStore.settings, req.body);
-    return sendSuccess(res, DevStore.settings, 'Settings saved successfully');
+    try {
+      const { rentDueDay, lateFeePerDay, noticePeriodDays, visitorCutoffTime, upiId, gstNumber, propertyPhone, propertyEmail, propertyId } = req.body;
+
+      const propId = propertyId || (await OwnerController.resolvePropertyScope(req));
+
+      const settingsToUpsert = [
+        { key: 'rent_due_day', value: String(rentDueDay || '5') },
+        { key: 'late_fee_per_day', value: String(lateFeePerDay || '100') },
+        { key: 'notice_period_days', value: String(noticePeriodDays || '30') },
+        { key: 'visitor_cutoff_time', value: String(visitorCutoffTime || '22:00') },
+        { key: 'primary_upi_id', value: String(upiId || '') },
+        { key: 'gst_number', value: String(gstNumber || '') },
+      ];
+
+      for (const item of settingsToUpsert) {
+        await prisma.setting.upsert({
+          where: { key: item.key },
+          update: { value: item.value },
+          create: { key: item.key, value: item.value },
+        });
+      }
+
+      if (propId) {
+        await prisma.property.update({
+          where: { id: propId },
+          data: {
+            ...(upiId && { upiId }),
+            ...(gstNumber && { gstNumber }),
+            ...(propertyPhone && { phone: propertyPhone }),
+            ...(propertyEmail && { email: propertyEmail }),
+          },
+        });
+      }
+
+      return sendSuccess(res, null, 'Settings saved successfully');
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to save settings', 500);
+    }
   }
 }
 
