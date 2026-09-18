@@ -6,6 +6,7 @@ import { useAuth } from './context/AuthContext';
 import { PublicLayout } from './components/layout/PublicLayout';
 import { OwnerLayout } from './components/layout/OwnerLayout';
 import { ResidentLayout } from './components/layout/ResidentLayout';
+import { SuperAdminLayout } from './components/layout/SuperAdminLayout';
 
 // Public Marketing Pages
 import { LandingPage } from './pages/public/LandingPage';
@@ -17,6 +18,20 @@ import { GateVerifyPage } from './pages/public/GateVerifyPage';
 
 // Auth Pages
 import { LoginPage } from './pages/auth/LoginPage';
+
+// Super Admin SaaS Platform Pages
+import { SuperAdminDashboardPage } from './pages/super-admin/SuperAdminDashboardPage';
+import { SuperAdminTenantsPage } from './pages/super-admin/SuperAdminTenantsPage';
+import { SuperAdminTenantDetailPage } from './pages/super-admin/SuperAdminTenantDetailPage';
+import { SuperAdminOwnersPage } from './pages/super-admin/SuperAdminOwnersPage';
+import { SuperAdminSubscriptionsPage } from './pages/super-admin/SuperAdminSubscriptionsPage';
+import { SuperAdminPlansPage } from './pages/super-admin/SuperAdminPlansPage';
+import { SuperAdminRevenuePage } from './pages/super-admin/SuperAdminRevenuePage';
+import { SuperAdminUsagePage } from './pages/super-admin/SuperAdminUsagePage';
+import { SuperAdminSupportPage } from './pages/super-admin/SuperAdminSupportPage';
+import { SuperAdminAuditLogsPage } from './pages/super-admin/SuperAdminAuditLogsPage';
+import { SuperAdminSystemHealthPage } from './pages/super-admin/SuperAdminSystemHealthPage';
+import { SuperAdminSettingsPage } from './pages/super-admin/SuperAdminSettingsPage';
 
 // Owner / Admin Pages
 import { OwnerDashboardPage } from './pages/owner/OwnerDashboardPage';
@@ -50,6 +65,22 @@ import { ResidentProfilePage } from './pages/resident/ResidentProfilePage';
 import { ResidentEmergencyPage } from './pages/resident/ResidentEmergencyPage';
 
 // Route Guards
+const ProtectedSuperAdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, isLoading } = useAuth();
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#FCFBF8] flex flex-col items-center justify-center">
+        <div className="w-8 h-8 border-4 border-brand-forest/20 border-t-brand-forest rounded-full animate-spin" />
+        <p className="text-xs text-slate-500 mt-2">Loading SaaS Administration...</p>
+      </div>
+    );
+  }
+  if (!user || user.role !== 'SUPER_ADMIN') {
+    return <Navigate to="/login" replace />;
+  }
+  return <SuperAdminLayout>{children}</SuperAdminLayout>;
+};
+
 const ProtectedOwnerRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isLoading } = useAuth();
   if (isLoading) {
@@ -61,6 +92,8 @@ const ProtectedOwnerRoute: React.FC<{ children: React.ReactNode }> = ({ children
     );
   }
   if (!user) return <Navigate to="/login" replace />;
+  if (user.role === 'SUPER_ADMIN') return <Navigate to="/super-admin/dashboard" replace />;
+  if (user.role === 'RESIDENT') return <Navigate to="/resident/dashboard" replace />;
   return <OwnerLayout>{children}</OwnerLayout>;
 };
 
@@ -75,6 +108,8 @@ const ProtectedResidentRoute: React.FC<{ children: React.ReactNode }> = ({ child
     );
   }
   if (!user) return <Navigate to="/login" replace />;
+  if (user.role === 'SUPER_ADMIN') return <Navigate to="/super-admin/dashboard" replace />;
+  if (user.role !== 'RESIDENT') return <Navigate to="/owner/dashboard" replace />;
   return <ResidentLayout>{children}</ResidentLayout>;
 };
 
@@ -103,6 +138,22 @@ const AppRoutes: React.FC = () => {
 
       {/* Authentication */}
       <Route path="/login" element={<LoginPage />} />
+
+      {/* ========================================================
+          SAAS PLATFORM: SUPER ADMIN PORTAL (/super-admin/*)
+         ======================================================== */}
+      <Route path="/super-admin/dashboard" element={<ProtectedSuperAdminRoute><SuperAdminDashboardPage /></ProtectedSuperAdminRoute>} />
+      <Route path="/super-admin/tenants" element={<ProtectedSuperAdminRoute><SuperAdminTenantsPage /></ProtectedSuperAdminRoute>} />
+      <Route path="/super-admin/tenants/:id" element={<ProtectedSuperAdminRoute><SuperAdminTenantDetailPage /></ProtectedSuperAdminRoute>} />
+      <Route path="/super-admin/owners" element={<ProtectedSuperAdminRoute><SuperAdminOwnersPage /></ProtectedSuperAdminRoute>} />
+      <Route path="/super-admin/subscriptions" element={<ProtectedSuperAdminRoute><SuperAdminSubscriptionsPage /></ProtectedSuperAdminRoute>} />
+      <Route path="/super-admin/plans" element={<ProtectedSuperAdminRoute><SuperAdminPlansPage /></ProtectedSuperAdminRoute>} />
+      <Route path="/super-admin/revenue" element={<ProtectedSuperAdminRoute><SuperAdminRevenuePage /></ProtectedSuperAdminRoute>} />
+      <Route path="/super-admin/usage" element={<ProtectedSuperAdminRoute><SuperAdminUsagePage /></ProtectedSuperAdminRoute>} />
+      <Route path="/super-admin/support" element={<ProtectedSuperAdminRoute><SuperAdminSupportPage /></ProtectedSuperAdminRoute>} />
+      <Route path="/super-admin/audit-logs" element={<ProtectedSuperAdminRoute><SuperAdminAuditLogsPage /></ProtectedSuperAdminRoute>} />
+      <Route path="/super-admin/system-health" element={<ProtectedSuperAdminRoute><SuperAdminSystemHealthPage /></ProtectedSuperAdminRoute>} />
+      <Route path="/super-admin/settings" element={<ProtectedSuperAdminRoute><SuperAdminSettingsPage /></ProtectedSuperAdminRoute>} />
 
       {/* ========================================================
           APPLICATION: OWNER PORTAL (/owner/*)

@@ -32,6 +32,10 @@ export const sendSuccess = <T>(
   return res.status(statusCode).json(body);
 };
 
+export const sendCreated = <T>(res: Response, data: T, message = 'Resource created successfully'): Response => {
+  return sendSuccess(res, data, message, 201);
+};
+
 export const sendError = (
   res: Response,
   message = 'Internal Server Error',
@@ -49,3 +53,5 @@ export const sendError = (
 
   return res.status(statusCode).json(body);
 };
+
+

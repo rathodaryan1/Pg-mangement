@@ -1,5 +1,50 @@
 export type UserRole = 'OWNER' | 'MANAGER' | 'RESIDENT' | 'STAFF' | 'SUPER_ADMIN' | 'RECEPTIONIST' | 'MAINTENANCE' | 'ACCOUNTANT';
 
+export type TenantStatus = 'TRIAL' | 'ACTIVE' | 'SUSPENDED' | 'CANCELLED';
+export type SubscriptionPlan = 'TRIAL' | 'STARTER' | 'PROFESSIONAL' | 'ENTERPRISE';
+
+export interface Tenant {
+  id: string;
+  name: string;
+  slug: string;
+  email: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  status: TenantStatus;
+  plan: SubscriptionPlan;
+  subscriptionStatus?: string;
+  trialEndsAt?: string;
+  subscriptionStartedAt?: string;
+  subscriptionEndsAt?: string;
+  maxProperties: number;
+  maxRooms: number;
+  maxResidents: number;
+  users?: User[];
+  properties?: Property[];
+  _count?: {
+    properties: number;
+    users: number;
+  };
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface Plan {
+  id: string;
+  name: string;
+  tier: SubscriptionPlan;
+  priceMonthly: number;
+  priceYearly: number;
+  maxProperties: number;
+  maxRooms: number;
+  maxResidents: number;
+  features: string[] | string;
+  isActive: boolean;
+}
+
 export interface User {
   id: string;
   name: string;
@@ -8,6 +53,8 @@ export interface User {
   avatarUrl?: string;
   phone?: string;
   mobile?: string;
+  tenantId?: string;
+  tenant?: Partial<Tenant>;
   propertyId?: string;
   residentId?: string;
 }

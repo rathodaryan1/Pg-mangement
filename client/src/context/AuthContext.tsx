@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import type { User, UserRole, Property } from '../types';
+import type { User, UserRole, Property, Tenant } from '../types';
 import api from '../lib/api';
 
 interface AuthContextType {
@@ -10,6 +10,9 @@ interface AuthContextType {
   switchRole: (role: UserRole) => void;
   login: (email: string, password?: string, selectedRole?: UserRole) => Promise<boolean>;
   logout: () => Promise<void>;
+  isImpersonated: boolean;
+  impersonatedBy?: string;
+  exitImpersonation: () => Promise<void>;
   isLoading: boolean;
   error: string | null;
 }
@@ -18,11 +21,11 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const DEFAULT_PROPERTY: Property = {
   id: 'prop-1',
-  name: 'Urban Nest Platinum Living',
+  name: 'Urban Nest PG Living',
   address: 'Plot 42, Sector 45, Near Huda City Centre, Gurugram',
   city: 'Gurugram',
   phone: '+91 98765 43210',
-  email: 'gurgaon@urbannestpg.com',
+  email: 'contact@urbannestpg.com',
   totalRooms: 12,
   occupiedRooms: 10,
   totalBeds: 24,
@@ -41,6 +44,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
 
   const [activeProperty, setActiveProperty] = useState<Property>(DEFAULT_PROPERTY);
+  const [isImpersonated, setIsImpersonated] = useState<boolean>(false);
+  const [impersonatedBy, setImpersonatedBy] = useState<string | undefined>(undefined);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -61,8 +66,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           email: string;
           role: UserRole;
           mobile?: string;
+          tenantId?: string;
+          tenant?: Partial<Tenant>;
           propertyId?: string;
           residentId?: string;
+          isImpersonated?: boolean;
+          impersonatedBy?: string;
         }>('/auth/me');
 
         if (res.data) {
@@ -72,14 +81,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             email: res.data.email,
             role: res.data.role,
             mobile: res.data.mobile || '',
+            tenantId: res.data.tenantId,
+            tenant: res.data.tenant,
             propertyId: res.data.propertyId || 'prop-1',
             residentId: res.data.residentId,
           };
           setUser(authUser);
+          setIsImpersonated(!!res.data.isImpersonated);
+          setImpersonatedBy(res.data.impersonatedBy);
           localStorage.setItem('urbannest_user_session', JSON.stringify(authUser));
 
           // Fetch properties for owner/staff
-          if (authUser.role === 'OWNER' || authUser.role === 'SUPER_ADMIN' || authUser.role === 'MANAGER' || authUser.role === 'STAFF') {
+          if (authUser.role === 'OWNER' || authUser.role === 'MANAGER' || authUser.role === 'STAFF') {
             try {
               const propRes = await api.get<any[]>('/owner/properties');
               if (propRes.data && propRes.data.length > 0) {
@@ -101,14 +114,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
           }
         } else {
-          // No user data returned from /auth/me
           api.setToken(null);
           localStorage.removeItem('urbannest_user_session');
           setUser(null);
         }
       } catch (err: any) {
         console.warn('Session verification failed:', err.message);
-        // Clear invalid token & session on 401/403
         api.setToken(null);
         localStorage.removeItem('urbannest_user_session');
         setUser(null);
@@ -135,6 +146,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           email: string;
           role: UserRole;
           mobile?: string;
+          tenantId?: string;
+          tenant?: Partial<Tenant>;
           propertyId?: string;
           residentId?: string;
         };
@@ -151,14 +164,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           email: res.data.user.email,
           role: res.data.user.role,
           mobile: res.data.user.mobile || '',
+          tenantId: res.data.user.tenantId,
+          tenant: res.data.user.tenant,
           propertyId: res.data.user.propertyId || 'prop-1',
           residentId: res.data.user.residentId,
         };
         setUser(loggedInUser);
+        setIsImpersonated(false);
+        setImpersonatedBy(undefined);
         localStorage.setItem('urbannest_user_session', JSON.stringify(loggedInUser));
 
         // Fetch properties if owner/staff
-        if (loggedInUser.role === 'OWNER' || loggedInUser.role === 'SUPER_ADMIN' || loggedInUser.role === 'MANAGER') {
+        if (loggedInUser.role === 'OWNER' || loggedInUser.role === 'MANAGER') {
           try {
             const propRes = await api.get<any[]>('/owner/properties');
             if (propRes.data && propRes.data.length > 0) {
@@ -179,48 +196,65 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             // ignore
           }
         }
-
-        setIsLoading(false);
         return true;
       }
-      throw new Error(res.message || 'Invalid server response during authentication.');
-    } catch (err: any) {
-      const errMsg = err.message || 'Unable to connect to server. Please try again.';
-      setError(errMsg);
-      setIsLoading(false);
       return false;
+    } catch (err: any) {
+      setError(err.message || 'Login failed. Please verify email and password.');
+      return false;
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const logout = async () => {
     try {
-      await api.post('/auth/logout');
+      await api.post('/auth/logout', {});
     } catch {
-      // Ignore network errors during logout
+      // ignore
     } finally {
       api.setToken(null);
       localStorage.removeItem('urbannest_user_session');
+      localStorage.removeItem('saas_superadmin_original_token');
       setUser(null);
+      setIsImpersonated(false);
+      setImpersonatedBy(undefined);
+      window.location.href = '/login';
     }
   };
 
-  const switchRole = async (newRole: UserRole) => {
-    setIsLoading(true);
-    const targetEmail = newRole === 'RESIDENT' ? 'aakash.v@gmail.com' : 'owner@pg.com';
-    await login(targetEmail, 'admin123', newRole);
-    setIsLoading(false);
+  const exitImpersonation = async () => {
+    const superAdminToken = localStorage.getItem('saas_superadmin_original_token');
+    if (superAdminToken) {
+      api.setToken(superAdminToken);
+      localStorage.removeItem('saas_superadmin_original_token');
+      window.location.href = '/super-admin/tenants';
+    } else {
+      await logout();
+    }
+  };
+
+  const switchRole = (newRole: UserRole) => {
+    if (user) {
+      const updated = { ...user, role: newRole };
+      setUser(updated);
+      localStorage.setItem('urbannest_user_session', JSON.stringify(updated));
+    }
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        role: user ? user.role : 'OWNER',
+        role: user?.role || 'RESIDENT',
         activeProperty,
         setActiveProperty,
         switchRole,
         login,
         logout,
+        isImpersonated,
+        impersonatedBy,
+        exitImpersonation,
         isLoading,
         error,
       }}
@@ -230,7 +264,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
-export const useAuth = (): AuthContextType => {
+export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');

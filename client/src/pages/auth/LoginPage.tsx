@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building2, UserCheck, KeyRound, ArrowRight, ShieldCheck } from 'lucide-react';
-import { Card } from '../../components/ui/Card';
+import { Building2, UserCheck, KeyRound, ArrowRight, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { UrbanNestLogo } from '../../components/ui/UrbanNestLogo';
@@ -11,16 +10,19 @@ import type { UserRole } from '../../types';
 export const LoginPage: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState('owner@pg.com');
-  const [password, setPassword] = useState('admin123');
-  const [selectedRole, setSelectedRole] = useState<UserRole>('OWNER');
+  const [email, setEmail] = useState('superadmin@urbannest.io');
+  const [password, setPassword] = useState('superadmin123');
+  const [selectedRole, setSelectedRole] = useState<UserRole>('SUPER_ADMIN');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const handleRoleChange = (role: UserRole) => {
     setSelectedRole(role);
     setErrorMsg(null);
-    if (role === 'OWNER') {
+    if (role === 'SUPER_ADMIN') {
+      setEmail('superadmin@urbannest.io');
+      setPassword('superadmin123');
+    } else if (role === 'OWNER') {
       setEmail('owner@pg.com');
       setPassword('admin123');
     } else {
@@ -36,13 +38,12 @@ export const LoginPage: React.FC = () => {
     try {
       const success = await login(email, password, selectedRole);
       if (success) {
-        if (selectedRole === 'RESIDENT') {
-          navigate('/resident/dashboard');
-        } else {
-          navigate('/owner/dashboard');
-        }
-      } else {
-        if (selectedRole === 'RESIDENT') {
+        // Read stored session to determine exact role
+        const session = localStorage.getItem('urbannest_user_session');
+        const userObj = session ? JSON.parse(session) : null;
+        if (userObj?.role === 'SUPER_ADMIN') {
+          navigate('/super-admin/dashboard');
+        } else if (userObj?.role === 'RESIDENT') {
           navigate('/resident/dashboard');
         } else {
           navigate('/owner/dashboard');
@@ -63,13 +64,13 @@ export const LoginPage: React.FC = () => {
           <div className="my-auto space-y-6">
             <UrbanNestLogo variant="full" size="xl" />
             <p className="text-xs text-[#68736D] leading-relaxed max-w-xs mx-auto">
-              One centralized operating system for properties, residents, rent, and everyday operations.
+              Multi-Tenant SaaS platform powering next-generation PG & co-living management networks.
             </p>
           </div>
 
           <div className="pt-6 border-t border-[#DDE2DD] w-full flex items-center justify-center gap-1.5 text-xs text-[#0B4036] font-semibold">
             <ShieldCheck className="w-4 h-4 text-[#C8A45D]" />
-            <span>Bank-Grade Escrow & DPDP Privacy</span>
+            <span>Strict Tenant Isolation & Security</span>
           </div>
         </div>
 
@@ -78,40 +79,52 @@ export const LoginPage: React.FC = () => {
           <div className="space-y-1 text-left">
             <h2 className="text-xl font-bold text-[#18231F]">Account Sign In</h2>
             <p className="text-xs text-[#68736D]">
-              Select your portal role to access management or resident features.
+              Select your portal role to access SaaS platform, management or resident features.
             </p>
           </div>
 
           {/* Role Selector Tabs */}
-          <div className="grid grid-cols-2 gap-1.5 p-1 rounded-lg bg-[#F8F7F3] border border-[#DDE2DD] text-xs font-semibold">
+          <div className="grid grid-cols-3 gap-1.5 p-1 rounded-lg bg-[#F8F7F3] border border-[#DDE2DD] text-xs font-semibold">
+            <button
+              type="button"
+              onClick={() => handleRoleChange('SUPER_ADMIN')}
+              className={`py-2 rounded-md transition-colors flex items-center justify-center gap-1 ${
+                selectedRole === 'SUPER_ADMIN'
+                  ? 'bg-[#0B4036] text-white shadow-xs'
+                  : 'text-[#68736D] hover:text-[#18231F]'
+              }`}
+            >
+              <ShieldAlert className="w-3.5 h-3.5 text-[#C8A45D]" />
+              Super Admin
+            </button>
             <button
               type="button"
               onClick={() => handleRoleChange('OWNER')}
-              className={`py-2 rounded-md transition-colors flex items-center justify-center gap-1.5 ${
+              className={`py-2 rounded-md transition-colors flex items-center justify-center gap-1 ${
                 selectedRole === 'OWNER'
                   ? 'bg-[#0B4036] text-white shadow-xs'
                   : 'text-[#68736D] hover:text-[#18231F]'
               }`}
             >
               <Building2 className="w-3.5 h-3.5" />
-              Owner / Admin
+              PG Owner
             </button>
             <button
               type="button"
               onClick={() => handleRoleChange('RESIDENT')}
-              className={`py-2 rounded-md transition-colors flex items-center justify-center gap-1.5 ${
+              className={`py-2 rounded-md transition-colors flex items-center justify-center gap-1 ${
                 selectedRole === 'RESIDENT'
                   ? 'bg-[#0B4036] text-white shadow-xs'
                   : 'text-[#68736D] hover:text-[#18231F]'
               }`}
             >
-              <UserCheck className="w-3.5 h-3.5 text-[#C8A45D]" />
-              Resident Portal
+              <UserCheck className="w-3.5 h-3.5" />
+              Resident
             </button>
           </div>
 
           {errorMsg && (
-            <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs">
+            <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs text-left">
               {errorMsg}
             </div>
           )}
@@ -120,7 +133,13 @@ export const LoginPage: React.FC = () => {
             <Input
               label="Email Address"
               type="email"
-              placeholder={selectedRole === 'OWNER' ? 'owner@pg.com' : 'aakash.v@gmail.com'}
+              placeholder={
+                selectedRole === 'SUPER_ADMIN'
+                  ? 'superadmin@urbannest.io'
+                  : selectedRole === 'OWNER'
+                  ? 'owner@pg.com'
+                  : 'aakash.v@gmail.com'
+              }
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -129,7 +148,7 @@ export const LoginPage: React.FC = () => {
             <Input
               label="Password"
               type="password"
-              placeholder="admin123"
+              placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -142,18 +161,36 @@ export const LoginPage: React.FC = () => {
               className="w-full py-2.5 font-bold shadow-xs"
               rightIcon={<ArrowRight className="w-4 h-4" />}
             >
-              Sign In to {selectedRole === 'OWNER' ? 'Owner Portal' : 'Resident Portal'}
+              Sign In to{' '}
+              {selectedRole === 'SUPER_ADMIN'
+                ? 'Super Admin Portal'
+                : selectedRole === 'OWNER'
+                ? 'Owner Portal'
+                : 'Resident Portal'}
             </Button>
           </form>
 
           {/* Quick Demo Credentials Panel */}
           <div className="p-3.5 rounded-lg bg-[#FAF5EB] border border-[#C8A45D]/30 space-y-1.5 text-xs text-left">
             <p className="font-bold text-[#18231F] flex items-center gap-1.5">
-              <KeyRound className="w-3.5 h-3.5 text-[#B9954E]" /> Sample Demo Credentials:
+              <KeyRound className="w-3.5 h-3.5 text-[#B9954E]" /> Standard System Credentials:
             </p>
             <div className="space-y-0.5 text-[11px] text-[#68736D]">
-              <p><strong>Owner:</strong> <span className="font-mono text-[#0B4036]">owner@pg.com</span> / <span className="font-mono text-[#18231F]">admin123</span></p>
-              <p><strong>Resident:</strong> <span className="font-mono text-[#0B4036]">aakash.v@gmail.com</span> / <span className="font-mono text-[#18231F]">admin123</span></p>
+              <p>
+                <strong>Super Admin:</strong>{' '}
+                <span className="font-mono text-[#0B4036]">superadmin@urbannest.io</span> /{' '}
+                <span className="font-mono text-[#18231F]">superadmin123</span>
+              </p>
+              <p>
+                <strong>PG Owner:</strong>{' '}
+                <span className="font-mono text-[#0B4036]">owner@pg.com</span> /{' '}
+                <span className="font-mono text-[#18231F]">admin123</span>
+              </p>
+              <p>
+                <strong>Resident:</strong>{' '}
+                <span className="font-mono text-[#0B4036]">aakash.v@gmail.com</span> /{' '}
+                <span className="font-mono text-[#18231F]">admin123</span>
+              </p>
             </div>
           </div>
         </div>
@@ -161,3 +198,4 @@ export const LoginPage: React.FC = () => {
     </div>
   );
 };
+

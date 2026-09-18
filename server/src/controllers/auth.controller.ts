@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import * as bcrypt from 'bcryptjs';
+import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../config/prisma';
 import { config } from '../config/env';
@@ -17,11 +17,11 @@ export class AuthController {
       const { email, password, name, mobile, propertyId } = req.body;
 
       if (!email || !password || !name) {
-        return sendError(res, 'Email, password, and full name are required.', 400);
+        return sendError(res, 'Email, password, and full name are required.', 400, 'VALIDATION_ERROR');
       }
 
       if (password.length < 6) {
-        return sendError(res, 'Password must be at least 6 characters long.', 400);
+        return sendError(res, 'Password must be at least 6 characters long.', 400, 'VALIDATION_ERROR');
       }
 
       const existingUser = await prisma.user.findUnique({
@@ -29,18 +29,19 @@ export class AuthController {
       });
 
       if (existingUser) {
-        return sendError(res, 'An account with this email address already exists.', 409);
+        return sendError(res, 'An account with this email address already exists.', 409, 'DUPLICATE_EMAIL');
       }
 
-      // Find property if provided or assign first available demo property
-      let targetPropertyId = propertyId;
-      if (!targetPropertyId) {
-        const defaultProp = await prisma.property.findFirst();
-        if (defaultProp) targetPropertyId = defaultProp.id;
+      // Find target property
+      let targetProperty = null;
+      if (propertyId) {
+        targetProperty = await prisma.property.findUnique({ where: { id: propertyId } });
+      }
+      if (!targetProperty) {
+        targetProperty = await prisma.property.findFirst();
       }
 
-      const salt = await bcrypt.genSalt(10);
-      const passwordHash = await bcrypt.hash(password, salt);
+      const passwordHash = await bcrypt.hash(password, 10);
 
       // Create User and Resident in transaction
       const result = await prisma.$transaction(async (tx) => {
@@ -51,14 +52,15 @@ export class AuthController {
             name: name.trim(),
             role: 'RESIDENT',
             mobile: mobile || null,
-            propertyId: targetPropertyId || null,
+            tenantId: targetProperty?.tenantId || null,
+            propertyId: targetProperty?.id || null,
           },
         });
 
         const newResident = await tx.resident.create({
           data: {
             userId: newUser.id,
-            propertyId: targetPropertyId!,
+            propertyId: targetProperty!.id,
             fullName: name.trim(),
             email: email.toLowerCase().trim(),
             mobile: mobile || '9876543210',
@@ -73,13 +75,22 @@ export class AuthController {
       });
 
       const token = jwt.sign(
-        { id: result.user.id, email: result.user.email, role: result.user.role },
+        {
+          id: result.user.id,
+          email: result.user.email,
+          role: result.user.role,
+          name: result.user.name,
+          tenantId: result.user.tenantId,
+          propertyId: result.user.propertyId,
+          residentId: result.resident.id,
+        },
         config.jwtSecret,
         { expiresIn: config.jwtExpiresIn as any }
       );
 
       await AuditService.log({
-        propertyId: targetPropertyId,
+        tenantId: result.user.tenantId || undefined,
+        propertyId: targetProperty?.id,
         actorId: result.user.id,
         actorName: result.user.name,
         actorRole: result.user.role,
@@ -100,7 +111,8 @@ export class AuthController {
             email: result.user.email,
             role: result.user.role,
             mobile: result.user.mobile,
-            propertyId: targetPropertyId,
+            tenantId: result.user.tenantId,
+            propertyId: targetProperty?.id,
             residentId: result.resident.id,
           },
         },
@@ -109,38 +121,44 @@ export class AuthController {
       );
     } catch (error: any) {
       console.error('[AuthController.register] Error:', error);
-      return sendError(res, error.message || 'Registration failed', 500);
+      return sendError(res, error.message || 'Registration failed', 500, 'INTERNAL_ERROR');
     }
   }
 
   /**
    * POST /api/auth/login
-   * Authenticates user and returns JWT token and profile data
+   * Authenticates user against PostgreSQL and returns JWT token and multi-tenant profile
    */
   static async login(req: Request, res: Response): Promise<Response> {
     try {
       const { email, password } = req.body;
 
       if (!email || !password) {
-        return sendError(res, 'Email and password are required.', 400);
+        return sendError(res, 'Email and password are required.', 400, 'VALIDATION_ERROR');
       }
 
-      let user = null;
-      try {
-        user = await prisma.user.findUnique({
-          where: { email: email.toLowerCase().trim() },
-          include: {
-            resident: {
-              include: {
-                property: true,
-                bed: {
-                  include: {
-                    room: {
-                      include: {
-                        floor: {
-                          include: {
-                            building: true,
-                          },
+      const user = await prisma.user.findUnique({
+        where: { email: email.toLowerCase().trim() },
+        include: {
+          tenant: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              status: true,
+              plan: true,
+            },
+          },
+          resident: {
+            include: {
+              property: true,
+              bed: {
+                include: {
+                  room: {
+                    include: {
+                      floor: {
+                        include: {
+                          building: true,
                         },
                       },
                     },
@@ -149,154 +167,131 @@ export class AuthController {
               },
             },
           },
-        });
-      } catch (dbError: any) {
-        console.warn('[AuthController.login] Database unreachable, validating seeded credentials:', dbError.message);
+        },
+      });
+
+      if (!user) {
+        return sendError(res, 'Invalid email or password.', 401, 'INVALID_CREDENTIALS');
       }
 
-      if (user) {
-        const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
-        if (!isPasswordValid) {
-          return sendError(res, 'Invalid email or password.', 401);
-        }
+      const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+      if (!isPasswordValid) {
+        return sendError(res, 'Invalid email or password.', 401, 'INVALID_CREDENTIALS');
+      }
 
-        const token = jwt.sign(
-          {
+      // Check tenant suspension for non-Super-Admin users
+      if (user.role !== 'SUPER_ADMIN' && user.tenant?.status === 'SUSPENDED') {
+        return sendError(
+          res,
+          'Your PG Tenant account has been suspended by platform administration. Please contact support.',
+          403,
+          'TENANT_SUSPENDED'
+        );
+      }
+
+      const token = jwt.sign(
+        {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+          name: user.name,
+          tenantId: user.tenantId,
+          propertyId: user.propertyId || user.resident?.propertyId || null,
+          residentId: user.resident?.id,
+        },
+        config.jwtSecret,
+        { expiresIn: config.jwtExpiresIn as any }
+      );
+
+      // Log login event
+      await prisma.auditLog.create({
+        data: {
+          tenantId: user.tenantId,
+          propertyId: user.propertyId || user.resident?.propertyId || null,
+          actorId: user.id,
+          actorName: user.name,
+          actorRole: user.role,
+          action: 'LOGIN',
+          entity: 'User',
+          entityId: user.id,
+          ipAddress: req.ip,
+          details: `User logged in from ${req.ip || 'web'}`,
+        },
+      }).catch(() => {});
+
+      return sendSuccess(
+        res,
+        {
+          token,
+          user: {
             id: user.id,
+            name: user.name,
             email: user.email,
             role: user.role,
-            name: user.name,
-            propertyId: user.propertyId || user.resident?.propertyId,
-            residentId: user.resident?.id
+            mobile: user.mobile,
+            avatarUrl: user.avatarUrl,
+            tenantId: user.tenantId,
+            tenant: user.tenant,
+            propertyId: user.propertyId || user.resident?.propertyId || null,
+            residentId: user.resident?.id,
+            residentDetails: user.resident
+              ? {
+                  id: user.resident.id,
+                  fullName: user.resident.fullName,
+                  status: user.resident.status,
+                  kycStatus: user.resident.kycStatus,
+                  propertyName: user.resident.property?.name,
+                  roomNumber: user.resident.bed?.room?.number,
+                  bedNumber: user.resident.bed?.bedNumber,
+                  buildingName: user.resident.bed?.room?.floor?.building?.name,
+                  floorNumber: user.resident.bed?.room?.floor?.floorNumber,
+                }
+              : null,
           },
-          config.jwtSecret,
-          { expiresIn: config.jwtExpiresIn as any }
-        );
-
-        return sendSuccess(
-          res,
-          {
-            token,
-            user: {
-              id: user.id,
-              name: user.name,
-              email: user.email,
-              role: user.role,
-              mobile: user.mobile,
-              avatarUrl: user.avatarUrl,
-              propertyId: user.propertyId || user.resident?.propertyId || 'prop-1',
-              residentId: user.resident?.id,
-              residentDetails: user.resident
-                ? {
-                    id: user.resident.id,
-                    fullName: user.resident.fullName,
-                    status: user.resident.status,
-                    kycStatus: user.resident.kycStatus,
-                    propertyName: user.resident.property?.name,
-                    roomNumber: user.resident.bed?.room?.number,
-                    bedNumber: user.resident.bed?.bedNumber,
-                    buildingName: user.resident.bed?.room?.floor?.building?.name,
-                    floorNumber: user.resident.bed?.room?.floor?.floorNumber,
-                  }
-                : null,
-            },
-          },
-          'Login successful'
-        );
-      }
-
-      // If user is not found in database, check if explicit dev demo credentials match in non-production
-      const isProd = process.env.NODE_ENV === 'production';
-      const isDemo = process.env.DEMO_MODE === 'true';
-
-      if (!isProd && isDemo && (password === 'admin123' || password === 'password123')) {
-        const cleanEmail = email.toLowerCase().trim();
-        let role: any = 'RESIDENT';
-        let name = 'Aakash Verma';
-        let userId = 'usr-res-1';
-        let residentId: string | undefined = 'res-1';
-
-        if (cleanEmail === 'owner@pg.com' || cleanEmail.includes('owner')) {
-          role = 'OWNER';
-          name = 'Aaryan Sharma (Owner)';
-          userId = 'usr-owner-1';
-          residentId = undefined;
-        } else if (cleanEmail === 'superadmin@pg.com') {
-          role = 'SUPER_ADMIN';
-          name = 'Platform Super Admin';
-          userId = 'usr-super-1';
-          residentId = undefined;
-        } else if (cleanEmail === 'manager@pg.com') {
-          role = 'MANAGER';
-          name = 'Property Manager';
-          userId = 'usr-mgr-1';
-          residentId = undefined;
-        } else if (cleanEmail === 'aakash.v@gmail.com' || cleanEmail.includes('resident')) {
-          role = 'RESIDENT';
-          name = 'Aakash Verma';
-          userId = 'usr-res-1';
-          residentId = 'res-1';
-        } else {
-          return sendError(res, 'Invalid email or password.', 401);
-        }
-
-        const token = jwt.sign(
-          { id: userId, email: cleanEmail, role, name, residentId },
-          config.jwtSecret,
-          { expiresIn: config.jwtExpiresIn as any }
-        );
-
-        return sendSuccess(
-          res,
-          {
-            token,
-            user: {
-              id: userId,
-              name,
-              email: cleanEmail,
-              role,
-              mobile: '9876500001',
-              propertyId: 'prop-1',
-              residentId,
-            },
-          },
-          'Login successful'
-        );
-      }
-
-      return sendError(res, 'Invalid email or password.', 401);
+        },
+        'Login successful'
+      );
     } catch (error: any) {
       console.error('[AuthController.login] Error:', error);
-      return sendError(res, error.message || 'Login failed', 500);
+      return sendError(res, error.message || 'Login failed. Database connection unavailable.', 500, 'INTERNAL_ERROR');
     }
   }
 
   /**
    * GET /api/auth/me
-   * Returns current authenticated user and linked resident info
+   * Returns current authenticated user, tenant organization, and linked resident info
    */
   static async getCurrentUser(req: AuthRequest, res: Response): Promise<Response> {
     try {
       if (!req.user) {
-        return sendError(res, 'Authentication required.', 401);
+        return sendError(res, 'Authentication required.', 401, 'UNAUTHORIZED');
       }
 
-      let user: any = null;
-      try {
-        user = await prisma.user.findUnique({
-          where: { id: req.user.id },
-          include: {
-            resident: {
-              include: {
-                property: true,
-                bed: {
-                  include: {
-                    room: {
-                      include: {
-                        floor: {
-                          include: {
-                            building: true,
-                          },
+      const user = await prisma.user.findUnique({
+        where: { id: req.user.id },
+        include: {
+          tenant: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              status: true,
+              plan: true,
+              maxProperties: true,
+              maxRooms: true,
+              maxResidents: true,
+            },
+          },
+          resident: {
+            include: {
+              property: true,
+              bed: {
+                include: {
+                  room: {
+                    include: {
+                      floor: {
+                        include: {
+                          building: true,
                         },
                       },
                     },
@@ -305,64 +300,45 @@ export class AuthController {
               },
             },
           },
-        });
-      } catch (dbErr: any) {
-        console.warn('[AuthController.getCurrentUser] DB lookup fallback:', dbErr.message);
+        },
+      });
+
+      if (!user) {
+        return sendError(res, 'User profile not found.', 404, 'USER_NOT_FOUND');
       }
 
-      if (user) {
-        return sendSuccess(res, {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          mobile: user.mobile,
-          avatarUrl: user.avatarUrl,
-          propertyId: user.propertyId || user.resident?.propertyId || 'prop-1',
-          residentId: user.resident?.id,
-          residentDetails: user.resident
-            ? {
-                id: user.resident.id,
-                fullName: user.resident.fullName,
-                status: user.resident.status,
-                kycStatus: user.resident.kycStatus,
-                joiningDate: user.resident.joiningDate,
-                propertyName: user.resident.property?.name,
-                propertyAddress: user.resident.property?.address,
-                roomNumber: user.resident.bed?.room?.number,
-                bedNumber: user.resident.bed?.bedNumber,
-                buildingName: user.resident.bed?.room?.floor?.building?.name,
-                floorNumber: user.resident.bed?.room?.floor?.floorNumber,
-              }
-            : null,
-        });
-      }
-
-      // If user not in DB, return authenticated token user
       return sendSuccess(res, {
-        id: req.user.id,
-        name: req.user.name || (req.user.role === 'OWNER' ? 'Aaryan Sharma (Owner)' : 'Aakash Verma'),
-        email: req.user.email,
-        role: req.user.role,
-        mobile: '9876500001',
-        avatarUrl: null,
-        propertyId: req.user.propertyId || 'prop-1',
-        residentId: req.user.residentId || (req.user.role === 'RESIDENT' ? 'res-1' : undefined),
-        residentDetails: req.user.role === 'RESIDENT' ? {
-          id: 'res-1',
-          fullName: req.user.name || 'Aakash Verma',
-          status: 'ACTIVE',
-          kycStatus: 'VERIFIED',
-          propertyName: 'Urban Nest Platinum Living',
-          roomNumber: '101',
-          bedNumber: '101A',
-          buildingName: 'Tower A',
-          floorNumber: 1
-        } : null,
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        mobile: user.mobile,
+        avatarUrl: user.avatarUrl,
+        tenantId: user.tenantId,
+        tenant: user.tenant,
+        propertyId: user.propertyId || user.resident?.propertyId || null,
+        residentId: user.resident?.id,
+        isImpersonated: req.user.isImpersonated,
+        impersonatedBy: req.user.impersonatedBy,
+        residentDetails: user.resident
+          ? {
+              id: user.resident.id,
+              fullName: user.resident.fullName,
+              status: user.resident.status,
+              kycStatus: user.resident.kycStatus,
+              joiningDate: user.resident.joiningDate,
+              propertyName: user.resident.property?.name,
+              propertyAddress: user.resident.property?.address,
+              roomNumber: user.resident.bed?.room?.number,
+              bedNumber: user.resident.bed?.bedNumber,
+              buildingName: user.resident.bed?.room?.floor?.building?.name,
+              floorNumber: user.resident.bed?.room?.floor?.floorNumber,
+            }
+          : null,
       });
     } catch (error: any) {
       console.error('[AuthController.getCurrentUser] Error:', error);
-      return sendError(res, error.message || 'Failed to fetch user', 500);
+      return sendError(res, error.message || 'Failed to fetch user', 500, 'INTERNAL_ERROR');
     }
   }
 
@@ -371,17 +347,20 @@ export class AuthController {
    */
   static async logout(req: AuthRequest, res: Response): Promise<Response> {
     if (req.user) {
-      await AuditService.log({
-        propertyId: req.user.propertyId,
-        actorId: req.user.id,
-        actorName: req.user.name,
-        actorRole: req.user.role,
-        action: 'LOGOUT',
-        entity: 'User',
-        entityId: req.user.id,
-        ipAddress: req.ip,
-        details: `User logged out`,
-      });
+      await prisma.auditLog.create({
+        data: {
+          tenantId: req.user.tenantId,
+          propertyId: req.user.propertyId,
+          actorId: req.user.id,
+          actorName: req.user.name,
+          actorRole: req.user.role,
+          action: 'LOGOUT',
+          entity: 'User',
+          entityId: req.user.id,
+          ipAddress: req.ip,
+          details: `User logged out`,
+        },
+      }).catch(() => {});
     }
 
     return sendSuccess(res, null, 'Logged out successfully');

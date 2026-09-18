@@ -8,6 +8,76 @@ generator client {
 }
 
 // -------------------------------------------------------------
+// 0. MULTI-TENANT SAAS PLATFORM: Tenant & Subscription
+// -------------------------------------------------------------
+enum TenantStatus {
+  TRIAL
+  ACTIVE
+  SUSPENDED
+  CANCELLED
+}
+
+enum SubscriptionPlan {
+  TRIAL
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  TRIALING
+  PAST_DUE
+  CANCELLED
+  EXPIRED
+}
+
+model Tenant {
+  id                    String             @id @default(uuid())
+  name                  String             // e.g. "Green Valley PG Group"
+  slug                  String             @unique // e.g. "green-valley-pg"
+  email                 String             @unique
+  phone                 String?
+  address               String?
+  city                  String?            @default("Bengaluru")
+  state                 String?            @default("Karnataka")
+  country               String             @default("India")
+  status                TenantStatus       @default(TRIAL)
+  plan                  SubscriptionPlan   @default(TRIAL)
+  subscriptionStatus    SubscriptionStatus @default(TRIALING)
+  trialEndsAt           DateTime?
+  subscriptionStartedAt DateTime?
+  subscriptionEndsAt    DateTime?
+  maxProperties         Int                @default(1)
+  maxRooms              Int                @default(20)
+  maxResidents          Int                @default(50)
+  users                 User[]
+  properties            Property[]
+  auditLogs             AuditLog[]
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+
+  @@index([slug])
+  @@index([status])
+  @@index([plan])
+}
+
+model Plan {
+  id            String           @id @default(uuid())
+  name          String           @unique // "Starter", "Professional", "Enterprise"
+  tier          SubscriptionPlan @unique
+  priceMonthly  Float
+  priceYearly   Float
+  maxProperties Int
+  maxRooms      Int
+  maxResidents  Int
+  features      String           // JSON string of enabled features
+  isActive      Boolean          @default(true)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+}
+
+// -------------------------------------------------------------
 // 1. USER & AUTHENTICATION
 // -------------------------------------------------------------
 enum UserRole {
@@ -28,6 +98,8 @@ model User {
   role         UserRole       @default(RESIDENT)
   mobile       String?
   avatarUrl    String?
+  tenantId     String?
+  tenant       Tenant?        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   propertyId   String?
   property     Property?      @relation(fields: [propertyId], references: [id])
   resident     Resident?
@@ -38,6 +110,7 @@ model User {
 
   @@index([email])
   @@index([role])
+  @@index([tenantId])
 }
 
 // -------------------------------------------------------------
@@ -45,6 +118,8 @@ model User {
 // -------------------------------------------------------------
 model Property {
   id                String            @id @default(uuid())
+  tenantId          String?
+  tenant            Tenant?           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   name              String
   address           String
   city              String            @default("Bengaluru")
@@ -567,6 +642,8 @@ model SOSEvent {
 // -------------------------------------------------------------
 model AuditLog {
   id         String    @id @default(uuid())
+  tenantId   String?
+  tenant     Tenant?   @relation(fields: [tenantId], references: [id], onDelete: SetNull)
   propertyId String?
   property   Property? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
   actorId    String?
@@ -580,6 +657,7 @@ model AuditLog {
   ipAddress  String?
   details    String
 
+  @@index([tenantId])
   @@index([propertyId])
   @@index([timestamp])
 }

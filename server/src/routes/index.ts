@@ -1,9 +1,11 @@
 import { Router } from 'express';
+import { prisma } from '../config/prisma';
 import authRoutes from './auth.routes';
 import residentRoutes from './resident.routes';
 import ownerRoutes from './owner.routes';
+import superAdminRoutes from './super-admin.routes';
 import webhookRoutes from './webhook.routes';
-import { prisma } from '../config/prisma';
+import { OwnerController } from '../controllers/owner.controller';
 
 const router = Router();
 
@@ -18,6 +20,12 @@ router.get('/', (req, res) => {
     timestamp: new Date().toISOString(),
     endpoints: {
       health: '/api/health',
+      superAdmin: {
+        dashboard: 'GET /api/super-admin/dashboard/stats',
+        tenants: 'GET /api/super-admin/tenants',
+        owners: 'GET /api/super-admin/owners',
+        plans: 'GET /api/super-admin/plans',
+      },
       auth: {
         login: 'POST /api/auth/login',
         register: 'POST /api/auth/register',
@@ -72,7 +80,8 @@ router.get('/health', async (req, res) => {
   });
 });
 
-import { OwnerController } from '../controllers/owner.controller';
+// Super Admin SaaS Platform Routes
+router.use('/super-admin', superAdminRoutes);
 
 // Auth Routes
 router.use('/auth', authRoutes);

@@ -1,6 +1,7 @@
 import { prisma } from '../config/prisma';
 
 export interface CreateAuditLogParams {
+  tenantId?: string | null;
   propertyId?: string | null;
   actorId?: string | null;
   actorName: string;
@@ -10,13 +11,19 @@ export interface CreateAuditLogParams {
   entityId?: string | null;
   ipAddress?: string | null;
   details: string;
+  metadata?: any;
 }
 
 export class AuditService {
   static async log(params: CreateAuditLogParams): Promise<void> {
     try {
+      const detailsText = params.metadata
+        ? `${params.details} | ${JSON.stringify(params.metadata)}`
+        : params.details;
+
       await prisma.auditLog.create({
         data: {
+          tenantId: params.tenantId || null,
           propertyId: params.propertyId || null,
           actorId: params.actorId || null,
           actorName: params.actorName,
@@ -25,7 +32,7 @@ export class AuditService {
           entity: params.entity,
           entityId: params.entityId || null,
           ipAddress: params.ipAddress || null,
-          details: params.details,
+          details: detailsText,
         },
       });
     } catch (error) {

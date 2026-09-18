@@ -10,20 +10,48 @@ const isProd = process.env.NODE_ENV === 'production';
 const isDemoMode = process.env.DEMO_MODE === 'true';
 
 export class OwnerController {
-  private static async resolvePropertyScope(req: AuthRequest, targetPropertyId?: string): Promise<string | undefined> {
+  private static async resolvePropertyScope(req: AuthRequest, targetPropertyId?: string): Promise<{ propertyId?: string; propertyFilter: any; tenantFilter: any }> {
+    const isSuperAdmin = req.user?.role === 'SUPER_ADMIN';
+    const tenantId = req.user?.tenantId;
+
+    const tenantFilter = (!isSuperAdmin && tenantId) ? { tenantId } : {};
+    const propertyTenantFilter = (!isSuperAdmin && tenantId) ? { property: { tenantId } } : {};
+
     if (targetPropertyId && targetPropertyId !== 'ALL' && targetPropertyId !== 'undefined') {
-      return targetPropertyId;
+      if (!isSuperAdmin && tenantId) {
+        const prop = await prisma.property.findFirst({ where: { id: targetPropertyId, tenantId } });
+        if (prop) {
+          return { propertyId: targetPropertyId, propertyFilter: { propertyId: targetPropertyId }, tenantFilter };
+        } else {
+          // IDOR Block: foreign property requested, fallback to tenant property
+          const ownProp = await prisma.property.findFirst({ where: { tenantId } });
+          const pId = ownProp ? ownProp.id : undefined;
+          return { propertyId: pId, propertyFilter: pId ? { propertyId: pId } : propertyTenantFilter, tenantFilter };
+        }
+      }
+      return { propertyId: targetPropertyId, propertyFilter: { propertyId: targetPropertyId }, tenantFilter };
     }
+
     if (req.user?.propertyId && req.user.propertyId !== 'prop-1') {
-      return req.user.propertyId;
+      return { propertyId: req.user.propertyId, propertyFilter: { propertyId: req.user.propertyId }, tenantFilter };
     }
+
+    if (!isSuperAdmin && tenantId) {
+      const ownProp = await prisma.property.findFirst({ where: { tenantId } });
+      const pId = ownProp ? ownProp.id : undefined;
+      return { propertyId: pId, propertyFilter: pId ? { propertyId: pId } : propertyTenantFilter, tenantFilter };
+    }
+
     try {
       const firstProp = await prisma.property.findFirst();
-      if (firstProp) return firstProp.id;
+      if (firstProp) {
+        return { propertyId: firstProp.id, propertyFilter: { propertyId: firstProp.id }, tenantFilter: {} };
+      }
     } catch {
       // ignore
     }
-    return undefined;
+
+    return { propertyId: undefined, propertyFilter: {}, tenantFilter: {} };
   }
 
   // ==========================================================================
@@ -31,8 +59,7 @@ export class OwnerController {
   // ==========================================================================
   static async getDashboard(req: AuthRequest, res: Response): Promise<Response> {
     try {
-      const propertyId = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
-      const propFilter = propertyId ? { propertyId } : {};
+      const { propertyId, propertyFilter, tenantFilter } = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
 
       const [
         properties,
@@ -50,38 +77,41 @@ export class OwnerController {
         tasks,
       ] = await Promise.all([
         prisma.property.findMany({
-          where: propertyId ? { id: propertyId } : {},
-          include: { buildings: true, rooms: true, residents: true },
+          where: propertyId ? { id: propertyId } : tenantFilter,
+          include: { buildings: true, rooms: { include: { beds: true } }, residents: true },
         }),
-        prisma.building.count({ where: propFilter }),
-        prisma.room.findMany({ where: propFilter, include: { beds: true } }),
-        prisma.bed.findMany({ where: propertyId ? { room: { propertyId } } : {} }),
+        prisma.building.count({ where: propertyFilter }),
+        prisma.room.findMany({ where: propertyFilter, include: { beds: true } }),
+        prisma.bed.findMany({ where: propertyId ? { room: { propertyId } } : (req.user?.tenantId ? { room: { property: { tenantId: req.user.tenantId } } } : {}) }),
         prisma.resident.findMany({
-          where: propFilter,
+          where: propertyFilter,
           include: { bed: { include: { room: true } } },
         }),
         prisma.payment.findMany({
-          where: propFilter,
+          where: propertyFilter,
           include: { resident: true },
           orderBy: { createdAt: 'desc' },
         }),
-        prisma.securityDeposit.findMany({ where: propFilter }),
+        prisma.securityDeposit.findMany({ where: propertyFilter }),
         prisma.complaint.findMany({
-          where: propFilter,
+          where: propertyFilter,
           include: { resident: true },
           orderBy: { createdAt: 'desc' },
         }),
         prisma.visitorRequest.findMany({
-          where: propFilter,
+          where: propertyFilter,
           include: { resident: true },
           orderBy: { createdAt: 'desc' },
         }),
-        prisma.inventoryItem.findMany({ where: propFilter }),
+        prisma.inventoryItem.findMany({ where: propertyFilter }),
         prisma.user.findMany({
-          where: { role: { in: ['MANAGER', 'RECEPTIONIST', 'ACCOUNTANT', 'MAINTENANCE', 'SUPER_ADMIN'] } },
+          where: {
+            role: { in: ['MANAGER', 'RECEPTIONIST', 'ACCOUNTANT', 'MAINTENANCE'] },
+            ...(req.user?.tenantId ? { tenantId: req.user.tenantId } : {}),
+          },
         }),
-        prisma.notice.findMany({ where: propFilter, orderBy: { publishedAt: 'desc' }, take: 5 }),
-        prisma.operationalTask.findMany({ where: propFilter, take: 5 }),
+        prisma.notice.findMany({ where: propertyFilter, orderBy: { publishedAt: 'desc' }, take: 5 }),
+        prisma.operationalTask.findMany({ where: propertyFilter, take: 5 }),
       ]);
 
       const totalBedsCount = beds.length;
@@ -99,24 +129,25 @@ export class OwnerController {
           totalRooms: rooms.length,
           totalBeds: totalBedsCount,
           occupiedBeds: occupiedBedsCount,
-          availableBeds: availableBedsCount,
-          occupancyRate,
-          totalOccupancyPercentage: occupancyRate,
+          vacantBeds: availableBedsCount,
+          occupancyPercentage: occupancyRate,
+          monthlyRevenue: paidPayments.reduce((acc, p) => acc + p.amount, 0),
+          pendingCollections: pendingPayments.reduce((acc, p) => acc + p.amount, 0),
+          overdueRentAmount: overduePayments.reduce((acc, p) => acc + p.amount, 0),
           activeResidentsCount: residents.filter((r) => r.status === 'ACTIVE').length,
-          activeResidents: residents.filter((r) => r.status === 'ACTIVE').length,
-          monthlyRevenue: paidPayments.reduce((sum, p) => sum + p.amount, 0),
-          totalRevenueCollected: paidPayments.reduce((sum, p) => sum + p.amount, 0),
-          outstandingRent: pendingPayments.reduce((sum, p) => sum + p.amount, 0),
-          totalOutstandingRent: pendingPayments.reduce((sum, p) => sum + p.amount, 0),
-          totalDeposits: deposits.reduce((sum, d) => sum + d.amount, 0),
-          openComplaints: complaints.filter((c) => c.status !== 'RESOLVED' && c.status !== 'CLOSED').length,
-          pendingVisitors: visitors.filter((v) => v.status === 'PENDING').length,
-          staffCount: staffMembers.length,
-          lowInventoryAlerts: inventoryItems.filter((i) => i.quantity <= i.minQuantity).length,
+          openComplaintsCount: complaints.filter((c) => c.status !== 'RESOLVED' && c.status !== 'CLOSED').length,
+          todayVisitorsCount: visitors.filter((v) => new Date(v.visitDate).toDateString() === new Date().toDateString()).length,
+          totalStaffCount: staffMembers.length,
         },
-        recentPayments: payments.slice(0, 5),
-        recentComplaints: complaints.slice(0, 5),
-        recentVisitors: visitors.slice(0, 5),
+        properties: properties.map((p) => ({
+          id: p.id,
+          name: p.name,
+          address: p.address,
+          city: p.city,
+          totalRooms: p.rooms.length,
+          totalBeds: p.rooms.reduce((acc, r) => acc + (r.beds?.length || r.capacity || 0), 0),
+          occupiedBeds: p.residents.filter((r) => r.status === 'ACTIVE').length,
+        })),
         recentNotices,
         recentTasks: tasks,
         allResidents: residents.map((r) => ({
@@ -124,12 +155,6 @@ export class OwnerController {
           fullName: r.fullName,
           roomNumber: r.bed?.room?.number || 'N/A',
         })),
-        actionRequired: {
-          overdueRentsCount: overduePayments.length,
-          pendingVisitorsCount: visitors.filter((v) => v.status === 'PENDING').length,
-          openMaintenanceCount: complaints.filter((c) => c.status !== 'RESOLVED' && c.status !== 'CLOSED').length,
-          lowStockCount: inventoryItems.filter((i) => i.quantity <= i.minQuantity).length,
-        },
       });
     } catch (error: any) {
       console.error('[OwnerController.getDashboard] Error:', error);
@@ -142,7 +167,11 @@ export class OwnerController {
   // ==========================================================================
   static async getProperties(req: AuthRequest, res: Response): Promise<Response> {
     try {
+      const isSuperAdmin = req.user?.role === 'SUPER_ADMIN';
+      const where = (!isSuperAdmin && req.user?.tenantId) ? { tenantId: req.user.tenantId } : {};
+
       const properties = await prisma.property.findMany({
+        where,
         include: {
           buildings: {
             include: {
@@ -186,8 +215,14 @@ export class OwnerController {
 
   static async getPropertyById(req: AuthRequest, res: Response): Promise<Response> {
     try {
-      const property = await prisma.property.findUnique({
-        where: { id: req.params.id },
+      const isSuperAdmin = req.user?.role === 'SUPER_ADMIN';
+      const where: any = { id: req.params.id };
+      if (!isSuperAdmin && req.user?.tenantId) {
+        where.tenantId = req.user.tenantId;
+      }
+
+      const property = await prisma.property.findFirst({
+        where,
         include: {
           buildings: { include: { floors: { include: { rooms: { include: { beds: true } } } } } },
           rooms: { include: { beds: true } },
@@ -196,7 +231,7 @@ export class OwnerController {
       });
 
       if (!property) {
-        return sendError(res, 'Property not found', 404);
+        return sendError(res, 'Property not found or unauthorized', 404);
       }
 
       return sendSuccess(res, property);
@@ -212,8 +247,25 @@ export class OwnerController {
         return sendError(res, 'Property name and address are required', 400);
       }
 
+      // Check plan limits for tenant
+      if (req.user?.tenantId && req.user.role !== 'SUPER_ADMIN') {
+        const tenant = await prisma.tenant.findUnique({ where: { id: req.user.tenantId } });
+        if (tenant) {
+          const currentCount = await prisma.property.count({ where: { tenantId: req.user.tenantId } });
+          if (currentCount >= tenant.maxProperties) {
+            return sendError(
+              res,
+              `Property limit reached for your ${tenant.plan} plan (Max: ${tenant.maxProperties} properties). Upgrade to Pro or Enterprise to add more branches.`,
+              403,
+              'PLAN_LIMIT_REACHED'
+            );
+          }
+        }
+      }
+
       const created = await prisma.property.create({
         data: {
+          tenantId: req.user?.tenantId || null,
           name: name.trim(),
           address: address.trim(),
           city: city || 'Gurugram',
@@ -293,9 +345,9 @@ export class OwnerController {
   // ==========================================================================
   static async getBuildings(req: AuthRequest, res: Response): Promise<Response> {
     try {
-      const propertyId = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
+      const { propertyFilter } = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
       const buildings = await prisma.building.findMany({
-        where: propertyId ? { propertyId } : {},
+        where: propertyFilter,
         include: {
           floors: {
             include: { rooms: { include: { beds: true } } },
@@ -315,7 +367,7 @@ export class OwnerController {
       const { propertyId, name, numberOfFloors } = req.body;
       if (!name) return sendError(res, 'Building name is required', 400);
 
-      const propId = propertyId || (await OwnerController.resolvePropertyScope(req));
+      const propId = propertyId || (await OwnerController.resolvePropertyScope(req)).propertyId;
       if (!propId) return sendError(res, 'Property ID is required', 400);
 
       const building = await prisma.building.create({
@@ -410,9 +462,9 @@ export class OwnerController {
   // ==========================================================================
   static async getRooms(req: AuthRequest, res: Response): Promise<Response> {
     try {
-      const propertyId = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
+      const { propertyFilter } = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
       const rooms = await prisma.room.findMany({
-        where: propertyId ? { propertyId } : {},
+        where: propertyFilter,
         include: {
           floor: { include: { building: true } },
           beds: { include: { resident: true } },
@@ -471,7 +523,7 @@ export class OwnerController {
       const { propertyId, number, type, capacity, baseRent, deposit, amenities, floorId } = req.body;
       if (!number) return sendError(res, 'Room number is required', 400);
 
-      const propId = propertyId || (await OwnerController.resolvePropertyScope(req));
+      const propId = propertyId || (await OwnerController.resolvePropertyScope(req)).propertyId;
       if (!propId) return sendError(res, 'Property ID is required', 400);
 
       const cap = parseInt(capacity || '2', 10);
@@ -571,9 +623,9 @@ export class OwnerController {
   // ==========================================================================
   static async getResidents(req: AuthRequest, res: Response): Promise<Response> {
     try {
-      const propertyId = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
+      const { propertyFilter } = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
       const residents = await prisma.resident.findMany({
-        where: propertyId ? { propertyId } : {},
+        where: propertyFilter,
         include: {
           bed: { include: { room: { include: { floor: { include: { building: true } } } } } },
           documents: true,
@@ -634,25 +686,27 @@ export class OwnerController {
           payments: { orderBy: { dueDate: 'desc' } },
           agreements: true,
           securityDeposits: true,
-          complaints: true,
-          visitorRequests: true,
-          leaveRequests: true,
           property: true,
+          user: true,
         },
       });
 
       if (!resident) return sendError(res, 'Resident not found', 404);
       return sendSuccess(res, resident);
     } catch (error: any) {
-      return sendError(res, error.message || 'Failed to fetch resident details', 500);
+      return sendError(res, error.message || 'Failed to fetch resident', 500);
     }
   }
 
   static async createResident(req: AuthRequest, res: Response): Promise<Response> {
-    return OwnerController.moveInResident(req, res);
+    return OwnerController.onboardResident(req, res);
   }
 
   static async moveInResident(req: AuthRequest, res: Response): Promise<Response> {
+    return OwnerController.onboardResident(req, res);
+  }
+
+  static async onboardResident(req: AuthRequest, res: Response): Promise<Response> {
     try {
       const {
         propertyId,
@@ -660,10 +714,13 @@ export class OwnerController {
         fullName,
         email,
         mobile,
+        alternateMobile,
         gender,
         emergencyContactName,
         emergencyContactRelation,
         emergencyContactPhone,
+        kycDocumentType,
+        kycDocumentNumber,
         joiningDate,
         monthlyRent,
         depositAmount,
@@ -676,7 +733,7 @@ export class OwnerController {
         return sendError(res, 'Full name, email, and mobile number are required', 400);
       }
 
-      const propId = propertyId || (await OwnerController.resolvePropertyScope(req));
+      const propId = propertyId || (await OwnerController.resolvePropertyScope(req)).propertyId;
       if (!propId) return sendError(res, 'Property ID is required', 400);
 
       const salt = await bcrypt.genSalt(10);
@@ -896,9 +953,9 @@ export class OwnerController {
   // ==========================================================================
   static async getPayments(req: AuthRequest, res: Response): Promise<Response> {
     try {
-      const propertyId = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
+      const { propertyFilter } = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
       const payments = await prisma.payment.findMany({
-        where: propertyId ? { propertyId } : {},
+        where: propertyFilter,
         include: {
           resident: { include: { bed: { include: { room: true } } } },
           receipt: true,
@@ -1131,9 +1188,9 @@ export class OwnerController {
   // ==========================================================================
   static async getExpenses(req: AuthRequest, res: Response): Promise<Response> {
     try {
-      const propertyId = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
+      const { propertyFilter } = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
       const expenses = await prisma.expense.findMany({
-        where: propertyId ? { propertyId } : {},
+        where: propertyFilter,
         orderBy: { date: 'desc' },
       });
       return sendSuccess(res, expenses);
@@ -1147,7 +1204,7 @@ export class OwnerController {
       const { propertyId, title, category, amount, vendor, date, notes } = req.body;
       if (!title || !amount) return sendError(res, 'Title and amount are required', 400);
 
-      const propId = propertyId || (await OwnerController.resolvePropertyScope(req));
+      const propId = propertyId || (await OwnerController.resolvePropertyScope(req)).propertyId;
       if (!propId) return sendError(res, 'Property ID is required', 400);
 
       const expense = await prisma.expense.create({
@@ -1200,9 +1257,9 @@ export class OwnerController {
   // ==========================================================================
   static async getVisitors(req: AuthRequest, res: Response): Promise<Response> {
     try {
-      const propertyId = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
+      const { propertyFilter } = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
       const visitors = await prisma.visitorRequest.findMany({
-        where: propertyId ? { propertyId } : {},
+        where: propertyFilter,
         include: {
           resident: { include: { bed: { include: { room: true } } } },
         },
@@ -1243,7 +1300,7 @@ export class OwnerController {
         return sendError(res, 'Visitor name and mobile number are required', 400);
       }
 
-      const propId = propertyId || (await OwnerController.resolvePropertyScope(req));
+      const propId = propertyId || (await OwnerController.resolvePropertyScope(req)).propertyId;
       if (!propId) return sendError(res, 'Property ID is required', 400);
 
       const qrPassToken = `VPASS-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
@@ -1394,9 +1451,9 @@ export class OwnerController {
   // ==========================================================================
   static async getComplaints(req: AuthRequest, res: Response): Promise<Response> {
     try {
-      const propertyId = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
+      const { propertyFilter } = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
       const complaints = await prisma.complaint.findMany({
-        where: propertyId ? { propertyId } : {},
+        where: propertyFilter,
         include: {
           resident: { include: { bed: { include: { room: true } } } },
           activities: { orderBy: { timestamp: 'desc' } },
@@ -1417,7 +1474,7 @@ export class OwnerController {
         assignedStaff: c.assignedStaff || 'Unassigned',
         createdAt: c.createdAt,
         resolvedAt: c.resolvedAt,
-        comments: c.activities.map((a) => ({
+        comments: c.activities.map((a: any) => ({
           id: a.id,
           authorName: a.updatedBy,
           comment: a.comment,
@@ -1436,7 +1493,7 @@ export class OwnerController {
       const { residentId, propertyId, title, description, category, priority } = req.body;
       if (!title || !description) return sendError(res, 'Title and description are required', 400);
 
-      const propId = propertyId || (await OwnerController.resolvePropertyScope(req));
+      const propId = propertyId || (await OwnerController.resolvePropertyScope(req)).propertyId;
       if (!propId) return sendError(res, 'Property ID is required', 400);
 
       const ticketNumber = `TKT-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -1590,13 +1647,14 @@ export class OwnerController {
   }
 
   // ==========================================================================
+  // ==========================================================================
   // 11. INVENTORY & STOCK
   // ==========================================================================
   static async getInventory(req: AuthRequest, res: Response): Promise<Response> {
     try {
-      const propertyId = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
+      const { propertyFilter } = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
       const items = await prisma.inventoryItem.findMany({
-        where: propertyId ? { propertyId } : {},
+        where: propertyFilter,
         orderBy: { createdAt: 'desc' },
       });
       return sendSuccess(res, items);
@@ -1610,7 +1668,7 @@ export class OwnerController {
       const { propertyId, name, category, quantity, minQuantity, location, cost, vendor } = req.body;
       if (!name) return sendError(res, 'Item name is required', 400);
 
-      const propId = propertyId || (await OwnerController.resolvePropertyScope(req));
+      const propId = propertyId || (await OwnerController.resolvePropertyScope(req)).propertyId;
       if (!propId) return sendError(res, 'Property ID is required', 400);
 
       const item = await prisma.inventoryItem.create({
@@ -1686,9 +1744,9 @@ export class OwnerController {
   // ==========================================================================
   static async getTasks(req: AuthRequest, res: Response): Promise<Response> {
     try {
-      const propertyId = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
+      const { propertyFilter } = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
       const tasks = await prisma.operationalTask.findMany({
-        where: propertyId ? { propertyId } : {},
+        where: propertyFilter,
         orderBy: { createdAt: 'desc' },
       });
       return sendSuccess(res, tasks);
@@ -1702,7 +1760,7 @@ export class OwnerController {
       const { propertyId, title, category, priority, assignedTo, dueDate, notes } = req.body;
       if (!title) return sendError(res, 'Task title is required', 400);
 
-      const propId = propertyId || (await OwnerController.resolvePropertyScope(req));
+      const propId = propertyId || (await OwnerController.resolvePropertyScope(req)).propertyId;
       if (!propId) return sendError(res, 'Property ID is required', 400);
 
       const task = await prisma.operationalTask.create({
@@ -1755,9 +1813,9 @@ export class OwnerController {
   // ==========================================================================
   static async getDocuments(req: AuthRequest, res: Response): Promise<Response> {
     try {
-      const propertyId = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
+      const { propertyFilter } = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
       const docs = await prisma.document.findMany({
-        where: propertyId ? { propertyId } : {},
+        where: propertyFilter,
         include: {
           resident: { include: { bed: { include: { room: true } } } },
         },
@@ -1799,9 +1857,9 @@ export class OwnerController {
   // ==========================================================================
   static async getNotices(req: AuthRequest, res: Response): Promise<Response> {
     try {
-      const propertyId = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
+      const { propertyFilter } = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
       const notices = await prisma.notice.findMany({
-        where: propertyId ? { propertyId } : {},
+        where: propertyFilter,
         orderBy: { publishedAt: 'desc' },
       });
       return sendSuccess(res, notices);
@@ -1815,7 +1873,7 @@ export class OwnerController {
       const { propertyId, title, content, category, isImportant } = req.body;
       if (!title || !content) return sendError(res, 'Title and content are required', 400);
 
-      const propId = propertyId || (await OwnerController.resolvePropertyScope(req));
+      const propId = propertyId || (await OwnerController.resolvePropertyScope(req)).propertyId;
       if (!propId) return sendError(res, 'Property ID is required', 400);
 
       const notice = await prisma.notice.create({
@@ -1867,9 +1925,9 @@ export class OwnerController {
   // ==========================================================================
   static async getLeaveRequests(req: AuthRequest, res: Response): Promise<Response> {
     try {
-      const propertyId = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
+      const { propertyFilter } = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
       const leaves = await prisma.leaveRequest.findMany({
-        where: propertyId ? { propertyId } : {},
+        where: propertyFilter,
         include: {
           resident: { include: { bed: { include: { room: true } } } },
         },
@@ -1916,9 +1974,9 @@ export class OwnerController {
   // ==========================================================================
   static async getSOSEvents(req: AuthRequest, res: Response): Promise<Response> {
     try {
-      const propertyId = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
+      const { propertyFilter } = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
       const sos = await prisma.sOSEvent.findMany({
-        where: propertyId ? { propertyId } : {},
+        where: propertyFilter,
         include: {
           resident: { include: { bed: { include: { room: true } } } },
         },
@@ -1967,14 +2025,14 @@ export class OwnerController {
   // ==========================================================================
   static async getReports(req: AuthRequest, res: Response): Promise<Response> {
     try {
-      const propertyId = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
-      const propFilter = propertyId ? { propertyId } : {};
+      const { propertyId, propertyFilter } = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
+      const propFilter = propertyFilter;
 
       const [payments, expenses, rooms, beds, residents] = await Promise.all([
         prisma.payment.findMany({ where: propFilter }),
         prisma.expense.findMany({ where: propFilter }),
         prisma.room.findMany({ where: propFilter }),
-        prisma.bed.findMany({ where: propertyId ? { room: { propertyId } } : {} }),
+        prisma.bed.findMany({ where: propertyId ? { room: { propertyId } } : (req.user?.tenantId ? { room: { property: { tenantId: req.user.tenantId } } } : {}) }),
         prisma.resident.findMany({ where: propFilter }),
       ]);
 
@@ -2015,9 +2073,9 @@ export class OwnerController {
   // ==========================================================================
   static async getAuditLogs(req: AuthRequest, res: Response): Promise<Response> {
     try {
-      const propertyId = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
+      const { propertyId, tenantFilter } = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
       const logs = await prisma.auditLog.findMany({
-        where: propertyId ? { propertyId } : {},
+        where: propertyId ? { propertyId } : tenantFilter,
         orderBy: { timestamp: 'desc' },
         take: 100,
       });
@@ -2029,7 +2087,7 @@ export class OwnerController {
 
   static async getSettings(req: AuthRequest, res: Response): Promise<Response> {
     try {
-      const propertyId = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
+      const { propertyId } = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
       const [settingsRows, property] = await Promise.all([
         prisma.setting.findMany(),
         propertyId ? prisma.property.findUnique({ where: { id: propertyId } }) : null,
@@ -2046,9 +2104,17 @@ export class OwnerController {
         noticePeriodDays: settingsMap['notice_period_days'] || '30',
         visitorCutoffTime: settingsMap['visitor_cutoff_time'] || '22:00',
         upiId: property?.upiId || settingsMap['primary_upi_id'] || 'urbannest@axis',
-        gstNumber: property?.gstNumber || settingsMap['gst_number'] || '',
-        propertyPhone: property?.phone || '+91 98765 43210',
-        propertyEmail: property?.email || 'contact@urbannestpg.com',
+        rules: settingsMap['rules'] || '1. Quiet hours after 10 PM\n2. Visitors allowed 9 AM - 9 PM\n3. Keep common areas clean',
+        policies: settingsMap['policies'] || 'Deposit refundable within 7 days of checkout subject to room inspection.',
+        property: property ? {
+          id: property.id,
+          name: property.name,
+          address: property.address,
+          city: property.city,
+          upiId: property.upiId,
+          phone: property.phone,
+          email: property.email,
+        } : null,
       });
     } catch (error: any) {
       return sendError(res, error.message || 'Failed to fetch settings', 500);
@@ -2059,7 +2125,7 @@ export class OwnerController {
     try {
       const { rentDueDay, lateFeePerDay, noticePeriodDays, visitorCutoffTime, upiId, gstNumber, propertyPhone, propertyEmail, propertyId } = req.body;
 
-      const propId = propertyId || (await OwnerController.resolvePropertyScope(req));
+      const propId = propertyId || (await OwnerController.resolvePropertyScope(req)).propertyId;
 
       const settingsToUpsert = [
         { key: 'rent_due_day', value: String(rentDueDay || '5') },

@@ -9,9 +9,14 @@ export interface AuthenticatedUser {
   email: string;
   name: string;
   role: string;
+  tenantId?: string | null;
+  tenantName?: string;
+  tenantStatus?: string;
   propertyId?: string | null;
   residentId?: string;
   bedId?: string | null;
+  isImpersonated?: boolean;
+  impersonatedBy?: string;
 }
 
 export interface AuthRequest extends Request {
@@ -34,33 +39,17 @@ export const authenticateToken = async (
     return sendError(res, 'Authentication required. Please provide a valid access token.', 401, 'UNAUTHORIZED');
   }
 
-  // Support local dev tokens ONLY when explicitly enabled in local dev environment
-  const isProd = process.env.NODE_ENV === 'production';
-  const isDemoEnabled = process.env.DEMO_MODE === 'true';
-
-  if (!isProd && isDemoEnabled && (token.startsWith('dev-token') || token.startsWith('demo-token'))) {
-    const isResident = token.includes('resident') || token.includes('aakash');
-    const authUser: AuthenticatedUser = {
-      id: isResident ? 'usr-res-1' : 'usr-owner-1',
-      email: isResident ? 'aakash.v@gmail.com' : 'owner@pg.com',
-      name: isResident ? 'Aakash Verma' : 'Aaryan Sharma (Owner)',
-      role: isResident ? 'RESIDENT' : 'OWNER',
-      propertyId: 'prop-1',
-      residentId: isResident ? 'res-1' : undefined,
-      bedId: isResident ? 'bed-101A' : null,
-    };
-    req.user = authUser;
-    return next();
-  }
-
   try {
     const decoded = jwt.verify(token, config.jwtSecret) as {
       id: string;
       email: string;
       role: string;
       name?: string;
+      tenantId?: string;
       propertyId?: string;
       residentId?: string;
+      isImpersonated?: boolean;
+      impersonatedBy?: string;
     };
 
     let user = null;
@@ -68,6 +57,15 @@ export const authenticateToken = async (
       user = await prisma.user.findUnique({
         where: { id: decoded.id },
         include: {
+          tenant: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              status: true,
+              plan: true,
+            },
+          },
           resident: {
             select: {
               id: true,
@@ -87,9 +85,14 @@ export const authenticateToken = async (
       email: user?.email || decoded.email,
       name: user?.name || decoded.name || (decoded.role === 'OWNER' ? 'Owner' : 'Resident'),
       role: (user?.role as string) || decoded.role,
-      propertyId: user?.propertyId || user?.resident?.propertyId || decoded.propertyId || 'prop-1',
-      residentId: user?.resident?.id || decoded.residentId || (decoded.role === 'RESIDENT' ? 'res-1' : undefined),
-      bedId: user?.resident?.bedId || (decoded.role === 'RESIDENT' ? 'bed-101A' : null),
+      tenantId: user?.tenantId || decoded.tenantId || null,
+      tenantName: user?.tenant?.name,
+      tenantStatus: user?.tenant?.status,
+      propertyId: user?.propertyId || user?.resident?.propertyId || decoded.propertyId || null,
+      residentId: user?.resident?.id || decoded.residentId,
+      bedId: user?.resident?.bedId || null,
+      isImpersonated: !!decoded.isImpersonated,
+      impersonatedBy: decoded.impersonatedBy,
     };
 
     req.user = authUser;
@@ -100,6 +103,18 @@ export const authenticateToken = async (
     }
     return sendError(res, 'Invalid access token. Please authenticate again.', 401, 'INVALID_TOKEN');
   }
+};
+
+export const requireSuperAdmin = (req: AuthRequest, res: Response, next: NextFunction): Response | void => {
+  if (!req.user) {
+    return sendError(res, 'Authentication required.', 401, 'UNAUTHORIZED');
+  }
+
+  if (req.user.role !== 'SUPER_ADMIN') {
+    return sendError(res, 'Access forbidden: Super Administrator access only.', 403, 'SUPER_ADMIN_ONLY');
+  }
+
+  next();
 };
 
 export const requireRole = (allowedRoles: string[]) => {
@@ -126,6 +141,11 @@ export const requireOwnerOrStaff = (req: AuthRequest, res: Response, next: NextF
     return sendError(res, 'Access forbidden: Owner/Staff access only.', 403, 'FORBIDDEN');
   }
 
+  // Check if tenant is suspended (unless Super Admin)
+  if (req.user.role !== 'SUPER_ADMIN' && req.user.tenantStatus === 'SUSPENDED') {
+    return sendError(res, 'This PG Tenant account has been suspended by the platform administrator. Please contact support.', 403, 'TENANT_SUSPENDED');
+  }
+
   next();
 };
 
@@ -140,6 +160,10 @@ export const requireResident = (req: AuthRequest, res: Response, next: NextFunct
 
   if (!req.user.residentId) {
     return sendError(res, 'Resident profile not found for this user.', 404, 'RESIDENT_PROFILE_NOT_FOUND');
+  }
+
+  if (req.user.tenantStatus === 'SUSPENDED') {
+    return sendError(res, 'This PG property service is currently suspended. Please contact management.', 403, 'TENANT_SUSPENDED');
   }
 
   next();
