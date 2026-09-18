@@ -63,13 +63,14 @@ router.get('/health', async (req, res) => {
   let dbStatus = 'DATABASE_UNAVAILABLE';
   let isConnected = false;
   let latencyMs = 0;
+  let diagnosticReason: string | undefined = undefined;
 
   try {
     const startTime = Date.now();
     const timeout = new Promise((_, reject) => {
       const err: any = new Error('DATABASE_TIMEOUT');
       err.code = 'TIMEOUT';
-      setTimeout(() => reject(err), 4000);
+      setTimeout(() => reject(err), 8000);
     });
 
     await Promise.race([prisma.$queryRaw`SELECT 1`, timeout]);
@@ -78,6 +79,7 @@ router.get('/health', async (req, res) => {
     isConnected = true;
   } catch (error: any) {
     isConnected = false;
+    diagnosticReason = error?.code || error?.name || 'UNKNOWN_ERROR';
     if (error.code === 'TIMEOUT' || error.message?.includes('DATABASE_TIMEOUT')) {
       dbStatus = 'DATABASE_TIMEOUT';
     } else if (
@@ -98,6 +100,7 @@ router.get('/health', async (req, res) => {
     name: 'Urban Nest API',
     status: isConnected ? 'HEALTHY' : 'DEGRADED',
     database: dbStatus,
+    diagnostic: diagnosticReason,
     latencyMs: isConnected ? latencyMs : undefined,
     message: isConnected
       ? 'Urban Nest API and PostgreSQL database are fully operational.'
