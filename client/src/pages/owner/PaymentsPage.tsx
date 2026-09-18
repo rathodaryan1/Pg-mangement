@@ -85,7 +85,7 @@ export const PaymentsPage: React.FC = () => {
     category: 'ELECTRICITY',
     title: '',
     amount: '',
-    vendor: 'DHBVN Gurugram',
+    vendor: 'Torrent Power Ahmedabad',
     date: new Date().toISOString().split('T')[0],
     description: ''
   });

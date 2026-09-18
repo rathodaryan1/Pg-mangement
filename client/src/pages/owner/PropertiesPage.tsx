@@ -41,7 +41,7 @@ export const PropertiesPage: React.FC = () => {
   const [propertyForm, setPropertyForm] = useState({
     name: '',
     address: '',
-    city: 'Bengaluru',
+    city: 'Ahmedabad',
     phone: '',
     email: '',
     upiId: '',
@@ -232,7 +232,7 @@ export const PropertiesPage: React.FC = () => {
               size="sm"
               onClick={() => {
                 setEditingProperty(null);
-                setPropertyForm({ name: '', address: '', city: 'Bengaluru', phone: '', email: '', upiId: '', gstNumber: '' });
+                setPropertyForm({ name: '', address: '', city: 'Ahmedabad', phone: '', email: '', upiId: '', gstNumber: '' });
                 setPropertyModalOpen(true);
               }}
               leftIcon={<Plus className="w-3.5 h-3.5" />}
@@ -343,7 +343,7 @@ export const PropertiesPage: React.FC = () => {
                         setPropertyForm({
                           name: prop.name,
                           address: prop.address,
-                          city: prop.city || 'Bengaluru',
+                          city: prop.city || 'Ahmedabad',
                           phone: prop.phone || '',
                           email: prop.email || '',
                           upiId: prop.upiId || '',

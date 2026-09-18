@@ -116,7 +116,7 @@ export const SuperAdminSubscriptionsPage: React.FC = () => {
           >
             {t.name}
           </button>
-          <p className="text-[11px] text-[#68736D]">{t.email} • {t.city || 'Bengaluru'}</p>
+          <p className="text-[11px] text-[#68736D]">{t.email} • {t.city || 'Ahmedabad'}</p>
         </div>
       ),
     },

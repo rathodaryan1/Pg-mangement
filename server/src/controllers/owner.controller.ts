@@ -268,7 +268,7 @@ export class OwnerController {
           tenantId: req.user?.tenantId || null,
           name: name.trim(),
           address: address.trim(),
-          city: city || 'Gurugram',
+          city: city || 'Ahmedabad',
           phone: phone || null,
           email: email || null,
           upiId: upiId || null,

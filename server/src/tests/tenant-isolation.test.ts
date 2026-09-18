@@ -43,7 +43,7 @@ export async function runTenantIsolationTests() {
             create: {
               name: `Property Alpha ${testSuffix}`,
               address: '100 Alpha Road',
-              city: 'Bengaluru',
+              city: 'Ahmedabad',
             },
           },
         },

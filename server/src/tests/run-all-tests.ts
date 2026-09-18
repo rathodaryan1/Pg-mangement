@@ -1,3 +1,5 @@
+import dotenv from 'dotenv';
+dotenv.config();
 import { runSuperAdminTests } from './super-admin.test';
 import { runTenantIsolationTests } from './tenant-isolation.test';
 import { runPlanEnforcementTests } from './plan-enforcement.test';

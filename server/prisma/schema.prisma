@@ -42,8 +42,8 @@ model Tenant {
   email                 String             @unique
   phone                 String?
   address               String?
-  city                  String?            @default("Bengaluru")
-  state                 String?            @default("Karnataka")
+  city                  String?            @default("Ahmedabad")
+  state                 String?            @default("Gujarat")
   country               String             @default("India")
   status                TenantStatus       @default(TRIAL)
   plan                  SubscriptionPlan   @default(TRIAL)

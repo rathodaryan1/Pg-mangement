@@ -34,7 +34,7 @@ export async function runPlanEnforcementTests() {
             create: {
               name: `Initial Branch ${testSuffix}`,
               address: '123 Starter Way',
-              city: 'Bengaluru',
+              city: 'Ahmedabad',
             },
           },
         },
@@ -83,7 +83,7 @@ export async function runPlanEnforcementTests() {
         data: {
           name: `Second Branch ${testSuffix}`,
           address: '456 Expansion Road',
-          city: 'Bengaluru',
+          city: 'Ahmedabad',
           tenantId: tenant.id,
         },
       })

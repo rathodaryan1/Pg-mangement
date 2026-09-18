@@ -140,7 +140,7 @@ export const ContactPage: React.FC = () => {
                 <Phone className="w-4 h-4 text-[#0B4036] shrink-0 mt-0.5" />
                 <div>
                   <p className="font-semibold text-[#18231F]">Phone Support</p>
-                  <p className="text-[#68736D]">+91 80 2572 8899</p>
+                  <p className="text-[#68736D]">+91 79 2685 8899</p>
                   <p className="text-[11px] text-[#8A928D]">Mon - Sat: 9:00 AM - 7:00 PM IST</p>
                 </div>
               </div>
@@ -150,7 +150,7 @@ export const ContactPage: React.FC = () => {
                 <div>
                   <p className="font-semibold text-[#18231F]">Headquarters</p>
                   <p className="text-[#68736D] leading-relaxed">
-                    Sector 3, 27th Main Rd, HSR Layout, Bengaluru, Karnataka 560102
+                    Near Iscon Cross Road, S.G. Highway, Bodakdev, Ahmedabad, Gujarat 380054
                   </p>
                 </div>
               </div>

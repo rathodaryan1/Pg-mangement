@@ -25,7 +25,7 @@ export const AboutPage: React.FC = () => {
           </div>
           <h2 className="text-base font-bold text-[#18231F]">The Problem We Solve</h2>
           <p className="text-xs text-[#68736D] leading-relaxed">
-            For years, PG operations in urban hubs like Bengaluru, Pune, and NCR have relied on disjointed spreadsheets, paper entry registers, manual UPI screenshots on WhatsApp, and unorganized maintenance requests. This leads to revenue leakage, disputed security deposits, and compromised gate security.
+            For years, PG operations in urban hubs like Ahmedabad, Pune, and Bengaluru have relied on disjointed spreadsheets, paper entry registers, manual UPI screenshots on WhatsApp, and unorganized maintenance requests. This leads to revenue leakage, disputed security deposits, and compromised gate security.
           </p>
         </div>
 

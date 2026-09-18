@@ -63,8 +63,8 @@ export const SuperAdminTenantsPage: React.FC = () => {
     email: '',
     phone: '',
     address: '',
-    city: 'Bengaluru',
-    state: 'Karnataka',
+    city: 'Ahmedabad',
+    state: 'Gujarat',
     ownerName: '',
     ownerEmail: '',
     ownerMobile: '',
@@ -139,8 +139,8 @@ export const SuperAdminTenantsPage: React.FC = () => {
         email: '',
         phone: '',
         address: '',
-        city: 'Bengaluru',
-        state: 'Karnataka',
+        city: 'Ahmedabad',
+        state: 'Gujarat',
         ownerName: '',
         ownerEmail: '',
         ownerMobile: '',
@@ -242,7 +242,7 @@ export const SuperAdminTenantsPage: React.FC = () => {
             <span>{t.name}</span>
           </p>
           <p className="text-[11px] text-[#68736D]">
-            {t.city || 'Bengaluru'} • Slug: <span className="font-mono text-[10px]">{t.slug}</span>
+            {t.city || 'Ahmedabad'} • Slug: <span className="font-mono text-[10px]">{t.slug}</span>
           </p>
         </div>
       ),
@@ -426,12 +426,14 @@ export const SuperAdminTenantsPage: React.FC = () => {
             onChange={(e) => setCityFilter(e.target.value)}
             options={[
               { value: 'ALL', label: 'All Cities' },
-              { value: 'Bengaluru', label: 'Bengaluru' },
-              { value: 'Gurugram', label: 'Gurugram' },
-              { value: 'Noida', label: 'Noida' },
-              { value: 'Pune', label: 'Pune' },
-              { value: 'Hyderabad', label: 'Hyderabad' },
+              { value: 'Ahmedabad', label: 'Ahmedabad' },
+              { value: 'Surat', label: 'Surat' },
+              { value: 'Vadodara', label: 'Vadodara' },
+              { value: 'Rajkot', label: 'Rajkot' },
+              { value: 'Gandhinagar', label: 'Gandhinagar' },
               { value: 'Mumbai', label: 'Mumbai' },
+              { value: 'Pune', label: 'Pune' },
+              { value: 'Bengaluru', label: 'Bengaluru' },
             ]}
           />
         </form>
@@ -481,14 +483,14 @@ export const SuperAdminTenantsPage: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <Input
               label="City"
-              placeholder="Bengaluru"
+              placeholder="Ahmedabad"
               value={form.city}
               onChange={(e) => setForm({ ...form, city: e.target.value })}
               required
             />
             <Input
               label="State"
-              placeholder="Karnataka"
+              placeholder="Gujarat"
               value={form.state}
               onChange={(e) => setForm({ ...form, state: e.target.value })}
             />

@@ -69,9 +69,9 @@ export const OwnerDashboardPage: React.FC = () => {
   const [propertyForm, setPropertyForm] = useState({
     name: '',
     address: '',
-    city: 'Bengaluru',
-    state: 'Karnataka',
-    pincode: '560034',
+    city: 'Ahmedabad',
+    state: 'Gujarat',
+    pincode: '380009',
     type: 'COED'
   });
 
@@ -159,7 +159,7 @@ export const OwnerDashboardPage: React.FC = () => {
       });
       setCreatePropertyModal(false);
       showToast(`Property "${propertyForm.name}" created successfully!`);
-      setPropertyForm({ name: '', address: '', city: 'Bengaluru', state: 'Karnataka', pincode: '560034', type: 'COED' });
+      setPropertyForm({ name: '', address: '', city: 'Ahmedabad', state: 'Gujarat', pincode: '380009', type: 'COED' });
       fetchDashboard();
     } catch (err: any) {
       toast.error(err.message || 'Failed to create property');

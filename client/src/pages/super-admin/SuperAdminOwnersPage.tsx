@@ -119,7 +119,7 @@ export const SuperAdminOwnersPage: React.FC = () => {
             <Building2 className="w-3.5 h-3.5" />
             <span>{o.tenant?.name || 'Default Tenant'}</span>
           </p>
-          <span className="text-[10px] text-[#8A928D]">{o.tenant?.city || 'Bengaluru'}</span>
+          <span className="text-[10px] text-[#8A928D]">{o.tenant?.city || 'Ahmedabad'}</span>
         </div>
       ),
     },
