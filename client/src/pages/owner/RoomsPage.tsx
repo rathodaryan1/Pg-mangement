@@ -1,4 +1,3 @@
-import { toast, useToast } from '../../context/ToastContext';
 import React, { useState, useEffect } from 'react';
 import {
   BedDouble,
@@ -86,7 +85,7 @@ export const RoomsPage: React.FC = () => {
     e.preventDefault();
     try {
       if (!roomForm.number) {
-        toast.error('Please enter room number');
+        alert('Please enter room number');
         return;
       }
       const cap = parseInt(roomForm.capacity) || 2;
@@ -126,7 +125,7 @@ export const RoomsPage: React.FC = () => {
       setTimeout(() => setToastMessage(null), 4000);
       fetchRooms();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to save room');
+      alert(err.message || 'Failed to save room');
     }
   };
 
@@ -139,7 +138,7 @@ export const RoomsPage: React.FC = () => {
       setTimeout(() => setToastMessage(null), 3500);
       fetchRooms();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to archive room');
+      alert(err.message || 'Failed to archive room');
     }
   };
 
@@ -148,7 +147,7 @@ export const RoomsPage: React.FC = () => {
     if (!selectedBed) return;
     try {
       if (!residentForm.fullName || !residentForm.mobile || !residentForm.email) {
-        toast.error('Please fill resident details');
+        alert('Please fill resident details');
         return;
       }
 
@@ -169,7 +168,7 @@ export const RoomsPage: React.FC = () => {
       setTimeout(() => setToastMessage(null), 4000);
       fetchRooms();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to allocate bed');
+      alert(err.message || 'Failed to allocate bed');
     }
   };
 
@@ -180,7 +179,7 @@ export const RoomsPage: React.FC = () => {
       setTimeout(() => setToastMessage(null), 3000);
       fetchRooms();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to update bed status');
+      alert(err.message || 'Failed to update bed status');
     }
   };
 

@@ -113,39 +113,39 @@ async function main() {
       address: 'Plot 42, Sector 45, Near Huda City Centre Metro, Gurugram, Haryana - 122003',
       city: 'Gurugram',
       phone: '+91 98765 43210',
-      email: 'gurgaon@urbannestpg.com',
-      upiId: 'urbannest.gurgaon@okaxis',
-      gstNumber: '06AAAAA1111A1Z1',
+      email: 'ahmedabad@urbannestpg.com',
+      upiId: 'urbannest.ahmedabad@okaxis',
+      gstNumber: '24AAAAA1111A1Z1',
     },
   });
 
-  const propNoida = await prisma.property.create({
+  const propAhmedabad2 = await prisma.property.create({
     data: {
       tenantId: defaultTenant.id,
       name: 'Urban Nest Luxury PG (Noida)',
       address: 'Tower C, Sector 62, Electronic City, Noida, UP - 201301',
       city: 'Noida',
       phone: '+91 98765 00000',
-      email: 'noida@urbannestpg.com',
-      upiId: 'urbannest.noida@okaxis',
-      gstNumber: '09BBBBB2222B2Z2',
+      email: 'navrangpura@urbannestpg.com',
+      upiId: 'urbannest.navrangpura@okaxis',
+      gstNumber: '24BBBBB2222B2Z2',
     },
   });
 
-  console.log('✅ Created Properties:', propGurgaon.name, '|', propNoida.name);
+  console.log('✅ Created Properties:', propAhmedabad1.name, '|', propAhmedabad2.name);
 
   // 4. Create Buildings & Floors
   const buildingA = await prisma.building.create({
     data: {
       name: 'Block A - Executive Wing',
-      propertyId: propGurgaon.id,
+      propertyId: propAhmedabad1.id,
     },
   });
 
   const buildingB = await prisma.building.create({
     data: {
       name: 'Block B - Premier Suites',
-      propertyId: propGurgaon.id,
+      propertyId: propAhmedabad1.id,
     },
   });
 
@@ -174,7 +174,7 @@ async function main() {
       status: 'AVAILABLE',
       amenities: 'AC, High-Speed Wi-Fi (300 Mbps), Attached Bath, Smart LED TV, Mini Fridge, Work Desk',
       floorId: floor1.id,
-      propertyId: propGurgaon.id,
+      propertyId: propAhmedabad1.id,
     },
   });
 
@@ -188,7 +188,7 @@ async function main() {
       status: 'AVAILABLE',
       amenities: 'AC, High-Speed Wi-Fi, Attached Bath, Balcony, Individual Wardrobes, Work Desks',
       floorId: floor1.id,
-      propertyId: propGurgaon.id,
+      propertyId: propAhmedabad1.id,
     },
   });
 
@@ -202,7 +202,7 @@ async function main() {
       status: 'AVAILABLE',
       amenities: 'AC, High-Speed Wi-Fi, Attached Bath, Spacious Storage, Geyser',
       floorId: floor1.id,
-      propertyId: propGurgaon.id,
+      propertyId: propAhmedabad1.id,
     },
   });
 
@@ -216,7 +216,7 @@ async function main() {
       status: 'AVAILABLE',
       amenities: 'High-Speed Wi-Fi, Attached Bath, Balcony, Individual Wardrobe, Ceiling Fans',
       floorId: floor2.id,
-      propertyId: propGurgaon.id,
+      propertyId: propAhmedabad1.id,
     },
   });
 
@@ -291,7 +291,7 @@ async function main() {
       name: 'Aaryan Sharma (Owner)',
       role: 'OWNER',
       mobile: '9876500001',
-      propertyId: propGurgaon.id,
+      propertyId: propAhmedabad1.id,
     },
   });
 
@@ -325,14 +325,14 @@ async function main() {
       role: 'RESIDENT',
       mobile: '9812345678',
       avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-      propertyId: propGurgaon.id,
+      propertyId: propAhmedabad1.id,
     },
   });
 
   const resAakash = await prisma.resident.create({
     data: {
       userId: userAakash.id,
-      propertyId: propGurgaon.id,
+      propertyId: propAhmedabad1.id,
       bedId: bed101A.id,
       fullName: 'Aakash Verma',
       email: 'aakash.v@gmail.com',
@@ -347,7 +347,7 @@ async function main() {
       kycDocumentNumber: '9876-5432-1098',
       joiningDate: new Date('2025-10-15'),
       status: 'ACTIVE',
-      permanentAddress: 'House No 43, Sector 12, Karnal, Haryana - 132001',
+      permanentAddress: 'House No 43, Sector 12, Karnal, Gujarat - 132001',
       workCompany: 'Google India (Signature Towers)',
     },
   });
@@ -361,14 +361,14 @@ async function main() {
       role: 'RESIDENT',
       mobile: '9765432109',
       avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
-      propertyId: propGurgaon.id,
+      propertyId: propAhmedabad1.id,
     },
   });
 
   const resSneha = await prisma.resident.create({
     data: {
       userId: userSneha.id,
-      propertyId: propGurgaon.id,
+      propertyId: propAhmedabad1.id,
       bedId: bed103A.id,
       fullName: 'Sneha Rao',
       email: 'sneha.rao@yahoo.com',
@@ -395,14 +395,14 @@ async function main() {
       name: 'Vikram Singh',
       role: 'RESIDENT',
       mobile: '9988776655',
-      propertyId: propGurgaon.id,
+      propertyId: propAhmedabad1.id,
     },
   });
 
   const resVikram = await prisma.resident.create({
     data: {
       userId: userVikram.id,
-      propertyId: propGurgaon.id,
+      propertyId: propAhmedabad1.id,
       bedId: bed201A.id,
       fullName: 'Vikram Singh',
       email: 'vikram.singh@outlook.com',
@@ -426,7 +426,7 @@ async function main() {
   await prisma.agreement.create({
     data: {
       residentId: resAakash.id,
-      propertyId: propGurgaon.id,
+      propertyId: propAhmedabad1.id,
       agreementNumber: 'AGR-2025-101-01',
       validFrom: new Date('2025-10-15'),
       validTill: new Date('2026-09-14'),
@@ -437,7 +437,7 @@ async function main() {
   await prisma.securityDeposit.create({
     data: {
       residentId: resAakash.id,
-      propertyId: propGurgaon.id,
+      propertyId: propAhmedabad1.id,
       amount: 18000,
       status: 'PAID',
       paidAt: new Date('2025-10-15'),
@@ -448,7 +448,7 @@ async function main() {
   await prisma.agreement.create({
     data: {
       residentId: resSneha.id,
-      propertyId: propGurgaon.id,
+      propertyId: propAhmedabad1.id,
       agreementNumber: 'AGR-2026-103-02',
       validFrom: new Date('2026-01-10'),
       validTill: new Date('2026-12-09'),
@@ -459,7 +459,7 @@ async function main() {
   await prisma.securityDeposit.create({
     data: {
       residentId: resSneha.id,
-      propertyId: propGurgaon.id,
+      propertyId: propAhmedabad1.id,
       amount: 11000,
       status: 'PAID',
       paidAt: new Date('2026-01-10'),
@@ -471,7 +471,7 @@ async function main() {
   const pAug = await prisma.payment.create({
     data: {
       residentId: resAakash.id,
-      propertyId: propGurgaon.id,
+      propertyId: propAhmedabad1.id,
       amount: 18000,
       category: 'RENT',
       period: 'August 2026',
@@ -494,7 +494,7 @@ async function main() {
   const pSept = await prisma.payment.create({
     data: {
       residentId: resAakash.id,
-      propertyId: propGurgaon.id,
+      propertyId: propAhmedabad1.id,
       amount: 18000,
       category: 'RENT',
       period: 'September 2026',
@@ -507,7 +507,7 @@ async function main() {
   const pElec = await prisma.payment.create({
     data: {
       residentId: resAakash.id,
-      propertyId: propGurgaon.id,
+      propertyId: propAhmedabad1.id,
       amount: 1250,
       category: 'ELECTRICITY',
       period: 'September 2026',
@@ -523,7 +523,7 @@ async function main() {
   const v1 = await prisma.visitorRequest.create({
     data: {
       residentId: resAakash.id,
-      propertyId: propGurgaon.id,
+      propertyId: propAhmedabad1.id,
       visitorName: 'Satish Verma (Uncle)',
       visitorMobile: '9876599999',
       relation: 'Uncle',
@@ -540,7 +540,7 @@ async function main() {
   const v2 = await prisma.visitorRequest.create({
     data: {
       residentId: resAakash.id,
-      propertyId: propGurgaon.id,
+      propertyId: propAhmedabad1.id,
       visitorName: 'Rohan Gupta',
       visitorMobile: '9871122334',
       relation: 'Friend',
@@ -558,7 +558,7 @@ async function main() {
   const v3 = await prisma.visitorRequest.create({
     data: {
       residentId: resAakash.id,
-      propertyId: propGurgaon.id,
+      propertyId: propAhmedabad1.id,
       visitorName: 'Amit Sharma',
       visitorMobile: '9811224455',
       relation: 'Colleague',
@@ -577,7 +577,7 @@ async function main() {
     data: {
       ticketNumber: 'TKT-2026-1001',
       residentId: resAakash.id,
-      propertyId: propGurgaon.id,
+      propertyId: propAhmedabad1.id,
       roomId: room101.id,
       title: 'Air Conditioner not cooling effectively',
       description: 'The split AC unit in Room 101 makes a buzzing noise and stops cooling after 15 minutes of running.',
@@ -618,7 +618,7 @@ async function main() {
     data: {
       ticketNumber: 'TKT-2026-1002',
       residentId: resAakash.id,
-      propertyId: propGurgaon.id,
+      propertyId: propAhmedabad1.id,
       roomId: room101.id,
       title: 'Bathroom washbasin tap leaking water',
       description: 'Minor drip from tap valve in attached washroom.',
@@ -656,7 +656,7 @@ async function main() {
   await prisma.leaveRequest.create({
     data: {
       residentId: resAakash.id,
-      propertyId: propGurgaon.id,
+      propertyId: propAhmedabad1.id,
       fromDate: new Date('2026-10-28'),
       toDate: new Date('2026-11-04'),
       reason: 'Diwali Festival holidays at hometown Karnal with family.',
@@ -668,7 +668,7 @@ async function main() {
   await prisma.leaveRequest.create({
     data: {
       residentId: resAakash.id,
-      propertyId: propGurgaon.id,
+      propertyId: propAhmedabad1.id,
       fromDate: new Date('2026-09-26'),
       toDate: new Date('2026-09-28'),
       reason: 'Weekend trip with college friends to Rishikesh.',
@@ -683,7 +683,7 @@ async function main() {
     data: [
       {
         residentId: resAakash.id,
-        propertyId: propGurgaon.id,
+        propertyId: propAhmedabad1.id,
         title: 'Aadhaar Card Front & Back',
         type: 'AADHAAR',
         fileUrl: '/uploads/documents/aadhaar-aakash.pdf',
@@ -693,7 +693,7 @@ async function main() {
       },
       {
         residentId: resAakash.id,
-        propertyId: propGurgaon.id,
+        propertyId: propAhmedabad1.id,
         title: 'PAN Card Copy',
         type: 'PAN',
         fileUrl: '/uploads/documents/pan-aakash.pdf',
@@ -703,7 +703,7 @@ async function main() {
       },
       {
         residentId: resAakash.id,
-        propertyId: propGurgaon.id,
+        propertyId: propAhmedabad1.id,
         title: 'Signed PG Lease Agreement (11 Months)',
         type: 'AGREEMENT',
         fileUrl: '/uploads/documents/lease-agreement-aakash.pdf',
@@ -713,8 +713,8 @@ async function main() {
       },
       {
         residentId: resAakash.id,
-        propertyId: propGurgaon.id,
-        title: 'Haryana Police Resident Verification Form',
+        propertyId: propAhmedabad1.id,
+        title: 'Gujarat Police Resident Verification Form',
         type: 'POLICE_VERIFICATION',
         fileUrl: '/uploads/documents/police-verification-aakash.pdf',
         fileSize: 786432,
@@ -730,7 +730,7 @@ async function main() {
   await prisma.notice.createMany({
     data: [
       {
-        propertyId: propGurgaon.id,
+        propertyId: propAhmedabad1.id,
         title: '⚡ High-Speed Fiber Internet Scheduled Maintenance Window',
         content:
           'Please note that our Airtel Fiber line will undergo planned bandwidth upgrades on Thursday night between 01:00 AM and 04:00 AM. Internet connectivity will experience brief intermittent downtime during this window.',
@@ -739,7 +739,7 @@ async function main() {
         publisherName: 'Urban Nest Management',
       },
       {
-        propertyId: propGurgaon.id,
+        propertyId: propAhmedabad1.id,
         title: '🚪 Common Area Quiet Hours & Guest Visiting Policy Reminder',
         content:
           'Residents are kindly reminded that quiet hours commence at 11:00 PM on weekdays. Outside visitors must exit the premises by 10:00 PM unless an overnight visitor pass has been pre-approved by the warden.',
@@ -748,7 +748,7 @@ async function main() {
         publisherName: 'Warden Office',
       },
       {
-        propertyId: propGurgaon.id,
+        propertyId: propAhmedabad1.id,
         title: '🎉 Monthly Community Buffet Dinner & Indoor Games Evening',
         content:
           'Join us this Saturday at 8:00 PM in the rooftop terrace cafeteria for our monthly community buffet dinner with live acoustic music and foosball tournament!',
@@ -808,23 +808,23 @@ async function main() {
   // 18. Staff Users
   const staffManager = await prisma.user.create({
     data: {
-      email: 'manager.gurgaon@pg.com',
+      email: 'manager.ahmedabad@pg.com',
       passwordHash,
       name: 'Rohan Mehta (Manager)',
       role: 'MANAGER',
       mobile: '9876543220',
-      propertyId: propGurgaon.id,
+      propertyId: propAhmedabad1.id,
     },
   });
 
   const staffTech = await prisma.user.create({
     data: {
-      email: 'repair.gurgaon@pg.com',
+      email: 'repair.ahmedabad@pg.com',
       passwordHash,
       name: 'Kamal Electrician',
       role: 'MAINTENANCE',
       mobile: '9876511111',
-      propertyId: propGurgaon.id,
+      propertyId: propAhmedabad1.id,
     },
   });
 
@@ -835,7 +835,7 @@ async function main() {
       name: 'Sneha Sharma (Receptionist)',
       role: 'RECEPTIONIST',
       mobile: '9876543222',
-      propertyId: propGurgaon.id,
+      propertyId: propAhmedabad1.id,
     },
   });
 
@@ -845,16 +845,16 @@ async function main() {
   await prisma.expense.createMany({
     data: [
       {
-        propertyId: propGurgaon.id,
-        title: 'Electricity Bill - Gurgaon Block A (August 2026)',
+        propertyId: propAhmedabad1.id,
+        title: 'Electricity Bill - Ahmedabad Block A (August 2026)',
         category: 'ELECTRICITY',
         amount: 24500,
-        vendor: 'DHBVN Haryana Power',
+        vendor: 'DHBVN Gujarat Power',
         date: new Date('2026-08-15'),
         notes: 'Monthly power consumption invoice paid online',
       },
       {
-        propertyId: propGurgaon.id,
+        propertyId: propAhmedabad1.id,
         title: 'High-Speed Commercial Fiber Internet (Airtel)',
         category: 'INTERNET',
         amount: 4500,
@@ -863,7 +863,7 @@ async function main() {
         notes: '300 Mbps dedicated leased fiber line',
       },
       {
-        propertyId: propGurgaon.id,
+        propertyId: propAhmedabad1.id,
         title: 'Mess Groceries & Supplies',
         category: 'FOOD',
         amount: 18500,
@@ -872,7 +872,7 @@ async function main() {
         notes: 'Weekly kitchen grains, vegetables, and milk provisions',
       },
       {
-        propertyId: propGurgaon.id,
+        propertyId: propAhmedabad1.id,
         title: 'Staff Salary - Kamal Electrician',
         category: 'SALARY',
         amount: 16000,
@@ -889,7 +889,7 @@ async function main() {
   await prisma.inventoryItem.createMany({
     data: [
       {
-        propertyId: propGurgaon.id,
+        propertyId: propAhmedabad1.id,
         name: 'Single Wooden Bed Frame (Teak Finish)',
         category: 'Furniture',
         quantity: 8,
@@ -900,7 +900,7 @@ async function main() {
         cost: 6500,
       },
       {
-        propertyId: propGurgaon.id,
+        propertyId: propAhmedabad1.id,
         name: 'Split AC 1.5 Ton 5-Star (Daikin)',
         category: 'Electronics',
         quantity: 6,
@@ -911,7 +911,7 @@ async function main() {
         cost: 38000,
       },
       {
-        propertyId: propGurgaon.id,
+        propertyId: propAhmedabad1.id,
         name: 'Sleepwell Ortho 6-inch Mattress',
         category: 'Bedding',
         quantity: 12,
@@ -922,7 +922,7 @@ async function main() {
         cost: 4800,
       },
       {
-        propertyId: propGurgaon.id,
+        propertyId: propAhmedabad1.id,
         name: 'Commercial RO Water Purifier 50L/hr',
         category: 'Appliance',
         quantity: 1,
@@ -941,7 +941,7 @@ async function main() {
   await prisma.operationalTask.createMany({
     data: [
       {
-        propertyId: propGurgaon.id,
+        propertyId: propAhmedabad1.id,
         title: 'Deep Sanitation & Cleaning of Room 102',
         category: 'CLEANING',
         priority: 'MEDIUM',
@@ -950,7 +950,7 @@ async function main() {
         dueDate: new Date(Date.now() + 24 * 3600 * 1000),
       },
       {
-        propertyId: propGurgaon.id,
+        propertyId: propAhmedabad1.id,
         title: 'Rooftop Water Tank Chlorination & Filter Replacement',
         category: 'INSPECTION',
         priority: 'HIGH',
@@ -959,7 +959,7 @@ async function main() {
         dueDate: new Date(Date.now() + 48 * 3600 * 1000),
       },
       {
-        propertyId: propGurgaon.id,
+        propertyId: propAhmedabad1.id,
         title: 'Follow-up for September Rent Overdue Invoices',
         category: 'RENT_COLLECTION',
         priority: 'MEDIUM',
@@ -975,7 +975,7 @@ async function main() {
   await prisma.auditLog.createMany({
     data: [
       {
-        propertyId: propGurgaon.id,
+        propertyId: propAhmedabad1.id,
         actorId: userAakash.id,
         actorName: 'Aakash Verma',
         actorRole: 'RESIDENT',
@@ -985,7 +985,7 @@ async function main() {
         details: 'Resident logged into portal via web client',
       },
       {
-        propertyId: propGurgaon.id,
+        propertyId: propAhmedabad1.id,
         actorId: userAakash.id,
         actorName: 'Aakash Verma',
         actorRole: 'RESIDENT',
@@ -995,7 +995,7 @@ async function main() {
         details: 'Paid rent ₹18,000 for August 2026 via UPI',
       },
       {
-        propertyId: propGurgaon.id,
+        propertyId: propAhmedabad1.id,
         actorId: owner.id,
         actorName: owner.name,
         actorRole: 'OWNER',
@@ -1005,7 +1005,7 @@ async function main() {
         details: 'Configured Room 101 with Single AC capacity 1',
       },
       {
-        propertyId: propGurgaon.id,
+        propertyId: propAhmedabad1.id,
         actorId: owner.id,
         actorName: owner.name,
         actorRole: 'OWNER',
@@ -1026,7 +1026,7 @@ async function main() {
     Email:    aakash.v@gmail.com
     Password: admin123
     Room:     101 (Single AC)
-    PG:       Urban Nest Premium PG (Gurgaon)
+    PG:       Urban Nest Premium PG (Ahmedabad)
 
   RESIDENT 2:
     Email:    sneha.rao@yahoo.com

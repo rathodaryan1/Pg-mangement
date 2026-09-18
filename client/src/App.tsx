@@ -1,6 +1,6 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 
 // Layouts
 import { PublicLayout } from './components/layout/PublicLayout';
@@ -49,8 +49,6 @@ import { OwnerEmergencyPage } from './pages/owner/OwnerEmergencyPage';
 import { ReportsPage } from './pages/owner/ReportsPage';
 import { OwnerSettingsPage } from './pages/owner/OwnerSettingsPage';
 import { AuditLogsPage } from './pages/owner/AuditLogsPage';
-import { OwnerNoticesPage } from './pages/owner/OwnerNoticesPage';
-import { OwnerDocumentsPage } from './pages/owner/OwnerDocumentsPage';
 
 // Resident Pages
 import { ResidentDashboardPage } from './pages/resident/ResidentDashboardPage';
@@ -178,8 +176,8 @@ const AppRoutes: React.FC = () => {
       <Route path="/owner/tasks" element={<ProtectedOwnerRoute><MaintenancePage /></ProtectedOwnerRoute>} />
       <Route path="/owner/inventory" element={<ProtectedOwnerRoute><InventoryPage /></ProtectedOwnerRoute>} />
       <Route path="/owner/vendors" element={<ProtectedOwnerRoute><InventoryPage /></ProtectedOwnerRoute>} />
-      <Route path="/owner/documents" element={<ProtectedOwnerRoute><OwnerDocumentsPage /></ProtectedOwnerRoute>} />
-      <Route path="/owner/notices" element={<ProtectedOwnerRoute><OwnerNoticesPage /></ProtectedOwnerRoute>} />
+      <Route path="/owner/documents" element={<ProtectedOwnerRoute><ResidentsPage /></ProtectedOwnerRoute>} />
+      <Route path="/owner/notices" element={<ProtectedOwnerRoute><OwnerDashboardPage /></ProtectedOwnerRoute>} />
       <Route path="/owner/emergency" element={<ProtectedOwnerRoute><OwnerEmergencyPage /></ProtectedOwnerRoute>} />
       <Route path="/owner/sos" element={<ProtectedOwnerRoute><OwnerEmergencyPage /></ProtectedOwnerRoute>} />
       
@@ -209,7 +207,11 @@ const AppRoutes: React.FC = () => {
 };
 
 const App: React.FC = () => {
-  return <AppRoutes />;
+  return (
+    <AuthProvider>
+      <AppRoutes />
+    </AuthProvider>
+  );
 };
 
 export default App;

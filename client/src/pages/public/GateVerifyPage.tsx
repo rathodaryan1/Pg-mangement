@@ -1,4 +1,3 @@
-import { toast, useToast } from '../../context/ToastContext';
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
@@ -59,7 +58,7 @@ export const GateVerifyPage: React.FC = () => {
       setActionSuccess('Visitor successfully checked in at gate.');
       await verifyPass();
     } catch (err: any) {
-      toast.error(err.message || 'Unable to check in visitor.');
+      alert(err.message || 'Unable to check in visitor.');
     } finally {
       setActionLoading(false);
     }
@@ -72,7 +71,7 @@ export const GateVerifyPage: React.FC = () => {
       setActionSuccess('Visitor marked as checked out.');
       await verifyPass();
     } catch (err: any) {
-      toast.error(err.message || 'Unable to check out visitor.');
+      alert(err.message || 'Unable to check out visitor.');
     } finally {
       setActionLoading(false);
     }

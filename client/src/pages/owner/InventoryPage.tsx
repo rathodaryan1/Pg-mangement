@@ -1,4 +1,3 @@
-import { toast, useToast } from '../../context/ToastContext';
 import React, { useState, useEffect } from 'react';
 import {
   Box,
@@ -89,7 +88,7 @@ export const InventoryPage: React.FC = () => {
     e.preventDefault();
     try {
       if (!assetForm.name) {
-        toast.error('Please enter asset name');
+        alert('Please enter asset name');
         return;
       }
       await ownerApi.createInventoryItem({
@@ -120,7 +119,7 @@ export const InventoryPage: React.FC = () => {
       });
       fetchAssets();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to create inventory item');
+      alert(err.message || 'Failed to create inventory item');
     }
   };
 
@@ -145,7 +144,7 @@ export const InventoryPage: React.FC = () => {
       setSelectedAsset(null);
       fetchAssets();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to update asset item');
+      alert(err.message || 'Failed to update asset item');
     }
   };
 
@@ -164,7 +163,7 @@ export const InventoryPage: React.FC = () => {
       setSelectedAsset(null);
       fetchAssets();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to adjust stock');
+      alert(err.message || 'Failed to adjust stock');
     }
   };
 
@@ -177,7 +176,7 @@ export const InventoryPage: React.FC = () => {
       setSelectedAsset(null);
       fetchAssets();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to archive asset');
+      alert(err.message || 'Failed to archive asset');
     }
   };
 

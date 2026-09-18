@@ -150,7 +150,7 @@ export const ContactPage: React.FC = () => {
                 <div>
                   <p className="font-semibold text-[#18231F]">Headquarters</p>
                   <p className="text-[#68736D] leading-relaxed">
-                    Sector 3, 27th Main Rd, HSR Layout, Bengaluru, Karnataka 560102
+                    Sector 3, 27th Main Rd, HSR Layout, Ahmedabad, Gujarat 380015
                   </p>
                 </div>
               </div>

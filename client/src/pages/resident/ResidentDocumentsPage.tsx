@@ -17,10 +17,8 @@ import { Badge, StatusBadge } from '../../components/ui/Badge';
 import { Input, Select } from '../../components/ui/Input';
 import { Modal } from '../../components/ui/Modal';
 import { residentApi } from '../../services/residentApi';
-import { toast, useToast } from '../../context/ToastContext';
 
 export const ResidentDocumentsPage: React.FC = () => {
-  const { toast } = useToast();
   const [documents, setDocuments] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -53,12 +51,12 @@ export const ResidentDocumentsPage: React.FC = () => {
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedFile) {
-      toast.error('Please choose a file to upload.');
+      alert('Please choose a file to upload.');
       return;
     }
 
     if (!docTitle.trim()) {
-      toast.error('Please enter document title.');
+      alert('Please enter document title.');
       return;
     }
 
@@ -74,10 +72,9 @@ export const ResidentDocumentsPage: React.FC = () => {
       setUploadModalOpen(false);
       setDocTitle('');
       setSelectedFile(null);
-      toast.success('Document uploaded successfully.');
       await fetchDocuments();
     } catch (err: any) {
-      toast.error(err.message || 'Upload failed. Please verify file type and size.');
+      alert(err.message || 'Upload failed. Please verify file type and size.');
     } finally {
       setIsUploading(false);
     }
@@ -89,10 +86,10 @@ export const ResidentDocumentsPage: React.FC = () => {
       if (result.downloadUrl) {
         window.open(result.downloadUrl, '_blank');
       } else {
-        toast.error('Download link currently unavailable.');
+        alert('Download link currently unavailable.');
       }
     } catch (err: any) {
-      toast.error(err.message || 'Failed to retrieve document download link.');
+      alert(err.message || 'Failed to retrieve document download link.');
     }
   };
 

@@ -125,7 +125,7 @@ model Property {
   tenant            Tenant?           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   name              String
   address           String
-  city              String            @default("Bengaluru")
+  city              String            @default("Ahmedabad")
   phone             String?
   email             String?
   upiId             String?

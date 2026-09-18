@@ -17,10 +17,8 @@ import { Button } from '../../components/ui/Button';
 import { StatusBadge, Badge } from '../../components/ui/Badge';
 import { Input } from '../../components/ui/Input';
 import { residentApi } from '../../services/residentApi';
-import { toast, useToast } from '../../context/ToastContext';
 
 export const ResidentProfilePage: React.FC = () => {
-  const { toast } = useToast();
   const [profile, setProfile] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -83,10 +81,9 @@ export const ResidentProfilePage: React.FC = () => {
 
       setProfile({ ...(profile || {}), ...updated });
       setSaveSuccess(true);
-      toast.success('Emergency contact details updated successfully.');
       setTimeout(() => setSaveSuccess(false), 3500);
     } catch (err: any) {
-      toast.error(err.message || 'Failed to update profile.');
+      alert(err.message || 'Failed to update profile.');
     } finally {
       setIsSaving(false);
     }

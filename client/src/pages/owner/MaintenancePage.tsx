@@ -1,4 +1,3 @@
-import { toast, useToast } from '../../context/ToastContext';
 import React, { useState, useEffect } from 'react';
 import {
   Wrench,
@@ -105,7 +104,7 @@ export const MaintenancePage: React.FC = () => {
       setResolutionComment('');
       fetchData();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to update ticket status');
+      alert(err.message || 'Failed to update ticket status');
     }
   };
 
@@ -121,7 +120,7 @@ export const MaintenancePage: React.FC = () => {
       if (updated) setSelectedTicket(updated);
       fetchData();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to add note');
+      alert(err.message || 'Failed to add note');
     }
   };
 
@@ -134,7 +133,7 @@ export const MaintenancePage: React.FC = () => {
       setTimeout(() => setToastMessage(null), 4000);
       fetchData();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to create ticket');
+      alert(err.message || 'Failed to create ticket');
     }
   };
 
@@ -142,7 +141,7 @@ export const MaintenancePage: React.FC = () => {
     e.preventDefault();
     try {
       if (!taskForm.title) {
-        toast.error('Please enter task title');
+        alert('Please enter task title');
         return;
       }
       await ownerApi.createTask({
@@ -159,7 +158,7 @@ export const MaintenancePage: React.FC = () => {
       setTimeout(() => setToastMessage(null), 4000);
       fetchData();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to create task');
+      alert(err.message || 'Failed to create task');
     }
   };
 
@@ -170,7 +169,7 @@ export const MaintenancePage: React.FC = () => {
       setTimeout(() => setToastMessage(null), 3000);
       fetchData();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to update task');
+      alert(err.message || 'Failed to update task');
     }
   };
 
@@ -182,7 +181,7 @@ export const MaintenancePage: React.FC = () => {
       setTimeout(() => setToastMessage(null), 3000);
       fetchData();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to delete task');
+      alert(err.message || 'Failed to delete task');
     }
   };
 
