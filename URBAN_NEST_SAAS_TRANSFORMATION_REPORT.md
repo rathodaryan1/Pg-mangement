@@ -366,7 +366,7 @@ DIRECT_URL=postgresql://postgres:[PASSWORD]@[HOST]:5432/postgres?schema=public
 JWT_SECRET=production_jwt_secret_at_least_32_chars
 JWT_EXPIRES_IN=7d
 FRONTEND_URL=https://aryanpg.vercel.app
-SUPABASE_URL=https://mcjjlyxamwtpetibigln.supabase.co
+SUPABASE_URL=https://[YOUR_SUPABASE_PROJECT].supabase.co
 SUPABASE_ANON_KEY=eyJhbGci...
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGci...
 SUPABASE_STORAGE_BUCKET=resident-documents
@@ -378,9 +378,9 @@ RAZORPAY_KEY_SECRET=...
 
 ```env
 VITE_API_URL=https://pg-mangement.onrender.com/api
-VITE_SUPABASE_URL=https://mcjjlyxamwtpetibigln.supabase.co
+VITE_SUPABASE_URL=https://[YOUR_SUPABASE_PROJECT].supabase.co
 VITE_SUPABASE_ANON_KEY=eyJhbGci...
-VITE_RAZORPAY_KEY_ID=rzp_test_Tcby7xx80KIQ1F
+VITE_RAZORPAY_KEY_ID=rzp_test_...
 ```
 
 ---
