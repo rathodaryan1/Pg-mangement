@@ -27,6 +27,49 @@ export interface SuperAdminDashboardData {
   };
 }
 
+export interface SupportTicketItem {
+  id: string;
+  tenantId?: string | null;
+  creatorEmail: string;
+  creatorName?: string | null;
+  subject: string;
+  description: string;
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+  status: 'OPEN' | 'IN_PROGRESS' | 'WAITING_FOR_CUSTOMER' | 'RESOLVED' | 'CLOSED';
+  assignedAdmin?: string | null;
+  internalNotes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  tenant?: {
+    id: string;
+    name: string;
+    slug: string;
+    email: string;
+  } | null;
+}
+
+export interface UserItem {
+  id: string;
+  name: string;
+  email: string;
+  role: 'SUPER_ADMIN' | 'OWNER' | 'MANAGER' | 'RECEPTIONIST' | 'ACCOUNTANT' | 'MAINTENANCE' | 'RESIDENT';
+  mobile?: string | null;
+  tenantId?: string | null;
+  propertyId?: string | null;
+  createdAt: string;
+  tenant?: {
+    id: string;
+    name: string;
+    slug: string;
+    status: string;
+  } | null;
+  property?: {
+    id: string;
+    name: string;
+    city: string;
+  } | null;
+}
+
 export const superAdminApi = {
   // 1. Dashboard
   getDashboard: async () => {
@@ -63,7 +106,8 @@ export const superAdminApi = {
     ownerName: string;
     ownerEmail: string;
     ownerMobile?: string;
-    password: string;
+    password?: string;
+    temporaryPassword?: string;
     plan?: string;
     trialDays?: number;
   }) => {
@@ -106,6 +150,31 @@ export const superAdminApi = {
     return res.data;
   },
 
+  getTenantProperties: async (id: string) => {
+    const res = await api.get<any[]>(`/super-admin/tenants/${id}/properties`);
+    return res.data;
+  },
+
+  getTenantSubscription: async (id: string) => {
+    const res = await api.get<any>(`/super-admin/tenants/${id}/subscription`);
+    return res.data;
+  },
+
+  updateTenantSubscription: async (
+    id: string,
+    data: {
+      plan?: string;
+      subscriptionStatus?: string;
+      trialDaysExtension?: number;
+      maxProperties?: number;
+      maxRooms?: number;
+      maxResidents?: number;
+    }
+  ) => {
+    const res = await api.patch<any>(`/super-admin/tenants/${id}/subscription`, data);
+    return res.data;
+  },
+
   // 3. Owners Directory
   getOwners: async (search?: string) => {
     const url = search ? `/super-admin/owners?search=${encodeURIComponent(search)}` : '/super-admin/owners';
@@ -113,13 +182,91 @@ export const superAdminApi = {
     return res.data;
   },
 
-  // 4. Plans
+  // 4. Unified Users Directory
+  getUsers: async (params?: { search?: string; role?: string; tenantId?: string; page?: number; limit?: number }) => {
+    const query = new URLSearchParams();
+    if (params?.search) query.append('search', params.search);
+    if (params?.role && params.role !== 'ALL') query.append('role', params.role);
+    if (params?.tenantId && params.tenantId !== 'ALL') query.append('tenantId', params.tenantId);
+    if (params?.page) query.append('page', String(params.page));
+    if (params?.limit) query.append('limit', String(params.limit));
+
+    const res = await api.get<{ users: UserItem[]; pagination: any }>(`/super-admin/users?${query.toString()}`);
+    return res.data;
+  },
+
+  // 5. Plans CRUD
   getPlans: async () => {
     const res = await api.get<Plan[]>('/super-admin/plans');
     return res.data;
   },
 
-  // 5. Audit Logs
+  createPlan: async (data: Partial<Plan>) => {
+    const res = await api.post<Plan>('/super-admin/plans', data);
+    return res.data;
+  },
+
+  updatePlan: async (id: string, data: Partial<Plan>) => {
+    const res = await api.patch<Plan>(`/super-admin/plans/${id}`, data);
+    return res.data;
+  },
+
+  deletePlan: async (id: string) => {
+    const res = await api.delete<any>(`/super-admin/plans/${id}`);
+    return res.data;
+  },
+
+  // 6. Support Tickets
+  getSupportTickets: async (params?: { search?: string; status?: string; priority?: string; tenantId?: string; page?: number; limit?: number }) => {
+    const query = new URLSearchParams();
+    if (params?.search) query.append('search', params.search);
+    if (params?.status && params.status !== 'ALL') query.append('status', params.status);
+    if (params?.priority && params.priority !== 'ALL') query.append('priority', params.priority);
+    if (params?.tenantId && params.tenantId !== 'ALL') query.append('tenantId', params.tenantId);
+    if (params?.page) query.append('page', String(params.page));
+    if (params?.limit) query.append('limit', String(params.limit));
+
+    const res = await api.get<{ tickets: SupportTicketItem[]; pagination: any }>(`/super-admin/support?${query.toString()}`);
+    return res.data;
+  },
+
+  createSupportTicket: async (data: {
+    tenantId?: string;
+    creatorEmail?: string;
+    creatorName?: string;
+    subject: string;
+    description: string;
+    priority?: string;
+  }) => {
+    const res = await api.post<SupportTicketItem>('/super-admin/support', data);
+    return res.data;
+  },
+
+  updateSupportTicket: async (
+    id: string,
+    data: {
+      status?: string;
+      priority?: string;
+      assignedAdmin?: string;
+      internalNotes?: string;
+    }
+  ) => {
+    const res = await api.patch<SupportTicketItem>(`/super-admin/support/${id}`, data);
+    return res.data;
+  },
+
+  // 7. Platform Settings
+  getSettings: async () => {
+    const res = await api.get<Record<string, string>>('/super-admin/settings');
+    return res.data;
+  },
+
+  updateSettings: async (settings: Record<string, any>) => {
+    const res = await api.post<Record<string, string>>('/super-admin/settings', settings);
+    return res.data;
+  },
+
+  // 8. Audit Logs
   getAuditLogs: async (params?: { tenantId?: string; action?: string; page?: number; limit?: number }) => {
     const query = new URLSearchParams();
     if (params?.tenantId && params.tenantId !== 'ALL') query.append('tenantId', params.tenantId);
@@ -131,7 +278,7 @@ export const superAdminApi = {
     return res.data;
   },
 
-  // 6. System Health
+  // 9. System Health
   getSystemHealth: async () => {
     const res = await api.get<any>('/super-admin/system-health');
     return res.data;

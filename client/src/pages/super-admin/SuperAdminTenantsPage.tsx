@@ -17,6 +17,8 @@ import {
   UserCheck,
   MoreVertical,
   Filter,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -45,6 +47,17 @@ export const SuperAdminTenantsPage: React.FC = () => {
   // Create Tenant Modal
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [onboardingModalOpen, setOnboardingModalOpen] = useState(false);
+  const [createdCredentials, setCreatedCredentials] = useState<{
+    tenantName: string;
+    ownerName: string;
+    ownerEmail: string;
+    temporaryPassword?: string;
+    loginUrl: string;
+    plan: string;
+    trialDays: number;
+  } | null>(null);
+
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -108,9 +121,19 @@ export const SuperAdminTenantsPage: React.FC = () => {
 
     setIsCreating(true);
     try {
-      await superAdminApi.createTenant(form);
-      toast.success(`PG Tenant "${form.name}" created successfully with initial branch.`);
+      const res = await superAdminApi.createTenant(form);
+      toast.success(`PG Tenant "${form.name}" created successfully.`);
       setCreateModalOpen(false);
+      setCreatedCredentials({
+        tenantName: form.name,
+        ownerName: form.ownerName,
+        ownerEmail: form.ownerEmail,
+        temporaryPassword: form.password,
+        loginUrl: `${window.location.origin}/login`,
+        plan: form.plan,
+        trialDays: form.trialDays,
+      });
+      setOnboardingModalOpen(true);
       setForm({
         name: '',
         email: '',
@@ -614,6 +637,108 @@ export const SuperAdminTenantsPage: React.FC = () => {
           </div>
         </form>
       </Modal>
+
+      {/* TENANT PROVISIONED & OWNER CREDENTIALS MODAL */}
+      {createdCredentials && (
+        <Modal
+          isOpen={onboardingModalOpen}
+          onClose={() => setOnboardingModalOpen(false)}
+          title="PG Tenant Provisioned Successfully"
+          maxWidth="md"
+        >
+          <div className="space-y-4 pt-1">
+            <div className="p-3 bg-[#EAF2EE] border border-[#0B4036]/20 rounded-xl flex items-center gap-2 text-xs text-[#0B4036]">
+              <CheckCircle2 className="w-4 h-4 text-[#0B4036] shrink-0" />
+              <span>
+                Tenant <strong>{createdCredentials.tenantName}</strong> created on PostgreSQL with an initial PG branch.
+              </span>
+            </div>
+
+            <div className="p-4 bg-[#FCFBF8] border border-[#DDE2DD] rounded-xl space-y-3 text-xs">
+              <div>
+                <p className="text-[10px] uppercase font-bold text-[#8A928D]">Organization</p>
+                <p className="font-bold text-[#18231F] text-sm">{createdCredentials.tenantName}</p>
+                <p className="text-[11px] text-[#68736D]">Plan: {createdCredentials.plan} ({createdCredentials.trialDays}-Day Free Trial)</p>
+              </div>
+
+              <div className="pt-2 border-t border-[#DDE2DD] space-y-2">
+                <div className="flex items-center justify-between bg-white p-2.5 rounded-lg border border-[#DDE2DD]">
+                  <div>
+                    <span className="text-[10px] font-bold text-[#8A928D] block">Owner Email</span>
+                    <span className="font-mono text-xs font-semibold text-[#18231F]">{createdCredentials.ownerEmail}</span>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="xs"
+                    onClick={() => {
+                      navigator.clipboard.writeText(createdCredentials.ownerEmail);
+                      toast.success('Email copied to clipboard');
+                    }}
+                    leftIcon={<Copy className="w-3 h-3" />}
+                  >
+                    Copy
+                  </Button>
+                </div>
+
+                <div className="flex items-center justify-between bg-white p-2.5 rounded-lg border border-[#DDE2DD]">
+                  <div>
+                    <span className="text-[10px] font-bold text-[#8A928D] block">Temporary Password</span>
+                    <span className="font-mono text-xs font-bold text-[#0B4036]">{createdCredentials.temporaryPassword}</span>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="xs"
+                    onClick={() => {
+                      if (createdCredentials.temporaryPassword) {
+                        navigator.clipboard.writeText(createdCredentials.temporaryPassword);
+                        toast.success('Password copied to clipboard');
+                      }
+                    }}
+                    leftIcon={<Copy className="w-3 h-3" />}
+                  >
+                    Copy
+                  </Button>
+                </div>
+
+                <div className="flex items-center justify-between bg-white p-2.5 rounded-lg border border-[#DDE2DD]">
+                  <div>
+                    <span className="text-[10px] font-bold text-[#8A928D] block">Login Portal URL</span>
+                    <span className="font-mono text-[11px] text-[#68736D]">{createdCredentials.loginUrl}</span>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="xs"
+                    onClick={() => {
+                      navigator.clipboard.writeText(createdCredentials.loginUrl);
+                      toast.success('Login URL copied to clipboard');
+                    }}
+                    leftIcon={<Copy className="w-3 h-3" />}
+                  >
+                    Copy
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-900 flex items-start gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+              <span>
+                <strong>Security Notice:</strong> The temporary password will not be displayed again after closing this window. Please copy or share these credentials with the owner securely.
+              </span>
+            </div>
+
+            <div className="flex justify-end pt-2 border-t border-[#DDE2DD]">
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => setOnboardingModalOpen(false)}
+              >
+                Done
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 };

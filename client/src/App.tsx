@@ -24,6 +24,7 @@ import { SuperAdminDashboardPage } from './pages/super-admin/SuperAdminDashboard
 import { SuperAdminTenantsPage } from './pages/super-admin/SuperAdminTenantsPage';
 import { SuperAdminTenantDetailPage } from './pages/super-admin/SuperAdminTenantDetailPage';
 import { SuperAdminOwnersPage } from './pages/super-admin/SuperAdminOwnersPage';
+import { SuperAdminUsersPage } from './pages/super-admin/SuperAdminUsersPage';
 import { SuperAdminSubscriptionsPage } from './pages/super-admin/SuperAdminSubscriptionsPage';
 import { SuperAdminPlansPage } from './pages/super-admin/SuperAdminPlansPage';
 import { SuperAdminRevenuePage } from './pages/super-admin/SuperAdminRevenuePage';
@@ -149,7 +150,7 @@ const AppRoutes: React.FC = () => {
       <Route path="/super-admin/tenants/new" element={<ProtectedSuperAdminRoute><SuperAdminTenantsPage /></ProtectedSuperAdminRoute>} />
       <Route path="/super-admin/tenants/:id" element={<ProtectedSuperAdminRoute><SuperAdminTenantDetailPage /></ProtectedSuperAdminRoute>} />
       <Route path="/super-admin/owners" element={<ProtectedSuperAdminRoute><SuperAdminOwnersPage /></ProtectedSuperAdminRoute>} />
-      <Route path="/super-admin/users" element={<ProtectedSuperAdminRoute><SuperAdminOwnersPage /></ProtectedSuperAdminRoute>} />
+      <Route path="/super-admin/users" element={<ProtectedSuperAdminRoute><SuperAdminUsersPage /></ProtectedSuperAdminRoute>} />
       <Route path="/super-admin/subscriptions" element={<ProtectedSuperAdminRoute><SuperAdminSubscriptionsPage /></ProtectedSuperAdminRoute>} />
       <Route path="/super-admin/billing" element={<ProtectedSuperAdminRoute><SuperAdminSubscriptionsPage /></ProtectedSuperAdminRoute>} />
       <Route path="/super-admin/plans" element={<ProtectedSuperAdminRoute><SuperAdminPlansPage /></ProtectedSuperAdminRoute>} />

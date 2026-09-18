@@ -4,7 +4,23 @@ import { prisma } from '../config/prisma';
 import * as bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
-const API_BASE = process.env.API_BASE || 'http://localhost:5000/api';
+let resolvedApiBase = process.env.API_BASE || '';
+
+async function getApiBase() {
+  if (resolvedApiBase) return resolvedApiBase;
+  try {
+    const localRes = await fetch('http://localhost:5000/health', { signal: AbortSignal.timeout(1500) });
+    if (localRes.ok) {
+      resolvedApiBase = 'http://localhost:5000/api';
+      return resolvedApiBase;
+    }
+  } catch {
+    // Local server not running, fallback to live backend
+  }
+  resolvedApiBase = 'https://pg-mangement.onrender.com/api';
+  return resolvedApiBase;
+}
+
 const JWT_SECRET = process.env.JWT_SECRET || 'urbannest-dev-jwt-secret-key-2026';
 
 interface TestResult {
@@ -24,7 +40,8 @@ function record(suite: string, test: string, status: 'PASS' | 'FAIL' | 'NOT TEST
 }
 
 async function apiRequest(endpoint: string, options: { method?: string; headers?: Record<string, string>; body?: any } = {}) {
-  const url = `${API_BASE}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+  const base = await getApiBase();
+  const url = `${base}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
   const fetchOptions: RequestInit = {
     method: options.method || 'GET',
     headers: {
@@ -740,6 +757,7 @@ export async function runSaasMultiTenantAudit() {
     const failed = results.filter((r) => r.status === 'FAIL').length;
     console.log(`Total Checks: ${results.length} | Passed: ${passed} | Failed: ${failed}`);
     console.log('========================================================\n');
+    return { passed, failed, total: results.length };
   }
 }
 
