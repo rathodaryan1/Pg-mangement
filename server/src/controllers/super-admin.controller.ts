@@ -56,9 +56,10 @@ export class SuperAdminController {
         ENTERPRISE: 19999,
       };
 
-      const monthlySaaSRevenue = tenantsByPlan.reduce((acc, curr) => {
-        return acc + (planPricing[curr.plan] || 0) * curr._count.id;
-      }, 0);
+      let monthlySaaSRevenue = 0;
+      for (const curr of tenantsByPlan as any[]) {
+        monthlySaaSRevenue += (planPricing[curr.plan] || 0) * (curr._count?.id || 0);
+      }
 
       // Check system component status
       let dbHealth = 'HEALTHY';
