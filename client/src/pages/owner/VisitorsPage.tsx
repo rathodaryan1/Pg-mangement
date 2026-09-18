@@ -1,3 +1,4 @@
+import { toast, useToast } from '../../context/ToastContext';
 import React, { useState, useEffect } from 'react';
 import {
   UserCheck,
@@ -80,7 +81,7 @@ export const VisitorsPage: React.FC = () => {
     e.preventDefault();
     try {
       if (!visitorForm.visitorName || !visitorForm.visitorMobile) {
-        alert('Please provide visitor name and mobile number.');
+        toast.error('Please provide visitor name and mobile number.');
         return;
       }
       await ownerApi.createVisitor({
@@ -107,7 +108,7 @@ export const VisitorsPage: React.FC = () => {
       });
       fetchData();
     } catch (err: any) {
-      alert(err.message || 'Failed to create visitor pass');
+      toast.error(err.message || 'Failed to create visitor pass');
     }
   };
 
@@ -117,7 +118,7 @@ export const VisitorsPage: React.FC = () => {
       showToast('Visitor request approved! QR pass generated.');
       fetchData();
     } catch (err: any) {
-      alert(err.message || 'Failed to approve visitor');
+      toast.error(err.message || 'Failed to approve visitor');
     }
   };
 
@@ -127,7 +128,7 @@ export const VisitorsPage: React.FC = () => {
       showToast('Visitor request rejected.');
       fetchData();
     } catch (err: any) {
-      alert(err.message || 'Failed to reject visitor');
+      toast.error(err.message || 'Failed to reject visitor');
     }
   };
 
@@ -137,7 +138,7 @@ export const VisitorsPage: React.FC = () => {
       showToast('Visitor checked in at security gate.');
       fetchData();
     } catch (err: any) {
-      alert(err.message || 'Failed to check in');
+      toast.error(err.message || 'Failed to check in');
     }
   };
 
@@ -147,7 +148,7 @@ export const VisitorsPage: React.FC = () => {
       showToast('Visitor marked as checked out.');
       fetchData();
     } catch (err: any) {
-      alert(err.message || 'Failed to check out');
+      toast.error(err.message || 'Failed to check out');
     }
   };
 

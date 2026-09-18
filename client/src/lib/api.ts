@@ -43,19 +43,6 @@ class ApiClient {
     if (!this.token) {
       this.token = localStorage.getItem('urbannest_auth_token');
     }
-    if (!this.token) {
-      try {
-        const session = localStorage.getItem('urbannest_user_session');
-        if (session) {
-          const user = JSON.parse(session);
-          const devToken = user.role === 'RESIDENT' ? 'dev-token-resident' : 'dev-token-owner';
-          this.setToken(devToken);
-          return devToken;
-        }
-      } catch {
-        // ignore
-      }
-    }
     return this.token;
   }
 
@@ -70,8 +57,8 @@ class ApiClient {
       ...(options.headers as Record<string, string>),
     };
 
-    // Auto attach Bearer token
-    const token = this.getToken() || (window.location.pathname.includes('/resident') ? 'dev-token-resident' : 'dev-token-owner');
+    // Attach Bearer token if present
+    const token = this.getToken();
     if (token && !headers['Authorization']) {
       headers['Authorization'] = `Bearer ${token}`;
     }
@@ -86,14 +73,16 @@ class ApiClient {
         headers,
       });
 
-      // Handle 401 Unauthorized
+      // Handle 401 Unauthorized: clear invalid auth token
       if (response.status === 401) {
-        if (window.location.pathname === '/login' || endpoint.includes('/auth/login')) {
-          this.setToken(null);
-        }
+        this.setToken(null);
+        localStorage.removeItem('urbannest_user_session');
       }
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({
+        success: false,
+        message: `HTTP error status: ${response.status}`,
+      }));
 
       if (!response.ok) {
         throw new Error(data.message || data.error || `HTTP error! status: ${response.status}`);

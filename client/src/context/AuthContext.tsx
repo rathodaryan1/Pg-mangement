@@ -5,8 +5,7 @@ import api from '../lib/api';
 interface AuthContextType {
   user: User | null;
   role: UserRole;
-  activeProperty: Property | null;
-  properties: Property[];
+  activeProperty: Property;
   setActiveProperty: (property: Property) => void;
   switchRole: (role: UserRole) => void;
   login: (email: string, password?: string, selectedRole?: UserRole) => Promise<boolean>;
@@ -53,12 +52,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Check existing session token on mount
   useEffect(() => {
     const checkAuth = async () => {
-      let token = api.getToken();
-      if (!token && user) {
-        const devToken = user.role === 'RESIDENT' ? 'dev-token-resident' : 'dev-token-owner';
-        api.setToken(devToken);
-        token = devToken;
-      }
+      const token = api.getToken();
 
       if (!token) {
         setIsLoading(false);
@@ -102,22 +96,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             try {
               const propRes = await api.get<any[]>('/owner/properties');
               if (propRes.data && propRes.data.length > 0) {
-                const fetchedProperties = propRes.data.map(p => ({
+                const p = propRes.data[0];
+                setActiveProperty({
                   id: p.id,
                   name: p.name,
                   address: p.address,
-                  city: p.city,
+                  city: p.city || 'Gurugram',
                   totalRooms: p._count?.rooms || p.totalRooms || 0,
                   occupiedRooms: p._count?.residents || p.occupiedRooms || 0,
                   totalBeds: p._count?.beds || 0,
                   occupiedBeds: p._count?.residents || 0,
                   type: (p.type || 'BOYS') as any,
-                }));
-                setProperties(fetchedProperties);
-                setActiveProperty(fetchedProperties[0]);
+                });
               }
             } catch {
-              // Ignore if properties endpoint fails
+              // Ignore property fetch error
             }
           }
         } else {
@@ -138,7 +131,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     checkAuth();
   }, []);
 
-  const login = async (email: string, password = 'admin123', selectedRole: UserRole = 'OWNER'): Promise<boolean> => {
+  const login = async (email: string, password = 'admin123', selectedRole?: UserRole): Promise<boolean> => {
     setIsLoading(true);
     setError(null);
 
@@ -213,25 +206,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } finally {
       setIsLoading(false);
     }
-
-    // Direct fallback login for reliable development and testing
-    const fallbackUser: User =
-      selectedRole === 'RESIDENT' || cleanEmail.includes('resident') || cleanEmail.includes('aakash')
-        ? {
-            ...DEMO_RESIDENT_USER,
-            email: cleanEmail || DEMO_RESIDENT_USER.email,
-          }
-        : {
-            ...DEMO_OWNER_USER,
-            email: cleanEmail || DEMO_OWNER_USER.email,
-          };
-
-    const fallbackToken = fallbackUser.role === 'RESIDENT' ? 'dev-token-resident' : 'dev-token-owner';
-    api.setToken(fallbackToken);
-    setUser(fallbackUser);
-    localStorage.setItem('urbannest_user_session', JSON.stringify(fallbackUser));
-    setIsLoading(false);
-    return true;
   };
 
   const logout = async () => {
@@ -275,7 +249,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         user,
         role: user?.role || 'RESIDENT',
         activeProperty,
-        properties,
         setActiveProperty,
         switchRole,
         login,

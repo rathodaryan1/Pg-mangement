@@ -215,7 +215,7 @@ export const PublicLayout: React.FC<{ children: React.ReactNode }> = ({ children
                 Contact & Portals
               </h4>
               <ul className="space-y-2 text-xs text-slate-200">
-                <li><Link to="/contact" className="hover:text-[#C8A45D] transition-colors">Ahmedabad Support</Link></li>
+                <li><Link to="/contact" className="hover:text-[#C8A45D] transition-colors">Bengaluru Support</Link></li>
                 <li><Link to="/login" className="hover:text-[#C8A45D] transition-colors">Sign In Portal</Link></li>
                 <li><Link to="/owner/dashboard" className="hover:text-[#C8A45D] transition-colors">Owner Console</Link></li>
                 <li><Link to="/resident/dashboard" className="hover:text-[#C8A45D] transition-colors">Resident App</Link></li>

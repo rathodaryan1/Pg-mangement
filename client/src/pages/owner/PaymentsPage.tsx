@@ -1,3 +1,4 @@
+import { toast, useToast } from '../../context/ToastContext';
 import React, { useState, useEffect } from 'react';
 import {
   CreditCard,
@@ -84,7 +85,7 @@ export const PaymentsPage: React.FC = () => {
     category: 'ELECTRICITY',
     title: '',
     amount: '',
-    vendor: 'DHBVN Ahmedabad',
+    vendor: 'DHBVN Gurugram',
     date: new Date().toISOString().split('T')[0],
     description: ''
   });
@@ -117,7 +118,7 @@ export const PaymentsPage: React.FC = () => {
     e.preventDefault();
     try {
       if (!manualPayForm.paymentId || !manualPayForm.amount) {
-        alert('Please select an invoice and enter amount');
+        toast.error('Please select an invoice and enter amount');
         return;
       }
       await ownerApi.recordManualPayment(manualPayForm.paymentId, {
@@ -131,7 +132,7 @@ export const PaymentsPage: React.FC = () => {
       setTimeout(() => setToastMessage(null), 4000);
       fetchData();
     } catch (err: any) {
-      alert(err.message || 'Failed to record payment');
+      toast.error(err.message || 'Failed to record payment');
     }
   };
 
@@ -139,7 +140,7 @@ export const PaymentsPage: React.FC = () => {
     e.preventDefault();
     try {
       if (!invoiceForm.residentId || !invoiceForm.amount) {
-        alert('Please select resident and amount');
+        toast.error('Please select resident and amount');
         return;
       }
       await ownerApi.createInvoice({
@@ -155,7 +156,7 @@ export const PaymentsPage: React.FC = () => {
       setTimeout(() => setToastMessage(null), 4000);
       fetchData();
     } catch (err: any) {
-      alert(err.message || 'Failed to generate invoice');
+      toast.error(err.message || 'Failed to generate invoice');
     }
   };
 
@@ -167,7 +168,7 @@ export const PaymentsPage: React.FC = () => {
       setTimeout(() => setToastMessage(null), 3500);
       fetchData();
     } catch (err: any) {
-      alert(err.message || 'Failed to cancel invoice');
+      toast.error(err.message || 'Failed to cancel invoice');
     }
   };
 
@@ -175,7 +176,7 @@ export const PaymentsPage: React.FC = () => {
     e.preventDefault();
     try {
       if (!depositForm.residentId || !depositForm.amount) {
-        alert('Please select resident and deposit amount');
+        toast.error('Please select resident and deposit amount');
         return;
       }
       const sel = residents.find((r) => r.id === depositForm.residentId);
@@ -191,7 +192,7 @@ export const PaymentsPage: React.FC = () => {
       setTimeout(() => setToastMessage(null), 4000);
       fetchData();
     } catch (err: any) {
-      alert(err.message || 'Failed to log deposit');
+      toast.error(err.message || 'Failed to log deposit');
     }
   };
 
@@ -209,7 +210,7 @@ export const PaymentsPage: React.FC = () => {
       setTimeout(() => setToastMessage(null), 4000);
       fetchData();
     } catch (err: any) {
-      alert(err.message || 'Failed to settle deposit');
+      toast.error(err.message || 'Failed to settle deposit');
     }
   };
 
@@ -217,7 +218,7 @@ export const PaymentsPage: React.FC = () => {
     e.preventDefault();
     try {
       if (!expenseForm.title || !expenseForm.amount) {
-        alert('Please enter expense title and amount');
+        toast.error('Please enter expense title and amount');
         return;
       }
       await ownerApi.createExpense({
@@ -234,7 +235,7 @@ export const PaymentsPage: React.FC = () => {
       setTimeout(() => setToastMessage(null), 4000);
       fetchData();
     } catch (err: any) {
-      alert(err.message || 'Failed to log expense');
+      toast.error(err.message || 'Failed to log expense');
     }
   };
 
@@ -246,7 +247,7 @@ export const PaymentsPage: React.FC = () => {
       setTimeout(() => setToastMessage(null), 3500);
       fetchData();
     } catch (err: any) {
-      alert(err.message || 'Failed to delete expense');
+      toast.error(err.message || 'Failed to delete expense');
     }
   };
 
@@ -877,7 +878,7 @@ export const PaymentsPage: React.FC = () => {
                 variant="primary"
                 size="sm"
                 onClick={() => {
-                  alert(`Receipt ${selectedPayment.receiptNumber || 'UN-REC'} downloaded as PDF.`);
+                  toast.error(`Receipt ${selectedPayment.receiptNumber || 'UN-REC'} downloaded as PDF.`);
                   setReceiptModalOpen(false);
                 }}
                 leftIcon={<Download className="w-3.5 h-3.5" />}

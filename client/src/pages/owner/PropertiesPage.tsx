@@ -1,3 +1,4 @@
+import { toast, useToast } from '../../context/ToastContext';
 import React, { useState, useEffect } from 'react';
 import {
   Building2,
@@ -40,7 +41,7 @@ export const PropertiesPage: React.FC = () => {
   const [propertyForm, setPropertyForm] = useState({
     name: '',
     address: '',
-    city: 'Ahmedabad',
+    city: 'Bengaluru',
     phone: '',
     email: '',
     upiId: '',
@@ -95,7 +96,7 @@ export const PropertiesPage: React.FC = () => {
     e.preventDefault();
     try {
       if (!propertyForm.name || !propertyForm.address) {
-        alert('Please fill property name and address');
+        toast.error('Please fill property name and address');
         return;
       }
 
@@ -112,7 +113,7 @@ export const PropertiesPage: React.FC = () => {
       setTimeout(() => setToastMessage(null), 3500);
       fetchData();
     } catch (err: any) {
-      alert(err.message || 'Failed to save property');
+      toast.error(err.message || 'Failed to save property');
     }
   };
 
@@ -121,7 +122,7 @@ export const PropertiesPage: React.FC = () => {
     e.preventDefault();
     try {
       if (!buildingForm.name) {
-        alert('Please enter building name');
+        toast.error('Please enter building name');
         return;
       }
 
@@ -142,7 +143,7 @@ export const PropertiesPage: React.FC = () => {
       setTimeout(() => setToastMessage(null), 3500);
       fetchData();
     } catch (err: any) {
-      alert(err.message || 'Failed to save building');
+      toast.error(err.message || 'Failed to save building');
     }
   };
 
@@ -161,7 +162,7 @@ export const PropertiesPage: React.FC = () => {
       setTimeout(() => setToastMessage(null), 3500);
       fetchData();
     } catch (err: any) {
-      alert(err.message || 'Failed to create floor');
+      toast.error(err.message || 'Failed to create floor');
     }
   };
 
@@ -183,7 +184,7 @@ export const PropertiesPage: React.FC = () => {
       setTimeout(() => setToastMessage(null), 3500);
       fetchData();
     } catch (err: any) {
-      alert(err.message || 'Failed to archive entity');
+      toast.error(err.message || 'Failed to archive entity');
     }
   };
 
@@ -231,7 +232,7 @@ export const PropertiesPage: React.FC = () => {
               size="sm"
               onClick={() => {
                 setEditingProperty(null);
-                setPropertyForm({ name: '', address: '', city: 'Ahmedabad', phone: '', email: '', upiId: '', gstNumber: '' });
+                setPropertyForm({ name: '', address: '', city: 'Bengaluru', phone: '', email: '', upiId: '', gstNumber: '' });
                 setPropertyModalOpen(true);
               }}
               leftIcon={<Plus className="w-3.5 h-3.5" />}
@@ -342,7 +343,7 @@ export const PropertiesPage: React.FC = () => {
                         setPropertyForm({
                           name: prop.name,
                           address: prop.address,
-                          city: prop.city || 'Ahmedabad',
+                          city: prop.city || 'Bengaluru',
                           phone: prop.phone || '',
                           email: prop.email || '',
                           upiId: prop.upiId || '',

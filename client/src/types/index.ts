@@ -1,4 +1,4 @@
-export type UserRole = 'OWNER' | 'MANAGER' | 'RESIDENT' | 'STAFF';
+export type UserRole = 'OWNER' | 'MANAGER' | 'RESIDENT' | 'STAFF' | 'SUPER_ADMIN' | 'RECEPTIONIST' | 'MAINTENANCE' | 'ACCOUNTANT';
 
 export type TenantStatus = 'TRIAL' | 'ACTIVE' | 'SUSPENDED' | 'CANCELLED' | 'EXPIRED' | 'ARCHIVED';
 export type SubscriptionPlan = 'TRIAL' | 'STARTER' | 'PROFESSIONAL' | 'ENTERPRISE';
