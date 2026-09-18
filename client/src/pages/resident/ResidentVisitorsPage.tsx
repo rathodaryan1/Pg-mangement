@@ -222,9 +222,9 @@ export const ResidentVisitorsPage: React.FC = () => {
                         <Clock className="w-3.5 h-3.5" /> Awaiting Warden Approval
                       </span>
                       <Button
-                        variant="secondary"
+                        variant="outline"
                         size="xs"
-                        className="text-rose-600 hover:bg-rose-50 border-none"
+                        className="border-rose-300 text-rose-700 bg-rose-50 hover:bg-rose-100 hover:border-rose-400 font-semibold shadow-xs"
                         onClick={() => handleCancelRequest(vis.id)}
                       >
                         Cancel

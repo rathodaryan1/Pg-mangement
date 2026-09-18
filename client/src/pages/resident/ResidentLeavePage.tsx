@@ -172,9 +172,9 @@ export const ResidentLeavePage: React.FC = () => {
 
                 {isPending && (
                   <Button
-                    variant="secondary"
-                    size="xs"
-                    className="text-red-600 hover:bg-red-50 self-start sm:self-center"
+                    variant="outline"
+                    size="sm"
+                    className="border-rose-300 text-rose-700 bg-rose-50 hover:bg-rose-100 hover:border-rose-400 font-semibold self-start sm:self-center shadow-xs"
                     onClick={() => handleCancelLeave(l.id)}
                   >
                     Cancel Application
@@ -216,7 +216,7 @@ export const ResidentLeavePage: React.FC = () => {
           />
 
           <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
-            <Button variant="secondary" size="sm" type="button" onClick={() => setModalOpen(false)} disabled={isSubmitting}>
+            <Button variant="outline" size="sm" type="button" onClick={() => setModalOpen(false)} disabled={isSubmitting}>
               Cancel
             </Button>
             <Button
