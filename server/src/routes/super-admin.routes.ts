@@ -22,6 +22,7 @@ router.delete('/tenants/:id', SuperAdminController.deleteTenant as any);
 // 3. Tenant Operations & Actions
 router.post('/tenants/:id/suspend', SuperAdminController.suspendTenant as any);
 router.post('/tenants/:id/activate', SuperAdminController.activateTenant as any);
+router.post('/tenants/:id/archive', SuperAdminController.archiveTenant as any);
 router.post('/tenants/:id/reset-owner-password', SuperAdminController.resetOwnerPassword as any);
 router.post('/tenants/:id/impersonate', SuperAdminController.impersonateTenant as any);
 

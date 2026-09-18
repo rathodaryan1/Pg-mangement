@@ -16,6 +16,8 @@ enum TenantStatus {
   ACTIVE
   SUSPENDED
   CANCELLED
+  EXPIRED
+  ARCHIVED
 }
 
 enum SubscriptionPlan {

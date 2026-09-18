@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building2, UserCheck, KeyRound, ArrowRight, ShieldCheck, ShieldAlert } from 'lucide-react';
+import { Building2, UserCheck, ArrowRight, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { UrbanNestLogo } from '../../components/ui/UrbanNestLogo';
@@ -10,8 +10,8 @@ import type { UserRole } from '../../types';
 export const LoginPage: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState('superadmin@urbannest.io');
-  const [password, setPassword] = useState('superadmin123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [selectedRole, setSelectedRole] = useState<UserRole>('SUPER_ADMIN');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -19,16 +19,6 @@ export const LoginPage: React.FC = () => {
   const handleRoleChange = (role: UserRole) => {
     setSelectedRole(role);
     setErrorMsg(null);
-    if (role === 'SUPER_ADMIN') {
-      setEmail('superadmin@urbannest.io');
-      setPassword('superadmin123');
-    } else if (role === 'OWNER') {
-      setEmail('owner@pg.com');
-      setPassword('admin123');
-    } else {
-      setEmail('aakash.v@gmail.com');
-      setPassword('admin123');
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -41,16 +31,29 @@ export const LoginPage: React.FC = () => {
         // Read stored session to determine exact role
         const session = localStorage.getItem('urbannest_user_session');
         const userObj = session ? JSON.parse(session) : null;
-        if (userObj?.role === 'SUPER_ADMIN') {
+        const actualRole: UserRole = userObj?.role;
+
+        // Role verification against selected portal tab
+        if (selectedRole === 'SUPER_ADMIN' && actualRole !== 'SUPER_ADMIN') {
+          throw new Error('Your account does not have access to the Super Admin portal.');
+        }
+        if (selectedRole === 'OWNER' && actualRole !== 'OWNER' && actualRole !== 'MANAGER' && actualRole !== 'STAFF') {
+          throw new Error('Your account does not have access to the PG Owner portal.');
+        }
+        if (selectedRole === 'RESIDENT' && actualRole !== 'RESIDENT') {
+          throw new Error('Your account does not have access to the Resident portal.');
+        }
+
+        if (actualRole === 'SUPER_ADMIN') {
           navigate('/super-admin/dashboard');
-        } else if (userObj?.role === 'RESIDENT') {
+        } else if (actualRole === 'RESIDENT') {
           navigate('/resident/dashboard');
         } else {
           navigate('/owner/dashboard');
         }
       }
     } catch (err: any) {
-      setErrorMsg(err.message || 'Login failed. Please verify credentials.');
+      setErrorMsg(err.message || 'Login failed. Please verify email and password.');
     } finally {
       setIsLoading(false);
     }
@@ -130,11 +133,6 @@ export const LoginPage: React.FC = () => {
                 <span>Sign In Notice</span>
               </div>
               <p className="text-[11px] leading-relaxed text-rose-700">{errorMsg}</p>
-              {errorMsg.toLowerCase().includes('database') && (
-                <p className="text-[10px] text-rose-600 bg-rose-100/60 p-2 rounded mt-1 font-mono">
-                  Tip: If deployed on Render/Vercel, ensure the PostgreSQL DATABASE_URL connection string is configured in your Render service environment variables.
-                </p>
-              )}
             </div>
           )}
 
@@ -144,10 +142,10 @@ export const LoginPage: React.FC = () => {
               type="email"
               placeholder={
                 selectedRole === 'SUPER_ADMIN'
-                  ? 'superadmin@urbannest.io'
+                  ? 'admin@urbannest.io'
                   : selectedRole === 'OWNER'
-                  ? 'owner@pg.com'
-                  : 'aakash.v@gmail.com'
+                  ? 'owner@pgcompany.com'
+                  : 'resident@example.com'
               }
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -178,30 +176,6 @@ export const LoginPage: React.FC = () => {
                 : 'Resident Portal'}
             </Button>
           </form>
-
-          {/* Quick Demo Credentials Panel */}
-          <div className="p-3.5 rounded-lg bg-[#FAF5EB] border border-[#C8A45D]/30 space-y-1.5 text-xs text-left">
-            <p className="font-bold text-[#18231F] flex items-center gap-1.5">
-              <KeyRound className="w-3.5 h-3.5 text-[#B9954E]" /> Standard System Credentials:
-            </p>
-            <div className="space-y-0.5 text-[11px] text-[#68736D]">
-              <p>
-                <strong>Super Admin:</strong>{' '}
-                <span className="font-mono text-[#0B4036]">superadmin@urbannest.io</span> /{' '}
-                <span className="font-mono text-[#18231F]">superadmin123</span>
-              </p>
-              <p>
-                <strong>PG Owner:</strong>{' '}
-                <span className="font-mono text-[#0B4036]">owner@pg.com</span> /{' '}
-                <span className="font-mono text-[#18231F]">admin123</span>
-              </p>
-              <p>
-                <strong>Resident:</strong>{' '}
-                <span className="font-mono text-[#0B4036]">aakash.v@gmail.com</span> /{' '}
-                <span className="font-mono text-[#18231F]">admin123</span>
-              </p>
-            </div>
-          </div>
         </div>
       </div>
     </div>

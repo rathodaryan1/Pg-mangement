@@ -536,6 +536,18 @@ export async function runSaasMultiTenantAudit() {
       } else {
         record('Tenant Lifecycle', 'Restored Login after Reactivation', 'FAIL', 'Login failed after reactivation', reLoginRes.data?.error);
       }
+
+      // 5. Test Archive Tenant B
+      const archiveRes = await apiRequest(`/super-admin/tenants/${tenantBId}/archive`, {
+        method: 'POST',
+        headers: superAdminHeaders,
+      });
+
+      if (archiveRes.ok && archiveRes.data?.data?.status === 'ARCHIVED') {
+        record('Tenant Lifecycle', 'Archive Tenant B', 'PASS', 'Tenant B status set to ARCHIVED with data preserved');
+      } else {
+        record('Tenant Lifecycle', 'Archive Tenant B', 'FAIL', 'Archiving failed', archiveRes.data?.error);
+      }
     } catch (err: any) {
       record('Tenant Lifecycle', 'Tenant Suspension/Activation Cycle', 'FAIL', undefined, err.message);
     }

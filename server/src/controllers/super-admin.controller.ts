@@ -556,6 +556,40 @@ export class SuperAdminController {
     }
   }
 
+  static async archiveTenant(req: AuthRequest, res: Response): Promise<Response | void> {
+    try {
+      const { id } = req.params;
+
+      const tenant = await prisma.tenant.findUnique({ where: { id } });
+      if (!tenant) {
+        return sendError(res, 'Tenant not found', 404, 'NOT_FOUND');
+      }
+
+      const updated = await prisma.tenant.update({
+        where: { id },
+        data: { status: 'ARCHIVED' },
+      });
+
+      await prisma.auditLog.create({
+        data: {
+          tenantId: id,
+          actorId: req.user?.id || null,
+          actorName: req.user?.name || 'Super Administrator',
+          actorRole: 'SUPER_ADMIN',
+          action: 'TENANT_ARCHIVED',
+          entity: 'Tenant',
+          entityId: id,
+          details: `Archived PG tenant "${tenant.name}" (${tenant.email})`,
+        },
+      });
+
+      return sendSuccess(res, updated, `Tenant "${tenant.name}" has been ARCHIVED`);
+    } catch (error: any) {
+      console.error('[SuperAdmin.archiveTenant] Error:', error);
+      return sendError(res, 'Failed to archive tenant', 500, 'INTERNAL_ERROR', error.message);
+    }
+  }
+
   // -------------------------------------------------------------
   // 4. OWNER PASSWORD RESET
   // -------------------------------------------------------------

@@ -91,6 +91,11 @@ export const superAdminApi = {
     return res.data;
   },
 
+  archiveTenant: async (id: string) => {
+    const res = await api.post<Tenant>(`/super-admin/tenants/${id}/archive`, {});
+    return res.data;
+  },
+
   resetOwnerPassword: async (id: string, newPassword: string) => {
     const res = await api.post<any>(`/super-admin/tenants/${id}/reset-owner-password`, { newPassword });
     return res.data;

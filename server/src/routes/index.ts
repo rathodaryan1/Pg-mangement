@@ -60,20 +60,35 @@ router.get('/', (req, res) => {
 
 // Production Safe Database Readiness & Health Check
 router.get('/health', async (req, res) => {
-  let dbStatus = 'DISCONNECTED';
+  let dbStatus = 'DATABASE_UNAVAILABLE';
   let isConnected = false;
   let latencyMs = 0;
 
   try {
     const startTime = Date.now();
-    const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Database ping timeout')), 4000));
+    const timeout = new Promise((_, reject) => {
+      const err: any = new Error('DATABASE_TIMEOUT');
+      err.code = 'TIMEOUT';
+      setTimeout(() => reject(err), 4000);
+    });
+
     await Promise.race([prisma.$queryRaw`SELECT 1`, timeout]);
     latencyMs = Date.now() - startTime;
-    dbStatus = 'CONNECTED';
+    dbStatus = 'DATABASE_CONNECTED';
     isConnected = true;
   } catch (error: any) {
-    dbStatus = 'DISCONNECTED';
     isConnected = false;
+    if (error.code === 'TIMEOUT' || error.message?.includes('DATABASE_TIMEOUT')) {
+      dbStatus = 'DATABASE_TIMEOUT';
+    } else if (
+      error.message?.includes('password authentication failed') ||
+      error.code === 'P1000' ||
+      error.message?.includes('Authentication failed')
+    ) {
+      dbStatus = 'DATABASE_AUTH_ERROR';
+    } else {
+      dbStatus = 'DATABASE_UNAVAILABLE';
+    }
   }
 
   const statusCode = isConnected ? 200 : 503;
@@ -86,7 +101,7 @@ router.get('/health', async (req, res) => {
     latencyMs: isConnected ? latencyMs : undefined,
     message: isConnected
       ? 'Urban Nest API and PostgreSQL database are fully operational.'
-      : 'Database service is temporarily unreachable. Please check PostgreSQL connection string.',
+      : 'Database service is temporarily unreachable. Please verify PostgreSQL connection in server environment.',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
   });
