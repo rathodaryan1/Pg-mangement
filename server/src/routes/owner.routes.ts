@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { OwnerController } from '../controllers/owner.controller';
-import { authenticateToken, requireOwnerOrStaff } from '../middleware/auth';
+import { authenticateToken, requireOwnerOrStaff, checkPlanLimit } from '../middleware/auth';
 
 const router = Router();
 
@@ -14,7 +14,7 @@ router.get('/dashboard', OwnerController.getDashboard as any);
 // 2. Properties (CRUD)
 router.get('/properties', OwnerController.getProperties as any);
 router.get('/properties/:id', OwnerController.getPropertyById as any);
-router.post('/properties', OwnerController.createProperty as any);
+router.post('/properties', checkPlanLimit('properties') as any, OwnerController.createProperty as any);
 router.patch('/properties/:id', OwnerController.updateProperty as any);
 router.delete('/properties/:id', OwnerController.archiveProperty as any);
 
@@ -31,7 +31,7 @@ router.delete('/floors/:id', OwnerController.archiveFloor as any);
 // 4. Rooms & Beds (CRUD)
 router.get('/rooms', OwnerController.getRooms as any);
 router.get('/rooms/:id', OwnerController.getRoomById as any);
-router.post('/rooms', OwnerController.createRoom as any);
+router.post('/rooms', checkPlanLimit('rooms') as any, OwnerController.createRoom as any);
 router.patch('/rooms/:id', OwnerController.updateRoom as any);
 router.delete('/rooms/:id', OwnerController.archiveRoom as any);
 router.patch('/beds/:bedId', OwnerController.updateBedStatus as any);
@@ -39,7 +39,7 @@ router.patch('/beds/:bedId', OwnerController.updateBedStatus as any);
 // 5. Residents & Dossier (CRUD)
 router.get('/residents', OwnerController.getResidents as any);
 router.get('/residents/:id', OwnerController.getResidentById as any);
-router.post('/residents', OwnerController.createResident as any);
+router.post('/residents', checkPlanLimit('residents') as any, OwnerController.createResident as any);
 router.patch('/residents/:id', OwnerController.updateResident as any);
 router.delete('/residents/:id', OwnerController.archiveResident as any);
 

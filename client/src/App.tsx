@@ -138,21 +138,28 @@ const AppRoutes: React.FC = () => {
 
       {/* Authentication */}
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/super-admin/login" element={<LoginPage />} />
 
       {/* ========================================================
           SAAS PLATFORM: SUPER ADMIN PORTAL (/super-admin/*)
          ======================================================== */}
+      <Route path="/super-admin" element={<Navigate to="/super-admin/dashboard" replace />} />
       <Route path="/super-admin/dashboard" element={<ProtectedSuperAdminRoute><SuperAdminDashboardPage /></ProtectedSuperAdminRoute>} />
       <Route path="/super-admin/tenants" element={<ProtectedSuperAdminRoute><SuperAdminTenantsPage /></ProtectedSuperAdminRoute>} />
+      <Route path="/super-admin/tenants/new" element={<ProtectedSuperAdminRoute><SuperAdminTenantsPage /></ProtectedSuperAdminRoute>} />
       <Route path="/super-admin/tenants/:id" element={<ProtectedSuperAdminRoute><SuperAdminTenantDetailPage /></ProtectedSuperAdminRoute>} />
       <Route path="/super-admin/owners" element={<ProtectedSuperAdminRoute><SuperAdminOwnersPage /></ProtectedSuperAdminRoute>} />
+      <Route path="/super-admin/users" element={<ProtectedSuperAdminRoute><SuperAdminOwnersPage /></ProtectedSuperAdminRoute>} />
       <Route path="/super-admin/subscriptions" element={<ProtectedSuperAdminRoute><SuperAdminSubscriptionsPage /></ProtectedSuperAdminRoute>} />
+      <Route path="/super-admin/billing" element={<ProtectedSuperAdminRoute><SuperAdminSubscriptionsPage /></ProtectedSuperAdminRoute>} />
       <Route path="/super-admin/plans" element={<ProtectedSuperAdminRoute><SuperAdminPlansPage /></ProtectedSuperAdminRoute>} />
+      <Route path="/super-admin/analytics" element={<ProtectedSuperAdminRoute><SuperAdminRevenuePage /></ProtectedSuperAdminRoute>} />
       <Route path="/super-admin/revenue" element={<ProtectedSuperAdminRoute><SuperAdminRevenuePage /></ProtectedSuperAdminRoute>} />
       <Route path="/super-admin/usage" element={<ProtectedSuperAdminRoute><SuperAdminUsagePage /></ProtectedSuperAdminRoute>} />
       <Route path="/super-admin/support" element={<ProtectedSuperAdminRoute><SuperAdminSupportPage /></ProtectedSuperAdminRoute>} />
       <Route path="/super-admin/audit-logs" element={<ProtectedSuperAdminRoute><SuperAdminAuditLogsPage /></ProtectedSuperAdminRoute>} />
       <Route path="/super-admin/system-health" element={<ProtectedSuperAdminRoute><SuperAdminSystemHealthPage /></ProtectedSuperAdminRoute>} />
+      <Route path="/super-admin/health" element={<ProtectedSuperAdminRoute><SuperAdminSystemHealthPage /></ProtectedSuperAdminRoute>} />
       <Route path="/super-admin/settings" element={<ProtectedSuperAdminRoute><SuperAdminSettingsPage /></ProtectedSuperAdminRoute>} />
 
       {/* ========================================================

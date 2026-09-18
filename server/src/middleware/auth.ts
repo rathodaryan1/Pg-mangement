@@ -196,3 +196,78 @@ export const requireResident = (req: AuthRequest, res: Response, next: NextFunct
 
   next();
 };
+
+export const checkPlanLimit = (resource: 'properties' | 'rooms' | 'beds' | 'residents' | 'staff') => {
+  return async (req: AuthRequest, res: Response, next: NextFunction): Promise<Response | void> => {
+    try {
+      if (!req.user || req.user.role === 'SUPER_ADMIN') {
+        return next();
+      }
+
+      const tenantId = req.user.tenantId;
+      if (!tenantId) {
+        return next();
+      }
+
+      const tenant = await prisma.tenant.findUnique({
+        where: { id: tenantId },
+        select: {
+          maxProperties: true,
+          maxRooms: true,
+          maxResidents: true,
+        },
+      });
+
+      if (!tenant) return next();
+
+      if (resource === 'properties') {
+        const count = await prisma.property.count({ where: { tenantId } });
+        if (count >= tenant.maxProperties) {
+          return sendError(
+            res,
+            `SaaS plan limit reached: Your plan allows a maximum of ${tenant.maxProperties} properties. Please upgrade your plan.`,
+            403,
+            'PLAN_LIMIT_REACHED'
+          );
+        }
+      } else if (resource === 'rooms') {
+        const properties = await prisma.property.findMany({ where: { tenantId }, select: { id: true } });
+        const propIds = properties.map((p) => p.id);
+        const count = await prisma.room.count({ where: { propertyId: { in: propIds } } });
+        if (count >= tenant.maxRooms) {
+          return sendError(
+            res,
+            `SaaS plan limit reached: Your plan allows a maximum of ${tenant.maxRooms} rooms. Please upgrade your plan.`,
+            403,
+            'PLAN_LIMIT_REACHED'
+          );
+        }
+      } else if (resource === 'residents') {
+        const properties = await prisma.property.findMany({ where: { tenantId }, select: { id: true } });
+        const propIds = properties.map((p) => p.id);
+        const count = await prisma.resident.count({ where: { propertyId: { in: propIds }, status: 'ACTIVE' } });
+        if (count >= tenant.maxResidents) {
+          return sendError(
+            res,
+            `SaaS plan limit reached: Your plan allows a maximum of ${tenant.maxResidents} residents. Please upgrade your plan.`,
+            403,
+            'PLAN_LIMIT_REACHED'
+          );
+        }
+      }
+
+      next();
+    } catch (err: any) {
+      next();
+    }
+  };
+};
+
+export const requireFeature = (featureName: string) => {
+  return async (req: AuthRequest, res: Response, next: NextFunction): Promise<Response | void> => {
+    if (!req.user || req.user.role === 'SUPER_ADMIN') {
+      return next();
+    }
+    next();
+  };
+};

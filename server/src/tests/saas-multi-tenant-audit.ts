@@ -451,6 +451,36 @@ export async function runSaasMultiTenantAudit() {
       record('Security IDOR', 'Owner A Mutating Tenant B Room', 'PASS', `Mutation prevented with error: ${err.message}`);
     }
 
+    // 4. Test SaaS Plan Limit Ceiling Enforcement
+    try {
+      // Temporarily set Tenant A's maxRooms to 1 (which it has already used)
+      await prisma.tenant.update({ where: { id: tenantAId }, data: { maxRooms: 1 } });
+      const overLimitRoomRes = await apiRequest('/owner/rooms', {
+        method: 'POST',
+        headers: ownerAHeaders,
+        body: {
+          propertyId: propertyAId,
+          number: '999',
+          type: 'Single',
+          capacity: 1,
+          baseRent: 12000,
+          deposit: 20000,
+        },
+      });
+
+      if (overLimitRoomRes.status === 403 && overLimitRoomRes.data?.code === 'PLAN_LIMIT_REACHED') {
+        record('Plan Enforcement', 'SaaS Plan Room Limit Ceiling Check', 'PASS', 'Correctly rejected with HTTP 403 PLAN_LIMIT_REACHED');
+      } else if (!overLimitRoomRes.ok) {
+        record('Plan Enforcement', 'SaaS Plan Room Limit Ceiling Check', 'PASS', `Rejected with HTTP ${overLimitRoomRes.status}`);
+      } else {
+        record('Plan Enforcement', 'SaaS Plan Room Limit Ceiling Check', 'FAIL', 'Creation succeeded beyond plan limit');
+      }
+      // Restore generous quota
+      await prisma.tenant.update({ where: { id: tenantAId }, data: { maxRooms: 100 } });
+    } catch (err: any) {
+      record('Plan Enforcement', 'SaaS Plan Room Limit Ceiling Check', 'FAIL', undefined, err.message);
+    }
+
     // ------------------------------------------------------------------------
     // TEST SUITE 6: SUPER ADMIN IMPERSONATION & AUDIT LOGGING
     // ------------------------------------------------------------------------

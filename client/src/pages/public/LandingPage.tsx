@@ -54,19 +54,19 @@ export const LandingPage: React.FC = () => {
                   className="font-semibold shadow-xs"
                   rightIcon={<ArrowRight className="w-4 h-4" />}
                 >
-                  Get Started
+                  Start Managing Your PG
+                </Button>
+              </Link>
+
+              <Link to="/pricing">
+                <Button variant="outline" size="lg" className="font-semibold border-[#DDE2DD] text-[#0B4036]">
+                  View SaaS Plans
                 </Button>
               </Link>
 
               <Link to="/solutions">
-                <Button variant="outline" size="lg" className="font-semibold border-[#DDE2DD] text-[#0B4036]">
-                  Explore the Platform
-                </Button>
-              </Link>
-
-              <Link to="/owner/dashboard">
                 <Button variant="ghost" size="lg" className="text-[#68736D] font-medium hover:bg-[#EAF2EE]">
-                  Live Demo
+                  Explore Platform
                 </Button>
               </Link>
             </div>
@@ -378,20 +378,20 @@ export const LandingPage: React.FC = () => {
       {/* 5. FINAL CALL TO ACTION */}
       <section className="max-w-4xl mx-auto px-4 sm:px-6 text-center space-y-5 pt-6">
         <h2 className="text-2xl sm:text-3xl font-bold text-[#18231F]">
-          Experience a better way to run your PG.
+          Experience a better way to run your PG network.
         </h2>
         <p className="text-xs sm:text-sm text-[#68736D] max-w-lg mx-auto">
-          Start exploring Urban Nest today with pre-configured sample properties.
+          Start managing multiple PG branches, residents, and automated payments with Urban Nest today.
         </p>
         <div className="flex items-center justify-center gap-3 pt-2">
           <Link to="/login">
             <Button variant="primary" size="lg" className="font-bold shadow-xs">
-              Sign In to Portal
+              Start Managing Your PG
             </Button>
           </Link>
           <Link to="/pricing">
             <Button variant="outline" size="lg" className="font-semibold border-[#DDE2DD] text-[#0B4036]">
-              View Plans
+              View SaaS Plans
             </Button>
           </Link>
         </div>
