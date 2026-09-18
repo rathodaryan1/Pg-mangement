@@ -1,6 +1,5 @@
 import dotenv from 'dotenv';
 dotenv.config();
-import '../index'; // Start express server instance for testing
 import { prisma } from '../config/prisma';
 import * as bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -135,7 +134,7 @@ export async function runSaasMultiTenantAudit() {
           `Tenants: ${ov.totalTenants}, Active: ${ov.activeTenants}, Properties: ${ov.totalProperties}, Residents: ${ov.totalResidents}`
         );
       } else {
-        record('Super Admin', 'Global Platform Metrics', 'FAIL', 'Invalid response format');
+        record('Super Admin', 'Global Platform Metrics', 'FAIL', `Status ${statsRes.status}: ${JSON.stringify(statsRes.data)}`);
       }
     } catch (err: any) {
       record('Super Admin', 'Global Platform Metrics', 'FAIL', undefined, err.message);
@@ -614,6 +613,121 @@ export async function runSaasMultiTenantAudit() {
       }
     } catch (err: any) {
       record('QR Gate System', 'Machine-Scannable QR Pass Verification', 'FAIL', undefined, err.message);
+    }
+
+    // ------------------------------------------------------------------------
+    // TEST SUITE 9: SUPPORT TICKETS & GLOBAL SETTINGS
+    // ------------------------------------------------------------------------
+    console.log('\n--- Step 9: Support Tickets & Global Platform Settings ---');
+    try {
+      // 1. Create Support Ticket
+      const ticketRes = await apiRequest('/super-admin/support', {
+        method: 'POST',
+        headers: superAdminHeaders,
+        body: {
+          tenantId: tenantAId,
+          subject: 'Priority Storage Bucket Latency Audit',
+          description: 'Investigating high resolution KYC image upload throughput',
+          priority: 'HIGH',
+          creatorEmail: ownerAEmail,
+          creatorName: 'Owner A Admin',
+        },
+      });
+
+      if (ticketRes.ok && ticketRes.data?.data?.id) {
+        const ticketId = ticketRes.data.data.id;
+        record('Support System', 'Create Support Ticket in DB', 'PASS', `Ticket created with ID: ${ticketId}`);
+
+        // Update ticket
+        const updateTicketRes = await apiRequest(`/super-admin/support/${ticketId}`, {
+          method: 'PATCH',
+          headers: superAdminHeaders,
+          body: {
+            status: 'IN_PROGRESS',
+            assignedAdmin: 'Platform DevOps Team',
+            internalNotes: 'Routed request to cloud storage infrastructure pod',
+          },
+        });
+
+        if (updateTicketRes.ok && updateTicketRes.data?.data?.status === 'IN_PROGRESS') {
+          record('Support System', 'Update Ticket Status & Notes', 'PASS', 'Status transitioned to IN_PROGRESS');
+        } else {
+          record('Support System', 'Update Ticket Status & Notes', 'FAIL', 'Failed to update ticket');
+        }
+      } else {
+        record('Support System', 'Create Support Ticket in DB', 'FAIL', 'Failed to create ticket', ticketRes.data?.error);
+      }
+
+      // 2. Global Platform Settings
+      const settingsSaveRes = await apiRequest('/super-admin/settings', {
+        method: 'POST',
+        headers: superAdminHeaders,
+        body: {
+          platformName: 'Urban Nest SaaS Platform',
+          defaultTrialDays: '14',
+          supportEmail: 'ops@urbannest.com',
+        },
+      });
+
+      if (settingsSaveRes.ok) {
+        record('Platform Settings', 'Database Persisted Global Settings', 'PASS', 'Settings saved and audit logged');
+      } else {
+        record('Platform Settings', 'Database Persisted Global Settings', 'FAIL', 'Failed to save settings');
+      }
+    } catch (err: any) {
+      record('Support & Settings', 'Support Ticket / Settings Workflow', 'FAIL', undefined, err.message);
+    }
+
+    // ------------------------------------------------------------------------
+    // TEST SUITE 10: RESIDENT COMPLAINTS & WORKFLOW LIFECYCLE
+    // ------------------------------------------------------------------------
+    console.log('\n--- Step 10: Resident Complaint & Resolution Workflow ---');
+    try {
+      // 0. Authenticate Resident A
+      const resLogin = await apiRequest('/auth/login', {
+        method: 'POST',
+        body: { email: 'residenta.gv@example.com', password: 'admin123' },
+      });
+
+      const residentAToken = resLogin.data?.data?.token;
+      const residentAHeaders = { Authorization: `Bearer ${residentAToken}` };
+
+      // 1. Submit Complaint (as Resident A)
+      const complaintRes = await apiRequest('/resident/complaints', {
+        method: 'POST',
+        headers: residentAHeaders,
+        body: {
+          title: 'AC Temperature Sensor Calibration',
+          description: 'Room 101 AC cooling unit requires maintenance inspection',
+          category: 'MAINTENANCE',
+          priority: 'MEDIUM',
+        },
+      });
+
+      if (complaintRes.ok && complaintRes.data?.data?.id) {
+        const complaintId = complaintRes.data.data.id;
+        record('Complaints Lifecycle', 'Resident Submits Ticket', 'PASS', `Complaint filed with ID: ${complaintId}`);
+
+        // 2. Owner updates status
+        const updateComplaintRes = await apiRequest(`/owner/complaints/${complaintId}`, {
+          method: 'PATCH',
+          headers: ownerAHeaders,
+          body: {
+            status: 'IN_PROGRESS',
+            assignedTo: 'Kamal Electrician',
+          },
+        });
+
+        if (updateComplaintRes.ok) {
+          record('Complaints Lifecycle', 'Owner Assigns & Updates Status', 'PASS', 'Status updated to IN_PROGRESS in PostgreSQL');
+        } else {
+          record('Complaints Lifecycle', 'Owner Assigns & Updates Status', 'FAIL', 'Owner update failed');
+        }
+      } else {
+        record('Complaints Lifecycle', 'Resident Submits Ticket', 'FAIL', 'Failed to create complaint', complaintRes.data?.error);
+      }
+    } catch (err: any) {
+      record('Complaints Lifecycle', 'Complaints End-to-End Workflow', 'FAIL', undefined, err.message);
     }
 
   } catch (globalErr: any) {

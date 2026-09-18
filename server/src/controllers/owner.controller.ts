@@ -1540,16 +1540,27 @@ export class OwnerController {
 
   static async updateComplaintStatus(req: AuthRequest, res: Response): Promise<Response> {
     try {
-      const { status, assignedStaff, comment } = req.body;
+      const { status, assignedStaff, assignedTo, comment } = req.body;
       const complaintId = req.params.id;
+
+      const validStatuses = ['REPORTED', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'];
+      let mappedStatus = status ? status.toString().toUpperCase().replace(/[-\s]/g, '_') : undefined;
+      if (mappedStatus && !validStatuses.includes(mappedStatus)) {
+        if (mappedStatus.includes('PROGRESS')) mappedStatus = 'IN_PROGRESS';
+        else if (mappedStatus.includes('RESOLV')) mappedStatus = 'RESOLVED';
+        else if (mappedStatus.includes('CLOSE')) mappedStatus = 'CLOSED';
+        else mappedStatus = 'REPORTED';
+      }
+
+      const staff = assignedStaff !== undefined ? assignedStaff : assignedTo;
 
       const updated = await prisma.$transaction(async (tx) => {
         const comp = await tx.complaint.update({
           where: { id: complaintId },
           data: {
-            ...(status && { status }),
-            ...(assignedStaff !== undefined && { assignedStaff }),
-            ...(status === 'RESOLVED' && { resolvedAt: new Date() }),
+            ...(mappedStatus && { status: mappedStatus as any }),
+            ...(staff !== undefined && { assignedStaff: staff }),
+            ...(mappedStatus === 'RESOLVED' && { resolvedAt: new Date() }),
           },
         });
 
@@ -1557,7 +1568,7 @@ export class OwnerController {
           await tx.maintenanceActivity.create({
             data: {
               complaintId,
-              status: (status || comp.status) as any,
+              status: (mappedStatus || comp.status) as any,
               updatedBy: req.user?.name || 'Owner',
               comment: comment.trim(),
             },

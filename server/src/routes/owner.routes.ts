@@ -80,6 +80,8 @@ router.post('/visitors/:id/check-out', OwnerController.checkOutVisitor as any);
 // 11. Maintenance & Complaints
 router.get('/complaints', OwnerController.getComplaints as any);
 router.post('/complaints', OwnerController.createComplaint as any);
+router.patch('/complaints/:id', OwnerController.updateComplaintStatus as any);
+router.put('/complaints/:id', OwnerController.updateComplaintStatus as any);
 router.patch('/complaints/:id/status', OwnerController.updateComplaintStatus as any);
 router.post('/complaints/:id/comments', OwnerController.addComplaintComment as any);
 

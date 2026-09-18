@@ -7,43 +7,57 @@ import { AuditService } from '../services/audit.service';
 import { StorageService } from '../utils/supabase';
 import { config } from '../config/env';
 
+async function withDbRetry<T>(fn: () => Promise<T>, retries = 3): Promise<T> {
+  for (let i = 0; i <= retries; i++) {
+    try {
+      return await fn();
+    } catch (err: any) {
+      if (i === retries) throw err;
+      await new Promise((r) => setTimeout(r, 400 * (i + 1)));
+    }
+  }
+  throw new Error('Database operation failed after retries');
+}
+
 export class ResidentController {
   private static async getResident(req: AuthRequest) {
-    if (req.user?.residentId) {
-      const res = await prisma.resident.findUnique({
-        where: { id: req.user.residentId },
-        include: {
-          bed: { include: { room: { include: { floor: { include: { building: true } } } } } },
-          property: true,
-        },
-      });
-      if (res) return res;
-    }
+    return withDbRetry(async () => {
+      if (req.user?.residentId) {
+        const res = await prisma.resident.findUnique({
+          where: { id: req.user.residentId },
+          include: {
+            bed: { include: { room: { include: { floor: { include: { building: true } } } } } },
+            property: true,
+          },
+        });
+        if (res) return res;
+      }
 
-    if (req.user?.id) {
-      const res = await prisma.resident.findUnique({
-        where: { userId: req.user.id },
-        include: {
-          bed: { include: { room: { include: { floor: { include: { building: true } } } } } },
-          property: true,
-        },
-      });
-      if (res) return res;
-    }
+      if (req.user?.id) {
+        const res = await prisma.resident.findUnique({
+          where: { userId: req.user.id },
+          include: {
+            bed: { include: { room: { include: { floor: { include: { building: true } } } } } },
+            property: true,
+          },
+        });
+        if (res) return res;
+      }
 
-    // Lookup by email
-    if (req.user?.email) {
-      const res = await prisma.resident.findFirst({
-        where: { email: req.user.email.toLowerCase().trim() },
-        include: {
-          bed: { include: { room: { include: { floor: { include: { building: true } } } } } },
-          property: true,
-        },
-      });
-      if (res) return res;
-    }
+      // Lookup by email
+      if (req.user?.email) {
+        const res = await prisma.resident.findFirst({
+          where: { email: req.user.email.toLowerCase().trim() },
+          include: {
+            bed: { include: { room: { include: { floor: { include: { building: true } } } } } },
+            property: true,
+          },
+        });
+        if (res) return res;
+      }
 
-    return null;
+      return null;
+    });
   }
 
   // ==========================================================================
@@ -658,6 +672,25 @@ export class ResidentController {
 
       const ticketNumber = `TKT-${Math.floor(1000 + Math.random() * 9000)}`;
 
+      const validCategories = ['PLUMBING', 'ELECTRICAL', 'AIR_CONDITIONING', 'WIFI_INTERNET', 'CLEANING', 'CARPENTRY', 'PEST_CONTROL', 'OTHER'];
+      let mappedCategory = (category || 'OTHER').toString().toUpperCase().replace(/[-\s]/g, '_');
+      if (!validCategories.includes(mappedCategory)) {
+        if (mappedCategory.includes('AC') || mappedCategory.includes('AIR')) mappedCategory = 'AIR_CONDITIONING';
+        else if (mappedCategory.includes('ELEC')) mappedCategory = 'ELECTRICAL';
+        else if (mappedCategory.includes('PLUMB')) mappedCategory = 'PLUMBING';
+        else if (mappedCategory.includes('WIFI') || mappedCategory.includes('NET') || mappedCategory.includes('INTERNET')) mappedCategory = 'WIFI_INTERNET';
+        else if (mappedCategory.includes('CLEAN')) mappedCategory = 'CLEANING';
+        else if (mappedCategory.includes('CARPENTER') || mappedCategory.includes('CARPENTRY')) mappedCategory = 'CARPENTRY';
+        else if (mappedCategory.includes('PEST')) mappedCategory = 'PEST_CONTROL';
+        else mappedCategory = 'OTHER';
+      }
+
+      const validPriorities = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
+      let mappedPriority = (priority || 'MEDIUM').toString().toUpperCase();
+      if (!validPriorities.includes(mappedPriority)) {
+        mappedPriority = 'MEDIUM';
+      }
+
       const complaint = await prisma.complaint.create({
         data: {
           ticketNumber,
@@ -666,8 +699,8 @@ export class ResidentController {
           roomId: resident.bed?.roomId || null,
           title: title.trim(),
           description: description.trim(),
-          category: (category || 'OTHER') as any,
-          priority: (priority || 'MEDIUM') as any,
+          category: mappedCategory as any,
+          priority: mappedPriority as any,
           status: 'REPORTED',
         },
       });

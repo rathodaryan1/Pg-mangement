@@ -57,6 +57,7 @@ model Tenant {
   users                 User[]
   properties            Property[]
   auditLogs             AuditLog[]
+  supportTickets        SupportTicket[]
   createdAt             DateTime           @default(now())
   updatedAt             DateTime           @updatedAt
 
@@ -768,5 +769,42 @@ model OperationalTask {
   updatedAt   DateTime     @updatedAt
 
   @@index([propertyId])
+}
+
+// -------------------------------------------------------------
+// 17. PLATFORM SUPPORT TICKETS
+// -------------------------------------------------------------
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING_FOR_CUSTOMER
+  RESOLVED
+  CLOSED
+}
+
+model SupportTicket {
+  id            String         @id @default(uuid())
+  tenantId      String?
+  tenant        Tenant?        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  creatorEmail  String
+  creatorName   String?
+  subject       String
+  description   String
+  priority      TicketPriority @default(MEDIUM)
+  status        TicketStatus   @default(OPEN)
+  assignedAdmin String?
+  internalNotes String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([tenantId])
+  @@index([status])
 }
 

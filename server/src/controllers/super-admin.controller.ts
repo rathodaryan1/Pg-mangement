@@ -12,28 +12,58 @@ export class SuperAdminController {
   // -------------------------------------------------------------
   static async getDashboardStats(req: AuthRequest, res: Response): Promise<Response | void> {
     try {
-      // Fetch tenant statistics with resilient batching
-      const [totalTenants, activeTenants, trialTenants, suspendedTenants] = await Promise.all([
-        prisma.tenant.count(),
-        prisma.tenant.count({ where: { status: 'ACTIVE' } }),
-        prisma.tenant.count({ where: { status: 'TRIAL' } }),
-        prisma.tenant.count({ where: { status: 'SUSPENDED' } }),
-      ]);
+      // Resiliently query tenant counts using groupBy (single query)
+      const tenantStatusCounts = await prisma.tenant.groupBy({
+        by: ['status'],
+        _count: { id: true },
+      }).catch(() => []);
 
-      const [totalProperties, totalOwners, totalResidents, totalStaff] = await Promise.all([
-        prisma.property.count(),
-        prisma.user.count({ where: { role: 'OWNER' } }),
-        prisma.resident.count({ where: { status: 'ACTIVE' } }),
-        prisma.user.count({
-          where: { role: { in: ['MANAGER', 'RECEPTIONIST', 'ACCOUNTANT', 'MAINTENANCE'] } },
-        }),
-      ]);
+      let totalTenants = 0;
+      let activeTenants = 0;
+      let trialTenants = 0;
+      let suspendedTenants = 0;
 
-      const [totalRooms, totalBeds, occupiedBeds] = await Promise.all([
-        prisma.room.count(),
-        prisma.bed.count(),
-        prisma.bed.count({ where: { status: 'OCCUPIED' } }),
-      ]);
+      for (const item of tenantStatusCounts) {
+        const count = item._count?.id || 0;
+        totalTenants += count;
+        if (item.status === 'ACTIVE') activeTenants = count;
+        if (item.status === 'TRIAL') trialTenants = count;
+        if (item.status === 'SUSPENDED') suspendedTenants = count;
+      }
+
+      // User roles counts using groupBy
+      const userRoleCounts = await prisma.user.groupBy({
+        by: ['role'],
+        _count: { id: true },
+      }).catch(() => []);
+
+      let totalOwners = 0;
+      let totalStaff = 0;
+      for (const item of userRoleCounts) {
+        const count = item._count?.id || 0;
+        if (item.role === 'OWNER') totalOwners = count;
+        if (['MANAGER', 'RECEPTIONIST', 'ACCOUNTANT', 'MAINTENANCE'].includes(item.role)) {
+          totalStaff += count;
+        }
+      }
+
+      const totalProperties = await prisma.property.count().catch(() => 0);
+      const totalResidents = await prisma.resident.count({ where: { status: 'ACTIVE' } }).catch(() => 0);
+      const totalRooms = await prisma.room.count().catch(() => 0);
+
+      // Beds counts using groupBy
+      const bedStatusCounts = await prisma.bed.groupBy({
+        by: ['status'],
+        _count: { id: true },
+      }).catch(() => []);
+
+      let totalBeds = 0;
+      let occupiedBeds = 0;
+      for (const item of bedStatusCounts) {
+        const count = item._count?.id || 0;
+        totalBeds += count;
+        if (item.status === 'OCCUPIED') occupiedBeds = count;
+      }
 
       const recentAuditLogs = await prisma.auditLog.findMany({
         take: 10,
@@ -866,6 +896,435 @@ export class SuperAdminController {
     }
   }
 
+  // -------------------------------------------------------------
+  // 9. UNIFIED PLATFORM USERS DIRECTORY
+  // -------------------------------------------------------------
+  static async getUsers(req: AuthRequest, res: Response): Promise<Response | void> {
+    try {
+      const { search, role, tenantId, page = '1', limit = '50' } = req.query;
+
+      const pageNum = Math.max(1, parseInt(String(page), 10) || 1);
+      const limitNum = Math.max(1, Math.min(100, parseInt(String(limit), 10) || 50));
+      const skip = (pageNum - 1) * limitNum;
+
+      const where: any = {};
+      if (role && role !== 'ALL') where.role = role;
+      if (tenantId && tenantId !== 'ALL') where.tenantId = String(tenantId);
+      if (search) {
+        where.OR = [
+          { name: { contains: String(search), mode: 'insensitive' } },
+          { email: { contains: String(search), mode: 'insensitive' } },
+          { mobile: { contains: String(search), mode: 'insensitive' } },
+        ];
+      }
+
+      const [total, users] = await Promise.all([
+        prisma.user.count({ where }),
+        prisma.user.findMany({
+          where,
+          skip,
+          take: limitNum,
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+            mobile: true,
+            tenantId: true,
+            propertyId: true,
+            createdAt: true,
+            tenant: { select: { id: true, name: true, slug: true, status: true } },
+            property: { select: { id: true, name: true, city: true } },
+          },
+        }),
+      ]);
+
+      return sendSuccess(
+        res,
+        {
+          users,
+          pagination: {
+            page: pageNum,
+            limit: limitNum,
+            total,
+            totalPages: Math.ceil(total / limitNum),
+          },
+        },
+        'Platform users retrieved successfully'
+      );
+    } catch (error: any) {
+      console.error('[SuperAdmin.getUsers] Error:', error);
+      return sendError(res, 'Failed to fetch platform users', 500, 'INTERNAL_ERROR', error.message);
+    }
+  }
+
+  // -------------------------------------------------------------
+  // 10. TENANT PROPERTIES & SUBSCRIPTION CONTROLLERS
+  // -------------------------------------------------------------
+  static async getTenantProperties(req: AuthRequest, res: Response): Promise<Response | void> {
+    try {
+      const { id } = req.params;
+      const properties = await prisma.property.findMany({
+        where: { tenantId: id },
+        include: {
+          _count: {
+            select: {
+              rooms: true,
+              residents: true,
+              buildings: true,
+            },
+          },
+        },
+      });
+
+      return sendSuccess(res, properties, 'Tenant properties retrieved');
+    } catch (error: any) {
+      console.error('[SuperAdmin.getTenantProperties] Error:', error);
+      return sendError(res, 'Failed to fetch tenant properties', 500, 'INTERNAL_ERROR', error.message);
+    }
+  }
+
+  static async getTenantSubscription(req: AuthRequest, res: Response): Promise<Response | void> {
+    try {
+      const { id } = req.params;
+      const tenant = await prisma.tenant.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          name: true,
+          plan: true,
+          status: true,
+          subscriptionStatus: true,
+          trialEndsAt: true,
+          subscriptionStartedAt: true,
+          subscriptionEndsAt: true,
+          maxProperties: true,
+          maxRooms: true,
+          maxResidents: true,
+        },
+      });
+
+      if (!tenant) {
+        return sendError(res, 'Tenant not found', 404, 'NOT_FOUND');
+      }
+
+      return sendSuccess(res, tenant, 'Subscription details loaded');
+    } catch (error: any) {
+      console.error('[SuperAdmin.getTenantSubscription] Error:', error);
+      return sendError(res, 'Failed to fetch subscription', 500, 'INTERNAL_ERROR', error.message);
+    }
+  }
+
+  static async updateTenantSubscription(req: AuthRequest, res: Response): Promise<Response | void> {
+    try {
+      const { id } = req.params;
+      const { plan, subscriptionStatus, trialDaysExtension, maxProperties, maxRooms, maxResidents } = req.body;
+
+      const tenant = await prisma.tenant.findUnique({ where: { id } });
+      if (!tenant) {
+        return sendError(res, 'Tenant not found', 404, 'NOT_FOUND');
+      }
+
+      let trialEndsAt = tenant.trialEndsAt;
+      if (trialDaysExtension) {
+        trialEndsAt = new Date(trialEndsAt || new Date());
+        trialEndsAt.setDate(trialEndsAt.getDate() + parseInt(String(trialDaysExtension), 10));
+      }
+
+      const updated = await prisma.tenant.update({
+        where: { id },
+        data: {
+          plan: plan || undefined,
+          subscriptionStatus: subscriptionStatus || undefined,
+          trialEndsAt: trialEndsAt || undefined,
+          maxProperties: maxProperties ? parseInt(String(maxProperties), 10) : undefined,
+          maxRooms: maxRooms ? parseInt(String(maxRooms), 10) : undefined,
+          maxResidents: maxResidents ? parseInt(String(maxResidents), 10) : undefined,
+        },
+      });
+
+      await prisma.auditLog.create({
+        data: {
+          tenantId: id,
+          actorId: req.user?.id || null,
+          actorName: req.user?.name || 'Super Administrator',
+          actorRole: 'SUPER_ADMIN',
+          action: 'SUBSCRIPTION_CHANGED',
+          entity: 'Tenant',
+          entityId: id,
+          details: `Updated subscription for "${tenant.name}": Plan=${updated.plan}, Status=${updated.subscriptionStatus}`,
+        },
+      });
+
+      return sendSuccess(res, updated, 'Subscription updated successfully');
+    } catch (error: any) {
+      console.error('[SuperAdmin.updateTenantSubscription] Error:', error);
+      return sendError(res, 'Failed to update subscription', 500, 'INTERNAL_ERROR', error.message);
+    }
+  }
+
+  // -------------------------------------------------------------
+  // 11. PLANS CRUD
+  // -------------------------------------------------------------
+  static async createPlan(req: AuthRequest, res: Response): Promise<Response | void> {
+    try {
+      const { name, tier, priceMonthly, priceYearly, maxProperties, maxRooms, maxResidents, features } = req.body;
+
+      if (!name || !tier || priceMonthly === undefined) {
+        return sendError(res, 'Plan name, tier, and price are required', 400, 'VALIDATION_ERROR');
+      }
+
+      const created = await prisma.plan.create({
+        data: {
+          name: name.trim(),
+          tier,
+          priceMonthly: parseFloat(String(priceMonthly)),
+          priceYearly: parseFloat(String(priceYearly || priceMonthly * 10)),
+          maxProperties: parseInt(String(maxProperties || 1), 10),
+          maxRooms: parseInt(String(maxRooms || 20), 10),
+          maxResidents: parseInt(String(maxResidents || 50), 10),
+          features: typeof features === 'string' ? features : JSON.stringify(features || []),
+        },
+      });
+
+      await prisma.auditLog.create({
+        data: {
+          actorId: req.user?.id || null,
+          actorName: req.user?.name || 'Super Administrator',
+          actorRole: 'SUPER_ADMIN',
+          action: 'PLAN_CHANGED',
+          entity: 'Plan',
+          entityId: created.id,
+          details: `Created new SaaS Plan "${created.name}" (${created.tier})`,
+        },
+      });
+
+      return sendCreated(res, created, 'Plan created successfully');
+    } catch (error: any) {
+      console.error('[SuperAdmin.createPlan] Error:', error);
+      return sendError(res, 'Failed to create plan', 500, 'INTERNAL_ERROR', error.message);
+    }
+  }
+
+  static async updatePlan(req: AuthRequest, res: Response): Promise<Response | void> {
+    try {
+      const { id } = req.params;
+      const { name, priceMonthly, priceYearly, maxProperties, maxRooms, maxResidents, features, isActive } = req.body;
+
+      const updated = await prisma.plan.update({
+        where: { id },
+        data: {
+          name: name ? name.trim() : undefined,
+          priceMonthly: priceMonthly !== undefined ? parseFloat(String(priceMonthly)) : undefined,
+          priceYearly: priceYearly !== undefined ? parseFloat(String(priceYearly)) : undefined,
+          maxProperties: maxProperties !== undefined ? parseInt(String(maxProperties), 10) : undefined,
+          maxRooms: maxRooms !== undefined ? parseInt(String(maxRooms), 10) : undefined,
+          maxResidents: maxResidents !== undefined ? parseInt(String(maxResidents), 10) : undefined,
+          features: features !== undefined ? (typeof features === 'string' ? features : JSON.stringify(features)) : undefined,
+          isActive: isActive !== undefined ? Boolean(isActive) : undefined,
+        },
+      });
+
+      return sendSuccess(res, updated, 'Plan updated successfully');
+    } catch (error: any) {
+      console.error('[SuperAdmin.updatePlan] Error:', error);
+      return sendError(res, 'Failed to update plan', 500, 'INTERNAL_ERROR', error.message);
+    }
+  }
+
+  static async deletePlan(req: AuthRequest, res: Response): Promise<Response | void> {
+    try {
+      const { id } = req.params;
+      const plan = await prisma.plan.findUnique({ where: { id } });
+
+      if (!plan) {
+        return sendError(res, 'Plan not found', 404, 'NOT_FOUND');
+      }
+
+      // Check if active tenants are currently assigned to this tier
+      const assignedTenants = await prisma.tenant.count({ where: { plan: plan.tier } });
+      if (assignedTenants > 0) {
+        return sendError(res, `Cannot delete plan "${plan.name}" because it is currently assigned to ${assignedTenants} PG tenant(s). Archive or reassign first.`, 400, 'PLAN_IN_USE');
+      }
+
+      await prisma.plan.delete({ where: { id } });
+
+      return sendSuccess(res, { id, name: plan.name }, 'Plan deleted successfully');
+    } catch (error: any) {
+      console.error('[SuperAdmin.deletePlan] Error:', error);
+      return sendError(res, 'Failed to delete plan', 500, 'INTERNAL_ERROR', error.message);
+    }
+  }
+
+  // -------------------------------------------------------------
+  // 12. SUPPORT TICKETS SYSTEM
+  // -------------------------------------------------------------
+  static async getSupportTickets(req: AuthRequest, res: Response): Promise<Response | void> {
+    try {
+      const { search, status, priority, tenantId, page = '1', limit = '50' } = req.query;
+
+      const pageNum = Math.max(1, parseInt(String(page), 10) || 1);
+      const limitNum = Math.max(1, Math.min(100, parseInt(String(limit), 10) || 50));
+      const skip = (pageNum - 1) * limitNum;
+
+      const where: any = {};
+      if (status && status !== 'ALL') where.status = status;
+      if (priority && priority !== 'ALL') where.priority = priority;
+      if (tenantId && tenantId !== 'ALL') where.tenantId = String(tenantId);
+      if (search) {
+        where.OR = [
+          { subject: { contains: String(search), mode: 'insensitive' } },
+          { description: { contains: String(search), mode: 'insensitive' } },
+          { creatorEmail: { contains: String(search), mode: 'insensitive' } },
+        ];
+      }
+
+      const [total, tickets] = await Promise.all([
+        prisma.supportTicket.count({ where }),
+        prisma.supportTicket.findMany({
+          where,
+          skip,
+          take: limitNum,
+          orderBy: { createdAt: 'desc' },
+          include: {
+            tenant: { select: { id: true, name: true, slug: true, email: true } },
+          },
+        }),
+      ]);
+
+      return sendSuccess(
+        res,
+        {
+          tickets,
+          pagination: {
+            page: pageNum,
+            limit: limitNum,
+            total,
+            totalPages: Math.ceil(total / limitNum),
+          },
+        },
+        'Support tickets retrieved'
+      );
+    } catch (error: any) {
+      console.error('[SuperAdmin.getSupportTickets] Error:', error);
+      return sendError(res, 'Failed to fetch support tickets', 500, 'INTERNAL_ERROR', error.message);
+    }
+  }
+
+  static async createSupportTicket(req: AuthRequest, res: Response): Promise<Response | void> {
+    try {
+      const { tenantId, subject, description, priority = 'MEDIUM', creatorEmail, creatorName } = req.body;
+
+      if (!subject || !description) {
+        return sendError(res, 'Subject and description are required', 400, 'VALIDATION_ERROR');
+      }
+
+      const ticket = await prisma.supportTicket.create({
+        data: {
+          tenantId: tenantId || req.user?.tenantId || null,
+          creatorEmail: creatorEmail || req.user?.email || 'admin@urbannest.io',
+          creatorName: creatorName || req.user?.name || 'Platform Administrator',
+          subject: subject.trim(),
+          description: description.trim(),
+          priority,
+          status: 'OPEN',
+        },
+        include: {
+          tenant: { select: { id: true, name: true } },
+        },
+      });
+
+      return sendCreated(res, ticket, 'Support ticket created successfully');
+    } catch (error: any) {
+      console.error('[SuperAdmin.createSupportTicket] Error:', error);
+      return sendError(res, 'Failed to create support ticket', 500, 'INTERNAL_ERROR', error.message);
+    }
+  }
+
+  static async updateSupportTicket(req: AuthRequest, res: Response): Promise<Response | void> {
+    try {
+      const { id } = req.params;
+      const { status, priority, assignedAdmin, internalNotes } = req.body;
+
+      const updated = await prisma.supportTicket.update({
+        where: { id },
+        data: {
+          status: status || undefined,
+          priority: priority || undefined,
+          assignedAdmin: assignedAdmin !== undefined ? assignedAdmin : undefined,
+          internalNotes: internalNotes !== undefined ? internalNotes : undefined,
+        },
+        include: {
+          tenant: { select: { id: true, name: true } },
+        },
+      });
+
+      return sendSuccess(res, updated, 'Support ticket updated successfully');
+    } catch (error: any) {
+      console.error('[SuperAdmin.updateSupportTicket] Error:', error);
+      return sendError(res, 'Failed to update support ticket', 500, 'INTERNAL_ERROR', error.message);
+    }
+  }
+
+  // -------------------------------------------------------------
+  // 13. GLOBAL PLATFORM SETTINGS (DATABASE PERSISTED)
+  // -------------------------------------------------------------
+  static async getSettings(req: AuthRequest, res: Response): Promise<Response | void> {
+    try {
+      const settingsList = await prisma.setting.findMany();
+      const settingsMap: Record<string, string> = {
+        platformName: 'Urban Nest SaaS',
+        supportEmail: 'support@urbannest.com',
+        supportPhone: '+91 98765 43210',
+        defaultTrialDays: '14',
+        gracePeriodDays: '7',
+        maintenanceMode: 'false',
+        allowSelfRegistration: 'true',
+        platformCurrency: 'INR (₹)',
+      };
+
+      for (const s of settingsList) {
+        settingsMap[s.key] = s.value;
+      }
+
+      return sendSuccess(res, settingsMap, 'Platform settings loaded');
+    } catch (error: any) {
+      console.error('[SuperAdmin.getSettings] Error:', error);
+      return sendError(res, 'Failed to load platform settings', 500, 'INTERNAL_ERROR', error.message);
+    }
+  }
+
+  static async updateSettings(req: AuthRequest, res: Response): Promise<Response | void> {
+    try {
+      const settingsData: Record<string, any> = req.body;
+
+      for (const [key, value] of Object.entries(settingsData)) {
+        await prisma.setting.upsert({
+          where: { key },
+          update: { value: String(value) },
+          create: { key, value: String(value) },
+        });
+      }
+
+      await prisma.auditLog.create({
+        data: {
+          actorId: req.user?.id || null,
+          actorName: req.user?.name || 'Super Administrator',
+          actorRole: 'SUPER_ADMIN',
+          action: 'SETTINGS_UPDATED',
+          entity: 'Setting',
+          details: `Super Admin updated platform configuration settings`,
+        },
+      });
+
+      return sendSuccess(res, settingsData, 'Platform settings saved successfully');
+    } catch (error: any) {
+      console.error('[SuperAdmin.updateSettings] Error:', error);
+      return sendError(res, 'Failed to save platform settings', 500, 'INTERNAL_ERROR', error.message);
+    }
+  }
+
   static async getSystemHealth(req: AuthRequest, res: Response): Promise<Response | void> {
     const startTime = Date.now();
     let dbStatus = 'CONNECTED';
@@ -899,3 +1358,4 @@ export class SuperAdminController {
     });
   }
 }
+

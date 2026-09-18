@@ -94,7 +94,7 @@ const OWNER_NAV_GROUPS: NavGroup[] = [
 ];
 
 export const OwnerLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, activeProperty, setActiveProperty, switchRole, logout } = useAuth();
+  const { user, activeProperty, setActiveProperty, switchRole, logout, isImpersonated, impersonatedBy, exitImpersonation } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -116,15 +116,34 @@ export const OwnerLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#F8F7F3] dark:bg-slate-950 text-[#18231F] dark:text-slate-100 flex">
-      {/* Sidebar for Desktop */}
-      <aside className="hidden lg:flex flex-col w-60 border-r border-[#DDE2DD] dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 h-screen z-30 shrink-0">
-        {/* Brand Header with Exact Logo */}
-        <div className="h-16 px-4 border-b border-[#DDE2DD] dark:border-slate-800 flex items-center justify-between">
-          <Link to="/owner/dashboard" className="flex items-center">
-            <UrbanNestLogo variant="horizontal" size="sm" />
-          </Link>
+    <div className="min-h-screen bg-[#F8F7F3] dark:bg-slate-950 text-[#18231F] dark:text-slate-100 flex flex-col">
+      {/* Impersonation Banner */}
+      {isImpersonated && (
+        <div className="bg-amber-600 text-white px-4 py-2.5 text-xs font-semibold flex items-center justify-between shadow-md z-50 sticky top-0">
+          <div className="flex items-center gap-2">
+            <span className="font-bold">IMPERSONATION ACTIVE:</span>
+            <span>
+              Viewing tenant as <strong>{user?.name}</strong> ({user?.email}). Authorized by {impersonatedBy || 'Super Admin'}.
+            </span>
+          </div>
+          <button
+            onClick={exitImpersonation}
+            className="px-3 py-1 bg-white text-amber-900 rounded-lg font-bold text-xs hover:bg-amber-100 transition-colors shadow-sm"
+          >
+            Exit Impersonation
+          </button>
         </div>
+      )}
+
+      <div className="flex-1 flex">
+        {/* Sidebar for Desktop */}
+        <aside className="hidden lg:flex flex-col w-60 border-r border-[#DDE2DD] dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 h-screen z-30 shrink-0">
+          {/* Brand Header with Exact Logo */}
+          <div className="h-16 px-4 border-b border-[#DDE2DD] dark:border-slate-800 flex items-center justify-between">
+            <Link to="/owner/dashboard" className="flex items-center">
+              <UrbanNestLogo variant="horizontal" size="sm" />
+            </Link>
+          </div>
 
         {/* Grouped Navigation Links */}
         <div className="flex-1 overflow-y-auto px-2.5 py-3 space-y-4">
@@ -293,6 +312,7 @@ export const OwnerLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };

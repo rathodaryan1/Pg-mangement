@@ -8,11 +8,18 @@ import {
   Sparkles,
   ShieldCheck,
   RefreshCw,
+  Plus,
+  Edit2,
+  Trash2,
+  Save,
+  Loader2,
 } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
-import { superAdminApi } from '../../services/superAdminApi';
+import { Input } from '../../components/ui/Input';
+import { Modal } from '../../components/ui/Modal';
+import { api } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import type { Plan } from '../../types';
 
@@ -21,11 +28,29 @@ export const SuperAdminPlansPage: React.FC = () => {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Edit / Create Modal state
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const [formState, setFormState] = useState({
+    name: '',
+    tier: 'STARTER',
+    priceMonthly: 2999,
+    priceYearly: 29990,
+    maxProperties: 1,
+    maxRooms: 20,
+    maxResidents: 50,
+    featuresText: '',
+  });
+
   const fetchPlans = async () => {
     setIsLoading(true);
     try {
-      const data = await superAdminApi.getPlans();
-      setPlans(data || []);
+      const res = await api.get<Plan[]>('/super-admin/plans');
+      if (res.success && res.data) {
+        setPlans(res.data || []);
+      }
     } catch (err: any) {
       console.error('Failed to load plans:', err);
       toast.error('Failed to retrieve subscription plans.');
@@ -37,6 +62,94 @@ export const SuperAdminPlansPage: React.FC = () => {
   useEffect(() => {
     fetchPlans();
   }, []);
+
+  const openCreateModal = () => {
+    setEditingPlan(null);
+    setFormState({
+      name: '',
+      tier: 'STARTER',
+      priceMonthly: 2999,
+      priceYearly: 29990,
+      maxProperties: 1,
+      maxRooms: 20,
+      maxResidents: 50,
+      featuresText: 'QR Gate Pass System\nOnline Rent Invoicing\nKYC Document Vault',
+    });
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (plan: Plan) => {
+    setEditingPlan(plan);
+    const featuresList = Array.isArray(plan.features)
+      ? plan.features
+      : typeof plan.features === 'string'
+      ? JSON.parse(plan.features || '[]')
+      : [];
+
+    setFormState({
+      name: plan.name,
+      tier: plan.tier,
+      priceMonthly: plan.priceMonthly,
+      priceYearly: plan.priceYearly,
+      maxProperties: plan.maxProperties,
+      maxRooms: plan.maxRooms,
+      maxResidents: plan.maxResidents,
+      featuresText: Array.isArray(featuresList) ? featuresList.join('\n') : '',
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setSaving(true);
+      const featuresArray = formState.featuresText
+        .split('\n')
+        .map((f) => f.trim())
+        .filter(Boolean);
+
+      if (editingPlan) {
+        // Update existing plan
+        const res = await api.patch(`/super-admin/plans/${editingPlan.id}`, {
+          name: formState.name,
+          priceMonthly: formState.priceMonthly,
+          priceYearly: formState.priceYearly,
+          maxProperties: formState.maxProperties,
+          maxRooms: formState.maxRooms,
+          maxResidents: formState.maxResidents,
+          features: JSON.stringify(featuresArray),
+        });
+
+        if (res.success) {
+          toast.success(`Plan "${formState.name}" updated successfully.`);
+          setIsModalOpen(false);
+          fetchPlans();
+        }
+      } else {
+        // Create new plan
+        const res = await api.post('/super-admin/plans', {
+          name: formState.name,
+          tier: formState.tier,
+          priceMonthly: formState.priceMonthly,
+          priceYearly: formState.priceYearly,
+          maxProperties: formState.maxProperties,
+          maxRooms: formState.maxRooms,
+          maxResidents: formState.maxResidents,
+          features: JSON.stringify(featuresArray),
+        });
+
+        if (res.success) {
+          toast.success(`Plan "${formState.name}" created successfully.`);
+          setIsModalOpen(false);
+          fetchPlans();
+        }
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to save plan.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -51,9 +164,14 @@ export const SuperAdminPlansPage: React.FC = () => {
           </p>
         </div>
 
-        <Button variant="secondary" size="sm" onClick={fetchPlans} leftIcon={<RefreshCw className="w-3.5 h-3.5" />}>
-          Refresh Plans
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="secondary" size="sm" onClick={fetchPlans} leftIcon={<RefreshCw className="w-3.5 h-3.5" />}>
+            Refresh
+          </Button>
+          <Button variant="primary" size="sm" onClick={openCreateModal} leftIcon={<Plus className="w-3.5 h-3.5" />}>
+            Create Plan Tier
+          </Button>
+        </div>
       </div>
 
       {isLoading ? (
@@ -108,15 +226,15 @@ export const SuperAdminPlansPage: React.FC = () => {
                   <div className="p-3.5 rounded-xl bg-[#F8F7F3] border border-[#DDE2DD] space-y-1.5 text-xs text-[#18231F]">
                     <p className="flex items-center gap-2">
                       <Building2 className="w-3.5 h-3.5 text-[#0B4036]" />
-                      <strong>Max Properties:</strong> {plan.maxProperties === 9999 ? 'Unlimited' : plan.maxProperties}
+                      <strong>Max Properties:</strong> {plan.maxProperties >= 999 ? 'Unlimited' : plan.maxProperties}
                     </p>
                     <p className="flex items-center gap-2">
                       <DoorClosed className="w-3.5 h-3.5 text-[#0B4036]" />
-                      <strong>Max Rooms:</strong> {plan.maxRooms === 9999 ? 'Unlimited' : plan.maxRooms}
+                      <strong>Max Rooms:</strong> {plan.maxRooms >= 999 ? 'Unlimited' : plan.maxRooms}
                     </p>
                     <p className="flex items-center gap-2">
                       <BedDouble className="w-3.5 h-3.5 text-[#0B4036]" />
-                      <strong>Max Residents:</strong> {plan.maxResidents === 9999 ? 'Unlimited' : plan.maxResidents}
+                      <strong>Max Residents:</strong> {plan.maxResidents >= 999 ? 'Unlimited' : plan.maxResidents}
                     </p>
                   </div>
 
@@ -135,7 +253,13 @@ export const SuperAdminPlansPage: React.FC = () => {
                 </div>
 
                 <div className="pt-4 border-t border-[#DDE2DD]">
-                  <Button variant={isPro ? 'primary' : 'outline'} size="sm" className="w-full">
+                  <Button
+                    variant={isPro ? 'primary' : 'outline'}
+                    size="sm"
+                    className="w-full"
+                    onClick={() => openEditModal(plan)}
+                    leftIcon={<Edit2 className="w-3.5 h-3.5" />}
+                  >
                     Configure Tier Limits
                   </Button>
                 </div>
@@ -144,6 +268,100 @@ export const SuperAdminPlansPage: React.FC = () => {
           })}
         </div>
       )}
+
+      {/* Plan Edit / Create Modal */}
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={editingPlan ? `Configure Plan: ${editingPlan.name}` : 'Create New Subscription Plan'}
+      >
+        <form onSubmit={handleFormSubmit} className="space-y-4">
+          <Input
+            label="Plan Display Name"
+            placeholder="e.g. Professional Tier"
+            value={formState.name}
+            onChange={(e) => setFormState({ ...formState, name: e.target.value })}
+            required
+          />
+
+          {!editingPlan && (
+            <div>
+              <label className="block text-xs font-semibold text-[#18231F] mb-1">Tier Enum Key</label>
+              <select
+                value={formState.tier}
+                onChange={(e) => setFormState({ ...formState, tier: e.target.value })}
+                className="w-full p-2 text-xs border border-[#DDE2DD] rounded-md bg-white focus:outline-none focus:border-[#0B4036]"
+              >
+                <option value="STARTER">STARTER</option>
+                <option value="PROFESSIONAL">PROFESSIONAL</option>
+                <option value="ENTERPRISE">ENTERPRISE</option>
+                <option value="TRIAL">TRIAL</option>
+              </select>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              label="Monthly Price (₹)"
+              type="number"
+              value={String(formState.priceMonthly)}
+              onChange={(e) => setFormState({ ...formState, priceMonthly: parseFloat(e.target.value) || 0 })}
+              required
+            />
+            <Input
+              label="Yearly Price (₹)"
+              type="number"
+              value={String(formState.priceYearly)}
+              onChange={(e) => setFormState({ ...formState, priceYearly: parseFloat(e.target.value) || 0 })}
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-3 gap-3">
+            <Input
+              label="Max Properties"
+              type="number"
+              value={String(formState.maxProperties)}
+              onChange={(e) => setFormState({ ...formState, maxProperties: parseInt(e.target.value, 10) || 1 })}
+              required
+            />
+            <Input
+              label="Max Rooms"
+              type="number"
+              value={String(formState.maxRooms)}
+              onChange={(e) => setFormState({ ...formState, maxRooms: parseInt(e.target.value, 10) || 1 })}
+              required
+            />
+            <Input
+              label="Max Residents"
+              type="number"
+              value={String(formState.maxResidents)}
+              onChange={(e) => setFormState({ ...formState, maxResidents: parseInt(e.target.value, 10) || 1 })}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-[#18231F] mb-1">Features (One per line)</label>
+            <textarea
+              rows={4}
+              value={formState.featuresText}
+              onChange={(e) => setFormState({ ...formState, featuresText: e.target.value })}
+              placeholder="QR Gate Pass System&#10;Online Rent Collection&#10;KYC Document Vault"
+              className="w-full p-2 text-xs border border-[#DDE2DD] rounded-md focus:outline-none focus:border-[#0B4036]"
+            />
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" size="sm" type="button" onClick={() => setIsModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="primary" size="sm" type="submit" disabled={saving}>
+              {saving ? 'Saving...' : 'Save Tier Settings'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };
