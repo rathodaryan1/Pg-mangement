@@ -3,6 +3,7 @@ dotenv.config();
 import { prisma } from '../config/prisma';
 import * as bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { withDbRetry } from './db-helper';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'urbannest-dev-jwt-secret-key-2026';
 
@@ -16,9 +17,11 @@ export async function runSuperAdminTests() {
 
   try {
     // 1. Check Super Admin exists or create
-    const superAdmin = await prisma.user.findFirst({
-      where: { role: 'SUPER_ADMIN' },
-    });
+    const superAdmin = await withDbRetry(() =>
+      prisma.user.findFirst({
+        where: { role: 'SUPER_ADMIN' },
+      })
+    );
 
     if (!superAdmin) {
       console.error('❌ Super admin user not found in database');
@@ -44,25 +47,25 @@ export async function runSuperAdminTests() {
     }
 
     // 3. Test Dashboard KPI live database querying
-    const [totalTenants, totalUsers, totalProperties, totalRooms, totalBeds] = await Promise.all([
-      prisma.tenant.count(),
-      prisma.user.count(),
-      prisma.property.count(),
-      prisma.room.count(),
-      prisma.bed.count(),
-    ]);
+    const totalTenants = await withDbRetry(() => prisma.tenant.count());
+    const totalUsers = await withDbRetry(() => prisma.user.count());
+    const totalProperties = await withDbRetry(() => prisma.property.count());
+    const totalRooms = await withDbRetry(() => prisma.room.count());
+    const totalBeds = await withDbRetry(() => prisma.bed.count());
 
     console.log(`✅ Live Metrics Query: Tenants=${totalTenants}, Users=${totalUsers}, Props=${totalProperties}, Rooms=${totalRooms}, Beds=${totalBeds}`);
     passed++;
 
     // 4. Test Platform Global Settings Query & Upsert
     const testSettingKey = 'test_platform_maintenance';
-    await prisma.setting.upsert({
-      where: { key: testSettingKey },
-      update: { value: 'false' },
-      create: { key: testSettingKey, value: 'false' },
-    });
-    const retrievedSetting = await prisma.setting.findUnique({ where: { key: testSettingKey } });
+    await withDbRetry(() =>
+      prisma.setting.upsert({
+        where: { key: testSettingKey },
+        update: { value: 'false' },
+        create: { key: testSettingKey, value: 'false' },
+      })
+    );
+    const retrievedSetting = await withDbRetry(() => prisma.setting.findUnique({ where: { key: testSettingKey } }));
     if (retrievedSetting && retrievedSetting.value === 'false') {
       console.log('✅ Platform Settings PostgreSQL Persistence: PASS');
       passed++;
@@ -72,7 +75,7 @@ export async function runSuperAdminTests() {
     }
 
     // Clean up test setting
-    await prisma.setting.delete({ where: { key: testSettingKey } }).catch(() => {});
+    await withDbRetry(() => prisma.setting.delete({ where: { key: testSettingKey } })).catch(() => {});
 
   } catch (err: any) {
     console.error('❌ Super Admin Test Suite Error:', err.message);

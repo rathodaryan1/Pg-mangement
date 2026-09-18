@@ -2,6 +2,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 import { prisma } from '../config/prisma';
 import jwt from 'jsonwebtoken';
+import { withDbRetry } from './db-helper';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'urbannest-dev-jwt-secret-key-2026';
 
@@ -15,10 +16,8 @@ export async function runImpersonationTests() {
 
   try {
     // 1. Find or pick an Owner and a Super Admin
-    const [superAdmin, owner] = await Promise.all([
-      prisma.user.findFirst({ where: { role: 'SUPER_ADMIN' } }),
-      prisma.user.findFirst({ where: { role: 'OWNER' }, include: { tenant: true } }),
-    ]);
+    const superAdmin = await withDbRetry(() => prisma.user.findFirst({ where: { role: 'SUPER_ADMIN' } }));
+    const owner = await withDbRetry(() => prisma.user.findFirst({ where: { role: 'OWNER' }, include: { tenant: true } }));
 
     if (!superAdmin) {
       console.error('❌ Super Admin not found');
@@ -66,24 +65,26 @@ export async function runImpersonationTests() {
     }
 
     // 4. Test Audit Logging for Impersonation
-    const log = await prisma.auditLog.create({
-      data: {
-        tenantId: targetTenantId !== 'mock-tenant-id' ? targetTenantId : null,
-        actorId: superAdmin.id,
-        actorName: superAdmin.name,
-        actorRole: 'SUPER_ADMIN',
-        action: 'IMPERSONATION_STARTED',
-        entity: 'Tenant',
-        entityId: targetTenantId,
-        details: `Super Admin (${superAdmin.email}) impersonated Owner session (${targetOwnerEmail}) for testing`,
-      },
-    });
+    const log = await withDbRetry(() =>
+      prisma.auditLog.create({
+        data: {
+          tenantId: targetTenantId !== 'mock-tenant-id' ? targetTenantId : null,
+          actorId: superAdmin.id,
+          actorName: superAdmin.name,
+          actorRole: 'SUPER_ADMIN',
+          action: 'IMPERSONATION_STARTED',
+          entity: 'Tenant',
+          entityId: targetTenantId,
+          details: `Super Admin (${superAdmin.email}) impersonated Owner session (${targetOwnerEmail}) for testing`,
+        },
+      })
+    );
 
     if (log && log.action === 'IMPERSONATION_STARTED') {
       console.log(`✅ Impersonation Audit Log Created (ID: ${log.id}): PASS`);
       passed++;
       // Clean up log
-      await prisma.auditLog.delete({ where: { id: log.id } }).catch(() => {});
+      await withDbRetry(() => prisma.auditLog.delete({ where: { id: log.id } })).catch(() => {});
     } else {
       console.error('❌ Failed to log impersonation event');
       failed++;

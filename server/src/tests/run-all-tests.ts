@@ -3,6 +3,7 @@ import { runTenantIsolationTests } from './tenant-isolation.test';
 import { runPlanEnforcementTests } from './plan-enforcement.test';
 import { runImpersonationTests } from './impersonation.test';
 import { runSaasMultiTenantAudit } from './saas-multi-tenant-audit';
+import { sleep } from './db-helper';
 
 async function main() {
   console.log('===============================================================');
@@ -16,21 +17,25 @@ async function main() {
   const s1 = await runSuperAdminTests();
   totalPassed += s1.passed;
   totalFailed += s1.failed;
+  await sleep(1000);
 
   console.log('\n>>> RUNNING SUITE 2: TENANT DATA ISOLATION <<<');
   const s2 = await runTenantIsolationTests();
   totalPassed += s2.passed;
   totalFailed += s2.failed;
+  await sleep(1000);
 
   console.log('\n>>> RUNNING SUITE 3: SERVER-SIDE PLAN ENFORCEMENT <<<');
   const s3 = await runPlanEnforcementTests();
   totalPassed += s3.passed;
   totalFailed += s3.failed;
+  await sleep(1000);
 
   console.log('\n>>> RUNNING SUITE 4: SECURE OWNER IMPERSONATION <<<');
   const s4 = await runImpersonationTests();
   totalPassed += s4.passed;
   totalFailed += s4.failed;
+  await sleep(1000);
 
   console.log('\n>>> RUNNING SUITE 5: COMPREHENSIVE END-TO-END MULTI-TENANT AUDIT <<<');
   const auditRes = await runSaasMultiTenantAudit();
