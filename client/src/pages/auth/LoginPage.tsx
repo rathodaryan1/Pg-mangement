@@ -124,8 +124,17 @@ export const LoginPage: React.FC = () => {
           </div>
 
           {errorMsg && (
-            <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs text-left">
-              {errorMsg}
+            <div className="p-3.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs text-left space-y-1">
+              <div className="font-semibold flex items-center gap-1.5">
+                <ShieldAlert className="w-4 h-4 text-rose-600 shrink-0" />
+                <span>Sign In Notice</span>
+              </div>
+              <p className="text-[11px] leading-relaxed text-rose-700">{errorMsg}</p>
+              {errorMsg.toLowerCase().includes('database') && (
+                <p className="text-[10px] text-rose-600 bg-rose-100/60 p-2 rounded mt-1 font-mono">
+                  Tip: If deployed on Render/Vercel, ensure the PostgreSQL DATABASE_URL connection string is configured in your Render service environment variables.
+                </p>
+              )}
             </div>
           )}
 

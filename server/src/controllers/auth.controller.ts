@@ -253,7 +253,24 @@ export class AuthController {
       );
     } catch (error: any) {
       console.error('[AuthController.login] Error:', error);
-      return sendError(res, error.message || 'Login failed. Database connection unavailable.', 500, 'INTERNAL_ERROR');
+      const isDbError =
+        error.message?.includes("Can't reach database server") ||
+        error.message?.includes('P1001') ||
+        error.code === 'P1001' ||
+        error.code === 'P1000' ||
+        error.code === 'P1002' ||
+        error.name === 'PrismaClientInitializationError' ||
+        error.name === 'PrismaClientKnownRequestError';
+
+      if (isDbError) {
+        return sendError(
+          res,
+          'Database service is temporarily unreachable. Please check PostgreSQL / Supabase connection in server environment settings.',
+          503,
+          'DATABASE_UNAVAILABLE'
+        );
+      }
+      return sendError(res, error.message || 'Login failed. Please verify credentials.', 500, 'INTERNAL_ERROR');
     }
   }
 

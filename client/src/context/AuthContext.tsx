@@ -200,8 +200,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       return false;
     } catch (err: any) {
-      setError(err.message || 'Login failed. Please verify email and password.');
-      return false;
+      const msg = err.message || 'Login failed. Please verify email and password.';
+      setError(msg);
+      throw new Error(msg);
     } finally {
       setIsLoading(false);
     }
