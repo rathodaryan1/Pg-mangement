@@ -10,6 +10,7 @@ router.use(requireSuperAdmin as any);
 
 // 1. Dashboard & Global Stats
 router.get('/dashboard', SuperAdminController.getDashboardStats as any);
+router.get('/dashboard/stats', SuperAdminController.getDashboardStats as any);
 
 // 2. Tenants Management
 router.get('/tenants', SuperAdminController.getTenants as any);
@@ -35,5 +36,8 @@ router.get('/audit-logs', SuperAdminController.getAuditLogs as any);
 
 // 7. System Health
 router.get('/system-health', SuperAdminController.getSystemHealth as any);
+router.get('/system/health', SuperAdminController.getSystemHealth as any);
+router.get('/health', SuperAdminController.getSystemHealth as any);
 
 export default router;
+

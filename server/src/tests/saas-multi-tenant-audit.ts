@@ -110,7 +110,7 @@ export async function runSaasMultiTenantAudit() {
 
     // Generate Super Admin JWT
     const superAdminToken = jwt.sign(
-      { userId: superAdmin.id, email: superAdmin.email, role: 'SUPER_ADMIN' },
+      { id: superAdmin.id, userId: superAdmin.id, email: superAdmin.email, role: 'SUPER_ADMIN' },
       JWT_SECRET,
       { expiresIn: '1d' }
     );
@@ -156,15 +156,24 @@ export async function runSaasMultiTenantAudit() {
     // ------------------------------------------------------------------------
     console.log('\n--- Step 2: Atomic Creation of Independent PG Tenants ---');
 
-    // Clean previous test tenants if any
-    const existingTenantA = await prisma.tenant.findUnique({ where: { slug: 'green-valley-pg' } });
-    if (existingTenantA) {
-      await prisma.tenant.delete({ where: { id: existingTenantA.id } });
+    // Clean previous test tenants and users if any
+    const testTenants = await prisma.tenant.findMany({
+      where: {
+        OR: [
+          { email: { in: ['ownera@greenvalley.com', 'ownerb@royalresidency.com'] } },
+          { name: { in: ['Green Valley PG', 'Royal Residency'] } },
+        ],
+      },
+    });
+    for (const t of testTenants) {
+      await prisma.auditLog.deleteMany({ where: { tenantId: t.id } }).catch(() => {});
+      await prisma.user.deleteMany({ where: { tenantId: t.id } }).catch(() => {});
+      await prisma.property.deleteMany({ where: { tenantId: t.id } }).catch(() => {});
+      await prisma.tenant.delete({ where: { id: t.id } }).catch(() => {});
     }
-    const existingTenantB = await prisma.tenant.findUnique({ where: { slug: 'royal-residency' } });
-    if (existingTenantB) {
-      await prisma.tenant.delete({ where: { id: existingTenantB.id } });
-    }
+    await prisma.user.deleteMany({
+      where: { email: { in: ['ownera@greenvalley.com', 'ownerb@royalresidency.com', 'res_a@test.com', 'res_b@test.com'] } },
+    }).catch(() => {});
 
     let tenantAId = '';
     const ownerAEmail = 'ownera@greenvalley.com';

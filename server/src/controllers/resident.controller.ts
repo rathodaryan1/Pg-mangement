@@ -471,7 +471,7 @@ export class ResidentController {
         });
 
         return { payment: updated, receipt };
-      });
+      }, { maxWait: 15000, timeout: 30000 });
 
       await AuditService.log({
         propertyId: resident.propertyId,

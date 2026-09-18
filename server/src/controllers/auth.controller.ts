@@ -72,7 +72,7 @@ export class AuthController {
         });
 
         return { user: newUser, resident: newResident };
-      });
+      }, { maxWait: 15000, timeout: 30000 });
 
       const token = jwt.sign(
         {

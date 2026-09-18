@@ -235,11 +235,16 @@ export class SuperAdminController {
         ownerEmail,
         ownerMobile,
         password,
+        temporaryPassword,
         plan = 'STARTER',
         trialDays = 14,
       } = req.body;
 
-      if (!name || !email || !ownerEmail || !ownerName || !password) {
+      const tenantEmail = (email || ownerEmail)?.trim().toLowerCase();
+      const initialPassword = password || temporaryPassword;
+      const ownerEmailAddr = (ownerEmail || email)?.trim().toLowerCase();
+
+      if (!name || !tenantEmail || !ownerEmailAddr || !ownerName || !initialPassword) {
         return sendError(res, 'Please provide PG name, email, owner details and password', 400, 'VALIDATION_ERROR');
       }
 
@@ -249,17 +254,17 @@ export class SuperAdminController {
         .replace(/(^-|-$)/g, '') + `-${Math.random().toString(36).substring(2, 6)}`;
 
       // Check duplicate email
-      const existingUser = await prisma.user.findUnique({ where: { email: ownerEmail.trim().toLowerCase() } });
+      const existingUser = await prisma.user.findUnique({ where: { email: ownerEmailAddr } });
       if (existingUser) {
-        return sendError(res, `User with email ${ownerEmail} already exists`, 409, 'DUPLICATE_EMAIL');
+        return sendError(res, `User with email ${ownerEmailAddr} already exists`, 409, 'DUPLICATE_EMAIL');
       }
 
-      const existingTenant = await prisma.tenant.findUnique({ where: { email: email.trim().toLowerCase() } });
+      const existingTenant = await prisma.tenant.findUnique({ where: { email: tenantEmail } });
       if (existingTenant) {
-        return sendError(res, `Tenant organization with email ${email} already exists`, 409, 'DUPLICATE_TENANT_EMAIL');
+        return sendError(res, `Tenant organization with email ${tenantEmail} already exists`, 409, 'DUPLICATE_TENANT_EMAIL');
       }
 
-      const passwordHash = await bcrypt.hash(password, 10);
+      const passwordHash = await bcrypt.hash(initialPassword, 10);
       const trialEndsAt = new Date();
       trialEndsAt.setDate(trialEndsAt.getDate() + (parseInt(String(trialDays), 10) || 14));
 
@@ -285,7 +290,7 @@ export class SuperAdminController {
           data: {
             name: name.trim(),
             slug: cleanSlug,
-            email: email.trim().toLowerCase(),
+            email: tenantEmail,
             phone: phone || ownerMobile || null,
             address: address || null,
             city,
@@ -306,7 +311,7 @@ export class SuperAdminController {
         const newOwner = await tx.user.create({
           data: {
             name: ownerName.trim(),
-            email: ownerEmail.trim().toLowerCase(),
+            email: ownerEmailAddr,
             passwordHash,
             role: 'OWNER',
             mobile: ownerMobile || null,
@@ -321,7 +326,7 @@ export class SuperAdminController {
             address: address || 'Main Road',
             city,
             phone: phone || ownerMobile || null,
-            email: email.trim().toLowerCase(),
+            email: tenantEmail,
             tenantId: newTenant.id,
           },
         });
@@ -383,7 +388,7 @@ export class SuperAdminController {
         });
 
         return { tenant: newTenant, owner: newOwner, property: initialProperty };
-      });
+      }, { maxWait: 15000, timeout: 30000 });
 
       return sendCreated(
         res,
@@ -395,6 +400,9 @@ export class SuperAdminController {
           ownerName: result.owner.name,
           initialPropertyId: result.property.id,
           plan: result.tenant.plan,
+          tenant: result.tenant,
+          owner: result.owner,
+          property: result.property,
         },
         'PG Tenant and Owner account created successfully'
       );
@@ -637,7 +645,7 @@ export class SuperAdminController {
           tenantId: tenant.id,
           propertyId: tenant.properties[0]?.id || null,
           isImpersonated: true,
-          impersonatedBy: req.user?.email || 'Super Administrator',
+          impersonatedBy: req.user?.id || req.user?.email || 'Super Administrator',
         },
         config.jwtSecret,
         { expiresIn: '2h' }

@@ -41,7 +41,8 @@ export const authenticateToken = async (
 
   try {
     const decoded = jwt.verify(token, config.jwtSecret) as {
-      id: string;
+      id?: string;
+      userId?: string;
       email: string;
       role: string;
       name?: string;
@@ -52,36 +53,63 @@ export const authenticateToken = async (
       impersonatedBy?: string;
     };
 
+    const targetUserId = decoded.id || decoded.userId;
+
     let user = null;
     try {
-      user = await prisma.user.findUnique({
-        where: { id: decoded.id },
-        include: {
-          tenant: {
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-              status: true,
-              plan: true,
+      if (targetUserId) {
+        user = await prisma.user.findUnique({
+          where: { id: targetUserId },
+          include: {
+            tenant: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                status: true,
+                plan: true,
+              },
+            },
+            resident: {
+              select: {
+                id: true,
+                propertyId: true,
+                bedId: true,
+                status: true,
+              },
             },
           },
-          resident: {
-            select: {
-              id: true,
-              propertyId: true,
-              bedId: true,
-              status: true,
+        });
+      } else if (decoded.email) {
+        user = await prisma.user.findUnique({
+          where: { email: decoded.email },
+          include: {
+            tenant: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                status: true,
+                plan: true,
+              },
+            },
+            resident: {
+              select: {
+                id: true,
+                propertyId: true,
+                bedId: true,
+                status: true,
+              },
             },
           },
-        },
-      });
+        });
+      }
     } catch (dbErr: any) {
       console.warn('[auth.middleware] Database user lookup failed, using verified token claims:', dbErr.message);
     }
 
     const authUser: AuthenticatedUser = {
-      id: user?.id || decoded.id,
+      id: user?.id || targetUserId || '',
       email: user?.email || decoded.email,
       name: user?.name || decoded.name || (decoded.role === 'OWNER' ? 'Owner' : 'Resident'),
       role: (user?.role as string) || decoded.role,

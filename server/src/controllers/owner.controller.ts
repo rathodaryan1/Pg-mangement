@@ -561,7 +561,7 @@ export class OwnerController {
           where: { id: createdRoom.id },
           include: { beds: true, floor: { include: { building: true } } },
         });
-      });
+      }, { maxWait: 15000, timeout: 30000 });
 
       return sendSuccess(res, room, `Room ${number} and ${cap} beds created successfully`, 201);
     } catch (error: any) {
@@ -572,6 +572,19 @@ export class OwnerController {
   static async updateRoom(req: AuthRequest, res: Response): Promise<Response> {
     try {
       const { number, type, baseRent, deposit, status, amenities } = req.body;
+      const targetRoom = await prisma.room.findUnique({
+        where: { id: req.params.id },
+        include: { property: true },
+      });
+
+      if (!targetRoom) return sendError(res, 'Room not found', 404);
+
+      if (req.user?.role !== 'SUPER_ADMIN' && req.user?.tenantId) {
+        if (targetRoom.property.tenantId !== req.user.tenantId) {
+          return sendError(res, 'Access forbidden: Cross-tenant room mutation rejected', 403, 'FORBIDDEN');
+        }
+      }
+
       const updated = await prisma.room.update({
         where: { id: req.params.id },
         data: {
@@ -692,6 +705,13 @@ export class OwnerController {
       });
 
       if (!resident) return sendError(res, 'Resident not found', 404);
+
+      if (req.user?.role !== 'SUPER_ADMIN' && req.user?.tenantId) {
+        if (resident.property?.tenantId !== req.user.tenantId) {
+          return sendError(res, 'Access forbidden: Cannot access cross-tenant resident record', 403, 'FORBIDDEN');
+        }
+      }
+
       return sendSuccess(res, resident);
     } catch (error: any) {
       return sendError(res, error.message || 'Failed to fetch resident', 500);
@@ -816,7 +836,7 @@ export class OwnerController {
         });
 
         return resident;
-      });
+      }, { maxWait: 15000, timeout: 30000 });
 
       await AuditService.log({
         propertyId: propId,
@@ -1024,7 +1044,7 @@ export class OwnerController {
         });
 
         return { payment: updated, receipt };
-      });
+      }, { maxWait: 15000, timeout: 30000 });
 
       return sendSuccess(res, result, 'Manual payment recorded successfully');
     } catch (error: any) {
@@ -1397,6 +1417,7 @@ export class OwnerController {
     return sendSuccess(res, {
       valid: visitor.status === 'APPROVED' || visitor.status === 'CHECKED_IN',
       status: visitor.status,
+      pass: visitor,
       visitorName: visitor.visitorName,
       visitorMobile: visitor.visitorMobile,
       relation: visitor.relation,
