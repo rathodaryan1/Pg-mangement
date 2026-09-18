@@ -1,4 +1,3 @@
-import { toast, useToast } from '../../context/ToastContext';
 import React, { useState, useEffect } from 'react';
 import {
   AlertOctagon,
@@ -50,7 +49,7 @@ export const OwnerEmergencyPage: React.FC = () => {
       setTimeout(() => setToastMessage(null), 3500);
       fetchEvents();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to acknowledge SOS');
+      alert(err.message || 'Failed to acknowledge SOS');
     }
   };
 
@@ -66,7 +65,7 @@ export const OwnerEmergencyPage: React.FC = () => {
       setTimeout(() => setToastMessage(null), 3500);
       fetchEvents();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to resolve SOS');
+      alert(err.message || 'Failed to resolve SOS');
     }
   };
 

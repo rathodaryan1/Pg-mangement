@@ -148,7 +148,7 @@ export const AuditLogsPage: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-slate-400 font-medium">City</label>
-                  <Input defaultValue={activeProperty.city || 'Bangalore'} readOnly />
+                  <Input defaultValue={activeProperty.city || 'Ahmedabad'} readOnly />
                 </div>
                 <div>
                   <label className="text-slate-400 font-medium">Property Type</label>
@@ -157,7 +157,7 @@ export const AuditLogsPage: React.FC = () => {
               </div>
               <div>
                 <label className="text-slate-400 font-medium">Registered Address</label>
-                <Input defaultValue={activeProperty.address || 'Koramangala 4th Block, Bangalore'} readOnly />
+                <Input defaultValue={activeProperty.address || 'Koramangala 4th Block, Ahmedabad'} readOnly />
               </div>
             </div>
           </Card>

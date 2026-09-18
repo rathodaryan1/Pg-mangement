@@ -1,4 +1,3 @@
-import { toast, useToast } from '../../context/ToastContext';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -83,9 +82,16 @@ export const ResidentsPage: React.FC = () => {
 
   const handleVerifyDoc = async (docId: string, status: 'VERIFIED' | 'REJECTED') => {
     try {
-      const reason = status === 'REJECTED' ? 'Document image unclear / invalid format' : undefined;
+      let reason: string | undefined = undefined;
+      if (status === 'REJECTED') {
+        const inputReason = prompt('Please enter rejection reason:');
+        if (!inputReason) return;
+        reason = inputReason;
+      }
+
       await ownerApi.verifyDocument(docId, { status, rejectionReason: reason });
-      toast.success(`Document marked as ${status}`);
+      setToastMessage(`Document marked as ${status}`);
+      setTimeout(() => setToastMessage(null), 3000);
 
       if (selectedResident) {
         const res = await ownerApi.getResidentById(selectedResident.id);
@@ -93,7 +99,7 @@ export const ResidentsPage: React.FC = () => {
       }
       fetchResidents();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to update document status');
+      alert(err.message || 'Failed to update document status');
     }
   };
 
@@ -127,7 +133,7 @@ export const ResidentsPage: React.FC = () => {
       setTimeout(() => setToastMessage(null), 3500);
       fetchResidents();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to update resident');
+      alert(err.message || 'Failed to update resident');
     }
   };
 
@@ -140,7 +146,7 @@ export const ResidentsPage: React.FC = () => {
       setTimeout(() => setToastMessage(null), 3500);
       fetchResidents();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to archive resident');
+      alert(err.message || 'Failed to archive resident');
     }
   };
 

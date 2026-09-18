@@ -15,10 +15,8 @@ import { StatusBadge } from '../../components/ui/Badge';
 import { Input, Textarea } from '../../components/ui/Input';
 import { Modal } from '../../components/ui/Modal';
 import { residentApi } from '../../services/residentApi';
-import { toast, useToast } from '../../context/ToastContext';
 
 export const ResidentLeavePage: React.FC = () => {
-  const { toast } = useToast();
   const [leaves, setLeaves] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -51,7 +49,7 @@ export const ResidentLeavePage: React.FC = () => {
   const handleApplyLeave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fromDate || !toDate || !reason.trim()) {
-      toast.error('Please fill out all fields.');
+      alert('Please fill out all fields.');
       return;
     }
 
@@ -68,22 +66,21 @@ export const ResidentLeavePage: React.FC = () => {
       setFromDate('');
       setToDate('');
       setReason('');
-      toast.success('Leave application submitted for approval.');
       await fetchLeaves();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to submit leave request.');
+      alert(err.message || 'Failed to submit leave request.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleCancelLeave = async (id: string) => {
+    if (!confirm('Are you sure you want to cancel this leave application?')) return;
     try {
       await residentApi.cancelLeaveRequest(id);
-      toast.success('Leave application cancelled.');
       await fetchLeaves();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to cancel leave request.');
+      alert(err.message || 'Failed to cancel leave request.');
     }
   };
 

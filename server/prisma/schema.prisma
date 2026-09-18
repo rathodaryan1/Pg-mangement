@@ -47,7 +47,7 @@ model Property {
   id                String            @id @default(uuid())
   name              String
   address           String
-  city              String            @default("Bengaluru")
+  city              String            @default("Ahmedabad")
   phone             String?
   email             String?
   upiId             String?

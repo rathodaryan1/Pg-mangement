@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -22,12 +22,9 @@ import {
   LogOut,
   ArrowRightLeft,
   LifeBuoy,
-  FileSpreadsheet,
-  Bell,
-  FileText
+  FileSpreadsheet
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { ownerApi } from '../../services/ownerApi';
 import { Button } from '../ui/Button';
 import { UrbanNestLogo, UrbanNestMark } from '../ui/UrbanNestLogo';
 
@@ -45,8 +42,7 @@ const OWNER_NAV_GROUPS: NavGroup[] = [
   {
     groupName: 'OVERVIEW',
     items: [
-      { label: 'Dashboard', path: '/owner/dashboard', icon: LayoutDashboard },
-      { label: 'Noticeboard', path: '/owner/notices', icon: Bell }
+      { label: 'Dashboard', path: '/owner/dashboard', icon: LayoutDashboard }
     ]
   },
   {
@@ -60,7 +56,6 @@ const OWNER_NAV_GROUPS: NavGroup[] = [
     groupName: 'PEOPLE',
     items: [
       { label: 'Residents', path: '/owner/residents', icon: Users },
-      { label: 'KYC Documents', path: '/owner/documents', icon: FileText },
       { label: 'Resident Lifecycle', path: '/owner/residents/lifecycle', icon: UserCheck },
       { label: 'Staff Management', path: '/owner/staff', icon: ShieldCheck },
       { label: 'Leave Approvals', path: '/owner/leave', icon: Calendar }
@@ -94,26 +89,11 @@ const OWNER_NAV_GROUPS: NavGroup[] = [
 ];
 
 export const OwnerLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, activeProperty, setActiveProperty, switchRole, logout } = useAuth();
+  const { user, activeProperty, properties, setActiveProperty, switchRole, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [propertyDropdownOpen, setPropertyDropdownOpen] = useState(false);
-  const [propertiesList, setPropertiesList] = useState<any[]>([]);
-
-  useEffect(() => {
-    const loadProps = async () => {
-      try {
-        const res = await ownerApi.getProperties();
-        if (res.data && res.data.length > 0) {
-          setPropertiesList(res.data);
-        }
-      } catch {
-        // Use active property as fallback
-      }
-    };
-    loadProps();
-  }, []);
 
   return (
     <div className="min-h-screen bg-[#F8F7F3] dark:bg-slate-950 text-[#18231F] dark:text-slate-100 flex">
@@ -210,21 +190,21 @@ export const OwnerLayout: React.FC<{ children: React.ReactNode }> = ({ children 
                   <div className="px-3 py-1 text-[10px] font-bold text-[#8A928D] uppercase tracking-wider">
                     Select Active Property
                   </div>
-                  {(propertiesList.length > 0 ? propertiesList : [activeProperty]).map((prop) => (
+                  {properties.map((prop) => (
                     <button
                       key={prop.id}
                       onClick={() => {
                         setActiveProperty(prop);
                         setPropertyDropdownOpen(false);
                       }}
-                      className={`w-full text-left px-3 py-1.5 text-xs flex items-center justify-between hover:bg-[#F8F7F3] dark:hover:bg-slate-800 ${
-                        activeProperty?.id === prop.id
-                          ? 'font-bold text-[#0B4036] bg-[#EAF2EE]'
-                          : 'text-[#18231F] dark:text-slate-300'
-                      }`}
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-[#F8F7F3] dark:hover:bg-slate-800 transition-colors flex items-center justify-between"
                     >
-                      <span className="truncate">{prop.name}</span>
-                      {activeProperty?.id === prop.id && <span className="w-1.5 h-1.5 rounded-full bg-[#0B4036]" />}
+                      <span className={`truncate ${activeProperty?.id === prop.id ? 'font-bold text-[#0B4036] dark:text-emerald-400' : 'text-[#18231F] dark:text-slate-300'}`}>
+                        {prop.name}
+                      </span>
+                      {activeProperty?.id === prop.id && (
+                        <div className="w-1.5 h-1.5 rounded-full bg-[#0B4036] dark:bg-emerald-400"></div>
+                      )}
                     </button>
                   ))}
                 </div>

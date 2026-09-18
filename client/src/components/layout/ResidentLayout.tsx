@@ -1,4 +1,3 @@
-import { toast, useToast } from '../../context/ToastContext';
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
@@ -57,7 +56,7 @@ export const ResidentLayout: React.FC<{ children: React.ReactNode }> = ({ childr
       await residentApi.triggerSOS('Emergency SOS triggered from Resident Header shortcut');
       setSosActivated(true);
     } catch (err: any) {
-      toast.error(err.message || 'Failed to trigger SOS.');
+      alert(err.message || 'Failed to trigger SOS.');
     } finally {
       setIsTriggeringSOS(false);
     }

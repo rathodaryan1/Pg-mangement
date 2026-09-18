@@ -1,4 +1,3 @@
-import { toast, useToast } from '../../context/ToastContext';
 import React, { useState, useEffect } from 'react';
 import {
   Calendar,
@@ -52,7 +51,7 @@ export const OwnerLeavePage: React.FC = () => {
       setTimeout(() => setToastMessage(null), 3500);
       fetchLeaves();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to approve leave');
+      alert(err.message || 'Failed to approve leave');
     }
   };
 
@@ -68,7 +67,7 @@ export const OwnerLeavePage: React.FC = () => {
       setTimeout(() => setToastMessage(null), 3500);
       fetchLeaves();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to reject leave');
+      alert(err.message || 'Failed to reject leave');
     }
   };
 

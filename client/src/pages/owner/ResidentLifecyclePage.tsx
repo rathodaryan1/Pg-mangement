@@ -1,4 +1,3 @@
-import { toast, useToast } from '../../context/ToastContext';
 import React, { useState, useEffect } from 'react';
 import {
   UserCheck,
@@ -94,7 +93,7 @@ export const ResidentLifecyclePage: React.FC = () => {
     e.preventDefault();
     try {
       if (!moveInForm.bedId || !moveInForm.fullName || !moveInForm.email || !moveInForm.mobile) {
-        toast.error('Please select a bed and fill all resident details');
+        alert('Please select a bed and fill all resident details');
         return;
       }
 
@@ -124,7 +123,7 @@ export const ResidentLifecyclePage: React.FC = () => {
       setTimeout(() => setToastMessage(null), 4000);
       fetchData();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to onboard resident');
+      alert(err.message || 'Failed to onboard resident');
     }
   };
 
@@ -132,7 +131,7 @@ export const ResidentLifecyclePage: React.FC = () => {
     e.preventDefault();
     try {
       if (!noticeForm.residentId) {
-        toast.error('Please select a resident');
+        alert('Please select a resident');
         return;
       }
 
@@ -145,7 +144,7 @@ export const ResidentLifecyclePage: React.FC = () => {
       setTimeout(() => setToastMessage(null), 4000);
       fetchData();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to update notice period');
+      alert(err.message || 'Failed to update notice period');
     }
   };
 
@@ -153,7 +152,7 @@ export const ResidentLifecyclePage: React.FC = () => {
     e.preventDefault();
     try {
       if (!moveOutForm.residentId) {
-        toast.error('Please select a resident');
+        alert('Please select a resident');
         return;
       }
 
@@ -173,7 +172,7 @@ export const ResidentLifecyclePage: React.FC = () => {
       setTimeout(() => setToastMessage(null), 4000);
       fetchData();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to complete move-out');
+      alert(err.message || 'Failed to complete move-out');
     }
   };
 

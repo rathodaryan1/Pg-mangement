@@ -1,4 +1,3 @@
-import { toast, useToast } from '../../context/ToastContext';
 import React, { useState, useEffect } from 'react';
 import { ShieldCheck, Plus, Search, Phone, User, CheckSquare, CheckCircle2, Edit2, Trash2, AlertTriangle } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
@@ -50,7 +49,7 @@ export const StaffPage: React.FC = () => {
     e.preventDefault();
     try {
       if (!staffForm.name || !staffForm.mobile) {
-        toast.error('Please fill name and mobile number');
+        alert('Please fill name and mobile number');
         return;
       }
 
@@ -82,7 +81,7 @@ export const StaffPage: React.FC = () => {
       setTimeout(() => setToastMessage(null), 4000);
       fetchStaff();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to save staff member');
+      alert(err.message || 'Failed to save staff member');
     }
   };
 
@@ -95,7 +94,7 @@ export const StaffPage: React.FC = () => {
       setTimeout(() => setToastMessage(null), 3500);
       fetchStaff();
     } catch (err: any) {
-      toast.error(err.message || 'Failed to deactivate staff');
+      alert(err.message || 'Failed to deactivate staff');
     }
   };
 
