@@ -31,9 +31,70 @@ async function main() {
   await prisma.building.deleteMany({});
   await prisma.user.deleteMany({});
   await prisma.property.deleteMany({});
+  await prisma.tenant.deleteMany({});
+  await prisma.plan.deleteMany({});
   await prisma.setting.deleteMany({});
 
-  // 2. Default Settings
+  // 2. Pricing Plans
+  await prisma.plan.createMany({
+    data: [
+      {
+        name: 'Starter Tier',
+        tier: 'STARTER',
+        priceMonthly: 2999,
+        priceYearly: 29990,
+        maxProperties: 1,
+        maxRooms: 30,
+        maxResidents: 60,
+        features: 'Single Property, Essential QR Pass, Basic Invoicing',
+        isActive: true,
+      },
+      {
+        name: 'Professional Tier',
+        tier: 'PROFESSIONAL',
+        priceMonthly: 7999,
+        priceYearly: 79990,
+        maxProperties: 5,
+        maxRooms: 150,
+        maxResidents: 350,
+        features: 'Up to 5 Properties, Real-Time Visitor QR, Rent Escalation, Multi-Staff RBAC',
+        isActive: true,
+      },
+      {
+        name: 'Enterprise Tier',
+        tier: 'ENTERPRISE',
+        priceMonthly: 19999,
+        priceYearly: 199990,
+        maxProperties: 50,
+        maxRooms: 2000,
+        maxResidents: 5000,
+        features: 'Unlimited Properties & Rooms, Dedicated SLA, Custom Subdomain, Audit Logs',
+        isActive: true,
+      },
+    ],
+  });
+
+  // 3. Default SaaS Organization / Tenant
+  const defaultTenant = await prisma.tenant.create({
+    data: {
+      name: 'Urban Nest Living Network',
+      slug: 'urban-nest-network',
+      email: 'admin@urbannestpg.com',
+      phone: '+91 98765 43210',
+      address: 'Sector 45, Cyber City',
+      city: 'Gurugram',
+      state: 'Haryana',
+      country: 'India',
+      status: 'ACTIVE',
+      plan: 'PROFESSIONAL',
+      subscriptionStatus: 'ACTIVE',
+      subscriptionStartedAt: new Date(),
+    },
+  });
+
+  console.log('✅ Created Tenant Organization:', defaultTenant.name);
+
+  // 4. Default Settings
   await prisma.setting.createMany({
     data: [
       { key: 'sms_notifications_enabled', value: 'true' },
@@ -44,9 +105,10 @@ async function main() {
     ],
   });
 
-  // 3. Create Properties
+  // 5. Create Properties
   const propGurgaon = await prisma.property.create({
     data: {
+      tenantId: defaultTenant.id,
       name: 'Urban Nest Premium PG (Gurgaon)',
       address: 'Plot 42, Sector 45, Near Huda City Centre Metro, Gurugram, Haryana - 122003',
       city: 'Gurugram',
@@ -59,6 +121,7 @@ async function main() {
 
   const propNoida = await prisma.property.create({
     data: {
+      tenantId: defaultTenant.id,
       name: 'Urban Nest Luxury PG (Noida)',
       address: 'Tower C, Sector 62, Electronic City, Noida, UP - 201301',
       city: 'Noida',
@@ -217,16 +280,28 @@ async function main() {
   // 7. Password Hash ('admin123')
   const salt = await bcrypt.genSalt(10);
   const passwordHash = await bcrypt.hash('admin123', salt);
+  const superAdminPasswordHash = await bcrypt.hash('superadmin123', salt);
 
-  // 8. Create Owner & Staff Users
+  // 8. Create Owner & Super Admin Users
   const owner = await prisma.user.create({
     data: {
+      tenantId: defaultTenant.id,
       email: 'owner@pg.com',
       passwordHash,
       name: 'Aaryan Sharma (Owner)',
       role: 'OWNER',
       mobile: '9876500001',
       propertyId: propGurgaon.id,
+    },
+  });
+
+  await prisma.user.create({
+    data: {
+      email: 'superadmin@urbannest.io',
+      passwordHash: superAdminPasswordHash,
+      name: 'Platform Super Admin',
+      role: 'SUPER_ADMIN',
+      mobile: '+91 99999 00000',
     },
   });
 
@@ -243,6 +318,7 @@ async function main() {
   // Resident 1: Aakash Verma (Assigned to Room 101, Bed 101-A)
   const userAakash = await prisma.user.create({
     data: {
+      tenantId: defaultTenant.id,
       email: 'aakash.v@gmail.com',
       passwordHash,
       name: 'Aakash Verma',
