@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import path from 'path';
 import { config } from './config/env';
+import { prisma } from './config/prisma';
 import apiRouter from './routes';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { apiLimiter } from './middleware/rateLimiter';
@@ -107,12 +108,23 @@ app.use(notFoundHandler);
 // Centralized Error Handling Middleware
 app.use(errorHandler);
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`================================================`);
   console.log(`  🏢 URBAN NEST — SMART PG BACKEND SERVICE     `);
   console.log(`  Environment: ${config.nodeEnv}               `);
   console.log(`  Server Port: ${PORT}                         `);
   console.log(`  Frontend:    ${config.frontendUrl}           `);
+  console.log(`================================================`);
+
+  // Asynchronous Database Readiness Check on Startup
+  try {
+    const startTime = Date.now();
+    await prisma.$queryRaw`SELECT 1`;
+    console.log(`  ✅ PostgreSQL Database Connected (${Date.now() - startTime}ms)`);
+  } catch (err: any) {
+    console.error(`  ❌ PostgreSQL Database Connection FAILED:`, err.message);
+    console.error(`  ⚠️ Check DATABASE_URL and DIRECT_URL environment variables.`);
+  }
   console.log(`================================================`);
 });
 

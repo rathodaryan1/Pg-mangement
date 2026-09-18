@@ -58,23 +58,35 @@ router.get('/', (req, res) => {
   });
 });
 
-// Production Safe Health Check
+// Production Safe Database Readiness & Health Check
 router.get('/health', async (req, res) => {
-  let dbStatus = 'UNKNOWN';
+  let dbStatus = 'DISCONNECTED';
+  let isConnected = false;
+  let latencyMs = 0;
+
   try {
-    const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 1000));
+    const startTime = Date.now();
+    const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Database ping timeout')), 4000));
     await Promise.race([prisma.$queryRaw`SELECT 1`, timeout]);
+    latencyMs = Date.now() - startTime;
     dbStatus = 'CONNECTED';
-  } catch {
-    dbStatus = 'FALLBACK_READY';
+    isConnected = true;
+  } catch (error: any) {
+    dbStatus = 'DISCONNECTED';
+    isConnected = false;
   }
 
-  res.status(200).json({
-    success: true,
+  const statusCode = isConnected ? 200 : 503;
+
+  return res.status(statusCode).json({
+    success: isConnected,
     name: 'Urban Nest API',
-    status: 'HEALTHY',
+    status: isConnected ? 'HEALTHY' : 'DEGRADED',
     database: dbStatus,
-    message: 'Urban Nest API is running smoothly',
+    latencyMs: isConnected ? latencyMs : undefined,
+    message: isConnected
+      ? 'Urban Nest API and PostgreSQL database are fully operational.'
+      : 'Database service is temporarily unreachable. Please check PostgreSQL connection string.',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
   });
