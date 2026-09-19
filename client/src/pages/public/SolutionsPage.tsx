@@ -346,7 +346,7 @@ export const SolutionsPage: React.FC = () => {
             </Button>
           </Link>
           <Link to="/contact">
-            <Button variant="outline" size="md" className="border-white/30 text-white hover:bg-white/10">
+            <Button variant="outline" size="md" className="bg-transparent border-white/30 text-white hover:bg-white/10">
               Talk to Specialist
             </Button>
           </Link>
