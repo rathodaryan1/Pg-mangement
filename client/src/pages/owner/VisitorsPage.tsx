@@ -156,10 +156,18 @@ export const VisitorsPage: React.FC = () => {
     e.preventDefault();
     try {
       if (!qrCodeInput.trim()) return;
-      const res = await ownerApi.verifyVisitorQR(qrCodeInput.trim());
+      
+      // Extract the actual token if the scanner read the full URL
+      let tokenToVerify = qrCodeInput.trim();
+      if (tokenToVerify.includes('/gate/verify/')) {
+        tokenToVerify = tokenToVerify.split('/gate/verify/').pop() || tokenToVerify;
+      }
+
+      const res = await ownerApi.verifyVisitorQR(tokenToVerify);
       setQrVerificationResult(res.data);
       if (res.data.valid) {
-        showToast(`Valid pass verified for ${res.data.visitor?.visitorName || res.data.visitor?.name}!`);
+        const visitorData = res.data.visitor || res.data.pass;
+        showToast(`Valid pass verified for ${visitorData?.visitorName || visitorData?.name}!`);
         fetchData();
       }
     } catch (err: any) {
