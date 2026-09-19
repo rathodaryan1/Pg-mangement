@@ -1328,7 +1328,7 @@ export class OwnerController {
       const created = await prisma.visitorRequest.create({
         data: {
           propertyId: propId,
-          residentId: residentId || (await prisma.resident.findFirst({ where: { propertyId: propId } }))?.id || 'res-1',
+          residentId: residentId || null,
           visitorName: visitorName.trim(),
           visitorMobile: visitorMobile.trim(),
           relation: relation ? relation.trim() : 'Guest',

@@ -413,8 +413,8 @@ enum VisitorStatus {
 
 model VisitorRequest {
   id                String        @id @default(uuid())
-  residentId        String
-  resident          Resident      @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  residentId        String?
+  resident          Resident?      @relation(fields: [residentId], references: [id], onDelete: Cascade)
   propertyId        String
   property          Property      @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   visitorName       String
