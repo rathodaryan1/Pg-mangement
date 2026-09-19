@@ -257,6 +257,8 @@ export const VisitorsPage: React.FC = () => {
     }
   ];
 
+  const verifiedVisitor = qrVerificationResult?.visitor || qrVerificationResult?.pass;
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Toast Alert */}
@@ -484,46 +486,46 @@ export const VisitorsPage: React.FC = () => {
                 <span>{qrVerificationResult.valid ? 'VALID PASS VERIFIED' : 'INVALID / EXPIRED PASS'}</span>
               </div>
 
-              {qrVerificationResult.visitor && (
+              {verifiedVisitor && (
                 <div className="space-y-1 pt-1 border-t border-emerald-200/60 dark:border-emerald-800/40">
                   <p>
                     <strong>Visitor:</strong>{' '}
-                    {qrVerificationResult.visitor.visitorName || qrVerificationResult.visitor.name}
+                    {verifiedVisitor.visitorName || verifiedVisitor.name}
                   </p>
                   <p>
                     <strong>Host Resident:</strong>{' '}
-                    {qrVerificationResult.visitor.residentName || qrVerificationResult.visitor.resident?.fullName} (Room{' '}
-                    {qrVerificationResult.visitor.roomNumber ||
-                      qrVerificationResult.visitor.resident?.room?.number ||
+                    {verifiedVisitor.residentName || verifiedVisitor.resident?.fullName} (Room{' '}
+                    {verifiedVisitor.roomNumber ||
+                      verifiedVisitor.resident?.room?.number ||
                       'N/A'}
                     )
                   </p>
                   <p>
-                    <strong>Purpose:</strong> {qrVerificationResult.visitor.purpose}
+                    <strong>Purpose:</strong> {verifiedVisitor.purpose}
                   </p>
                   <p>
-                    <strong>Status:</strong> {qrVerificationResult.visitor.status}
+                    <strong>Status:</strong> {verifiedVisitor.status}
                   </p>
                   
                   <div className="mt-4 pt-3 border-t border-emerald-200/60 dark:border-emerald-800/40 flex justify-end gap-2">
-                    {qrVerificationResult.visitor.status === 'APPROVED' && (
+                    {verifiedVisitor.status === 'APPROVED' && (
                       <Button
                         variant="primary"
                         size="sm"
                         onClick={() => {
-                          handleCheckIn(qrVerificationResult.visitor.id);
+                          handleCheckIn(verifiedVisitor.id);
                           setGateScanModalOpen(false);
                         }}
                       >
                         Check-In Visitor
                       </Button>
                     )}
-                    {qrVerificationResult.visitor.status === 'CHECKED_IN' && (
+                    {verifiedVisitor.status === 'CHECKED_IN' && (
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => {
-                          handleCheckOut(qrVerificationResult.visitor.id);
+                          handleCheckOut(verifiedVisitor.id);
                           setGateScanModalOpen(false);
                         }}
                       >
