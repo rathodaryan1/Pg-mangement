@@ -504,6 +504,33 @@ export const VisitorsPage: React.FC = () => {
                   <p>
                     <strong>Status:</strong> {qrVerificationResult.visitor.status}
                   </p>
+                  
+                  <div className="mt-4 pt-3 border-t border-emerald-200/60 dark:border-emerald-800/40 flex justify-end gap-2">
+                    {qrVerificationResult.visitor.status === 'APPROVED' && (
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => {
+                          handleCheckIn(qrVerificationResult.visitor.id);
+                          setGateScanModalOpen(false);
+                        }}
+                      >
+                        Check-In Visitor
+                      </Button>
+                    )}
+                    {qrVerificationResult.visitor.status === 'CHECKED_IN' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          handleCheckOut(qrVerificationResult.visitor.id);
+                          setGateScanModalOpen(false);
+                        }}
+                      >
+                        Mark Exit (Check-Out)
+                      </Button>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
