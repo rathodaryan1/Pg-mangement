@@ -484,7 +484,14 @@ export const PaymentsPage: React.FC = () => {
                       ₹{p.amount.toLocaleString('en-IN')}
                     </td>
                     <td className="p-4">
-                      <StatusBadge status={p.status} />
+                      <div className="space-y-1">
+                        <StatusBadge status={p.status} />
+                        {p.status === 'PAID' && p.method && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">
+                            {p.method === 'RAZORPAY' ? '⚡ Razorpay' : p.method}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="p-4 text-right">
                       <div className="flex items-center justify-end gap-2">

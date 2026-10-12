@@ -10,7 +10,8 @@ import {
   Wifi,
   Phone,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Globe
 } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -31,7 +32,10 @@ export const OwnerSettingsPage: React.FC = () => {
     autoInvoiceGenerationDay: '1',
     rentDueDay: '5',
     upiId: 'urbannest.gurgaon@okaxis',
-    bankAccount: 'HDFC0001234 - 50200098765432'
+    bankAccount: 'HDFC0001234 - 50200098765432',
+    razorpayKeyId: '',
+    razorpayKeySecret: '',
+    hasRazorpaySecret: false,
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -190,7 +194,54 @@ export const OwnerSettingsPage: React.FC = () => {
           </div>
         </Card>
 
-        {/* Section 3: Connectivity & Emergency */}
+        {/* Section 3: Online Payment Gateway (Razorpay) */}
+        <Card className="p-6 space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+            <div className="flex items-center gap-2.5 text-slate-900 dark:text-white font-bold text-sm">
+              <Globe className="w-4 h-4 text-emerald-600" />
+              <span>Online Payment Gateway (Razorpay)</span>
+            </div>
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+              <span>{settings.razorpayKeyId ? 'Merchant Gateway Active' : 'Ready (Default Gateway)'}</span>
+            </div>
+          </div>
+
+          <p className="text-xs text-slate-500">
+            Allow residents to pay rent online via UPI (Google Pay, PhonePe, Paytm), Debit/Credit Cards, and Net Banking. Funds settle directly into your merchant bank account.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Input
+              label="Razorpay Key ID"
+              placeholder="e.g. rzp_live_... or rzp_test_..."
+              value={settings.razorpayKeyId || ''}
+              onChange={(e) => setSettings({ ...settings, razorpayKeyId: e.target.value })}
+            />
+            <Input
+              label="Razorpay Key Secret"
+              type="password"
+              placeholder={settings.hasRazorpaySecret ? '••••••••••••••••••••' : 'Enter Razorpay Key Secret'}
+              value={settings.razorpayKeySecret || ''}
+              onChange={(e) => setSettings({ ...settings, razorpayKeySecret: e.target.value })}
+            />
+          </div>
+
+          <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-start gap-3">
+            <Shield className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+            <div className="text-xs text-slate-600 dark:text-slate-400 space-y-1">
+              <p className="font-semibold text-slate-800 dark:text-slate-200">Webhook Integration Endpoint</p>
+              <p className="font-mono text-[11px] text-slate-700 dark:text-slate-300 select-all">
+                {window.location.origin.replace(':5173', ':5000')}/api/webhooks/razorpay
+              </p>
+              <p className="text-[11px] text-slate-500">
+                Register this webhook URL in your Razorpay Dashboard with the <code className="bg-slate-200 dark:bg-slate-800 px-1 py-0.5 rounded">payment.captured</code> event for automatic invoice settlement.
+              </p>
+            </div>
+          </div>
+        </Card>
+
+        {/* Section 4: Connectivity & Emergency */}
         <Card className="p-6 space-y-4">
           <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100 dark:border-slate-800 text-slate-900 dark:text-white font-bold text-sm">
             <Wifi className="w-4 h-4 text-brand-forest dark:text-brand-gold" />

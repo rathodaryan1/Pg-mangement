@@ -2434,6 +2434,8 @@ export class OwnerController {
         noticePeriodDays: settingsMap['notice_period_days'] || '30',
         visitorCutoffTime: settingsMap['visitor_cutoff_time'] || '22:00',
         upiId: property?.upiId || settingsMap['primary_upi_id'] || 'urbannest@axis',
+        razorpayKeyId: property?.razorpayKeyId || process.env.RAZORPAY_KEY_ID || '',
+        hasRazorpaySecret: Boolean(property?.razorpayKeySecret || process.env.RAZORPAY_KEY_SECRET),
         rules: settingsMap['rules'] || '1. Quiet hours after 10 PM\n2. Visitors allowed 9 AM - 9 PM\n3. Keep common areas clean',
         policies: settingsMap['policies'] || 'Deposit refundable within 7 days of checkout subject to room inspection.',
         property: property ? {
@@ -2444,6 +2446,7 @@ export class OwnerController {
           upiId: property.upiId,
           phone: property.phone,
           email: property.email,
+          razorpayKeyId: property.razorpayKeyId,
         } : null,
       });
     } catch (error: any) {
@@ -2453,7 +2456,19 @@ export class OwnerController {
 
   static async updateSettings(req: AuthRequest, res: Response): Promise<Response> {
     try {
-      const { rentDueDay, lateFeePerDay, noticePeriodDays, visitorCutoffTime, upiId, gstNumber, propertyPhone, propertyEmail, propertyId } = req.body;
+      const {
+        rentDueDay,
+        lateFeePerDay,
+        noticePeriodDays,
+        visitorCutoffTime,
+        upiId,
+        gstNumber,
+        propertyPhone,
+        propertyEmail,
+        propertyId,
+        razorpayKeyId,
+        razorpayKeySecret,
+      } = req.body;
 
       const propId = propertyId || (await OwnerController.resolvePropertyScope(req)).propertyId;
 
@@ -2482,6 +2497,8 @@ export class OwnerController {
             ...(gstNumber && { gstNumber }),
             ...(propertyPhone && { phone: propertyPhone }),
             ...(propertyEmail && { email: propertyEmail }),
+            ...(razorpayKeyId !== undefined && { razorpayKeyId: razorpayKeyId ? razorpayKeyId.trim() : null }),
+            ...(razorpayKeySecret && { razorpayKeySecret: razorpayKeySecret.trim() }),
           },
         });
       }

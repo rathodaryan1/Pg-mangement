@@ -5,8 +5,14 @@ import { config } from '../config/env';
 // ==========================================
 // 1. RAZORPAY SERVICE
 // ==========================================
-export const createRazorpayOrder = async (amount: number, receiptId: string) => {
-  const { keyId, keySecret } = config.razorpay;
+export const createRazorpayOrder = async (
+  amount: number,
+  receiptId: string,
+  customKeyId?: string,
+  customKeySecret?: string
+) => {
+  const keyId = customKeyId || config.razorpay.keyId;
+  const keySecret = customKeySecret || config.razorpay.keySecret;
 
   if (amount <= 0) {
     throw new Error('Payment amount must be greater than zero');
@@ -63,9 +69,10 @@ export const createRazorpayOrder = async (amount: number, receiptId: string) => 
 export const verifyRazorpaySignature = (
   orderId: string,
   paymentId: string,
-  signature: string
+  signature: string,
+  customKeySecret?: string
 ): boolean => {
-  const { keySecret } = config.razorpay;
+  const keySecret = customKeySecret || config.razorpay.keySecret;
 
   if (!orderId || !paymentId || !signature) {
     return false;
@@ -99,8 +106,13 @@ export const verifyRazorpaySignature = (
   }
 };
 
-export const fetchRazorpayPayment = async (paymentId: string): Promise<any | null> => {
-  const { keyId, keySecret } = config.razorpay;
+export const fetchRazorpayPayment = async (
+  paymentId: string,
+  customKeyId?: string,
+  customKeySecret?: string
+): Promise<any | null> => {
+  const keyId = customKeyId || config.razorpay.keyId;
+  const keySecret = customKeySecret || config.razorpay.keySecret;
   if (!keyId || !keySecret || !paymentId) return null;
 
   try {

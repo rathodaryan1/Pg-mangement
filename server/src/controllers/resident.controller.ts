@@ -416,14 +416,18 @@ export class ResidentController {
 
       const payment = await prisma.payment.findFirst({
         where: { id: paymentId, residentId: resident.id },
+        include: { property: true },
       });
 
       if (!payment) return sendError(res, 'Invoice not found or unauthorized', 404);
       if (payment.status === 'PAID') return sendError(res, 'This invoice is already paid', 400);
       if (payment.amount <= 0) return sendError(res, 'Invoice amount must be positive', 400);
 
+      const keyId = payment.property?.razorpayKeyId || config.razorpay.keyId || '';
+      const keySecret = payment.property?.razorpayKeySecret || config.razorpay.keySecret || '';
+
       // Create genuine Razorpay order using official service
-      const razorpayOrder = await createRazorpayOrder(payment.amount, payment.id);
+      const razorpayOrder = await createRazorpayOrder(payment.amount, payment.id, keyId, keySecret);
 
       // Persist order ID to database payment record
       await prisma.payment.update({
@@ -437,7 +441,7 @@ export class ResidentController {
         amount: payment.amount,
         amountInPaise: Math.round(payment.amount * 100),
         currency: 'INR',
-        keyId: config.razorpay.keyId || '',
+        keyId: keyId,
       });
     } catch (error: any) {
       return sendError(res, error.message || 'Failed to create payment order', 500);
@@ -464,7 +468,7 @@ export class ResidentController {
       // 1. Fetch payment record and verify tenant & resident ownership
       const payment = await prisma.payment.findFirst({
         where: { id: paymentId, residentId: resident.id },
-        include: { receipt: true },
+        include: { receipt: true, property: true },
       });
 
       if (!payment) return sendError(res, 'Payment invoice not found or unauthorized', 404);
@@ -491,11 +495,15 @@ export class ResidentController {
         );
       }
 
+      const keyId = payment.property?.razorpayKeyId || config.razorpay.keyId || '';
+      const keySecret = payment.property?.razorpayKeySecret || config.razorpay.keySecret || '';
+
       // 4. Server-side HMAC SHA-256 signature verification (constant-time)
       const isSignatureValid = verifyRazorpaySignature(
         razorpayOrderId,
         razorpayPaymentId,
-        razorpaySignature
+        razorpaySignature,
+        keySecret
       );
 
       if (!isSignatureValid) {
@@ -508,7 +516,7 @@ export class ResidentController {
       }
 
       // 5. Remote verification with Razorpay Gateway API (when credentials are active)
-      const rzpPayment = await fetchRazorpayPayment(razorpayPaymentId);
+      const rzpPayment = await fetchRazorpayPayment(razorpayPaymentId, keyId, keySecret);
       if (rzpPayment) {
         if (rzpPayment.order_id && rzpPayment.order_id !== razorpayOrderId) {
           return sendError(res, 'Gateway order ID verification mismatch', 400);

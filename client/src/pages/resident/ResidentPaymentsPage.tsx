@@ -131,7 +131,7 @@ export const ResidentPaymentsPage: React.FC = () => {
 
       // 3. Launch official Razorpay Checkout Modal
       const options = {
-        key: order.keyId,
+        key: order.keyId || (import.meta.env.VITE_RAZORPAY_KEY_ID as string) || 'rzp_test_Tcby7xx80KIQ1F',
         amount: order.amountInPaise || Math.round(selectedPayment.amount * 100),
         currency: order.currency || 'INR',
         name: 'Urban Nest PG',
