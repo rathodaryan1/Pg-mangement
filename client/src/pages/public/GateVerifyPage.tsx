@@ -52,10 +52,12 @@ export const GateVerifyPage: React.FC = () => {
     verifyPass();
   }, [token]);
 
-  const handleCheckIn = async (passId: string) => {
+  const handleCheckIn = async () => {
+    if (!token) return;
     setActionLoading(true);
+    setActionSuccess(null);
     try {
-      await api.post(`/owner/visitors/${passId}/check-in`);
+      await api.post(`/gate/check-in/${encodeURIComponent(token)}`);
       setActionSuccess('Visitor successfully checked in at gate.');
       await verifyPass();
     } catch (err: any) {
@@ -65,10 +67,12 @@ export const GateVerifyPage: React.FC = () => {
     }
   };
 
-  const handleCheckOut = async (passId: string) => {
+  const handleCheckOut = async () => {
+    if (!token) return;
     setActionLoading(true);
+    setActionSuccess(null);
     try {
-      await api.post(`/owner/visitors/${passId}/check-out`);
+      await api.post(`/gate/check-out/${encodeURIComponent(token)}`);
       setActionSuccess('Visitor marked as checked out.');
       await verifyPass();
     } catch (err: any) {
@@ -226,7 +230,7 @@ export const GateVerifyPage: React.FC = () => {
                   size="md"
                   className="w-full bg-[#0B4036] hover:bg-[#083129] text-white"
                   isLoading={actionLoading}
-                  onClick={() => handleCheckIn(visitor.id)}
+                  onClick={handleCheckIn}
                   leftIcon={<LogIn className="w-4 h-4" />}
                 >
                   Confirm Gate Entry (Check-In)
@@ -239,7 +243,7 @@ export const GateVerifyPage: React.FC = () => {
                   size="md"
                   className="w-full bg-slate-800 hover:bg-slate-900 text-white"
                   isLoading={actionLoading}
-                  onClick={() => handleCheckOut(visitor.id)}
+                  onClick={handleCheckOut}
                   leftIcon={<LogOut className="w-4 h-4" />}
                 >
                   Mark Visitor Departure (Check-Out)

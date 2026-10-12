@@ -45,6 +45,20 @@ async function main() {
     totalPassed += auditRes.passed || 0;
     totalFailed += auditRes.failed || 0;
   }
+  await sleep(1000);
+
+  console.log('\n>>> RUNNING SUITE 6: PHASE 1 CRITICAL FIXES (PAYMENTS, GATE, DOCUMENTS) <<<');
+  const { runPhase1CriticalTests } = await import('./phase1-critical-fixes.test');
+  const phase1Res = await runPhase1CriticalTests();
+  totalPassed += phase1Res.passed;
+  totalFailed += phase1Res.failed;
+  await sleep(1000);
+
+  console.log('\n>>> RUNNING SUITE 7: PHASE 2 FULL FUNCTIONALITY & AUDIT SUITE <<<');
+  const { runPhase2FunctionalityTests } = await import('./phase2-functionality.test');
+  const phase2Res = await runPhase2FunctionalityTests();
+  totalPassed += phase2Res.passed;
+  totalFailed += phase2Res.failed;
 
   console.log('\n===============================================================');
   console.log('FINAL SUMMARY OF ALL AUTOMATED TEST SUITES:');

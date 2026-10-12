@@ -1,11 +1,14 @@
 import { Response } from 'express';
 import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
 import { prisma } from '../config/prisma';
 import { sendSuccess, sendError } from '../utils/response';
 import { AuthRequest } from '../middleware/auth';
 import { AuditService } from '../services/audit.service';
-import { StorageService } from '../utils/supabase';
+import { StorageService, LOCAL_UPLOADS_DIR } from '../utils/supabase';
 import { config } from '../config/env';
+import { createRazorpayOrder, verifyRazorpaySignature, fetchRazorpayPayment } from '../services';
 
 async function withDbRetry<T>(fn: () => Promise<T>, retries = 3): Promise<T> {
   for (let i = 0; i <= retries; i++) {
@@ -405,30 +408,36 @@ export class ResidentController {
 
   static async createPaymentOrder(req: AuthRequest, res: Response): Promise<Response> {
     try {
-      const { paymentId, method } = req.body;
+      const { paymentId } = req.body;
       const resident = await ResidentController.getResident(req);
       if (!resident) return sendError(res, 'Resident profile not found', 404);
+
+      if (!paymentId) return sendError(res, 'Invoice paymentId is required', 400);
 
       const payment = await prisma.payment.findFirst({
         where: { id: paymentId, residentId: resident.id },
       });
 
-      if (!payment) return sendError(res, 'Invoice not found', 404);
+      if (!payment) return sendError(res, 'Invoice not found or unauthorized', 404);
       if (payment.status === 'PAID') return sendError(res, 'This invoice is already paid', 400);
+      if (payment.amount <= 0) return sendError(res, 'Invoice amount must be positive', 400);
 
-      const orderId = `order_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`;
+      // Create genuine Razorpay order using official service
+      const razorpayOrder = await createRazorpayOrder(payment.amount, payment.id);
 
+      // Persist order ID to database payment record
       await prisma.payment.update({
         where: { id: paymentId },
-        data: { orderId },
+        data: { orderId: razorpayOrder.id },
       });
 
       return sendSuccess(res, {
-        orderId,
+        orderId: razorpayOrder.id,
         paymentId: payment.id,
         amount: payment.amount,
+        amountInPaise: Math.round(payment.amount * 100),
         currency: 'INR',
-        keyId: config.razorpay.keyId || 'rzp_test_placeholder',
+        keyId: config.razorpay.keyId || '',
       });
     } catch (error: any) {
       return sendError(res, error.message || 'Failed to create payment order', 500);
@@ -437,55 +446,122 @@ export class ResidentController {
 
   static async verifyPayment(req: AuthRequest, res: Response): Promise<Response> {
     try {
-      const { paymentId, transactionId, method, razorpayPaymentId, razorpayOrderId, razorpaySignature } = req.body;
+      const { paymentId, razorpayPaymentId, razorpayOrderId, razorpaySignature } = req.body;
+
+      // Fail-closed validation: ALL 4 cryptographic fields are mandatory
+      if (!paymentId || !razorpayPaymentId || !razorpayOrderId || !razorpaySignature) {
+        return sendError(
+          res,
+          'Cryptographic verification rejected: paymentId, razorpayPaymentId, razorpayOrderId, and razorpaySignature are required. Synthetic transactions are strictly forbidden.',
+          400,
+          'MISSING_PAYMENT_SIGNATURE'
+        );
+      }
+
       const resident = await ResidentController.getResident(req);
       if (!resident) return sendError(res, 'Resident profile not found', 404);
 
+      // 1. Fetch payment record and verify tenant & resident ownership
       const payment = await prisma.payment.findFirst({
         where: { id: paymentId, residentId: resident.id },
+        include: { receipt: true },
       });
 
-      if (!payment) return sendError(res, 'Payment invoice not found', 404);
+      if (!payment) return sendError(res, 'Payment invoice not found or unauthorized', 404);
 
-      // Verify Razorpay HMAC signature if credentials exist
-      if (config.razorpay.keySecret && razorpayOrderId && razorpayPaymentId && razorpaySignature) {
-        const expectedSignature = crypto
-          .createHmac('sha256', config.razorpay.keySecret)
-          .update(`${razorpayOrderId}|${razorpayPaymentId}`)
-          .digest('hex');
+      // 2. Check for idempotent repeat requests
+      if (payment.status === 'PAID') {
+        if (payment.orderId === razorpayOrderId && payment.transactionId === razorpayPaymentId) {
+          return sendSuccess(
+            res,
+            { payment, receipt: payment.receipt },
+            'Payment already verified and confirmed (idempotent request).'
+          );
+        }
+        return sendError(res, 'This invoice has already been settled.', 400, 'INVOICE_ALREADY_PAID');
+      }
 
-        if (expectedSignature !== razorpaySignature) {
-          return sendError(res, 'Cryptographic payment signature verification failed.', 400);
+      // 3. Ensure orderId matches the invoice assigned Razorpay order
+      if (payment.orderId && payment.orderId !== razorpayOrderId) {
+        return sendError(
+          res,
+          'Razorpay order ID does not match the invoice order ID.',
+          400,
+          'ORDER_ID_MISMATCH'
+        );
+      }
+
+      // 4. Server-side HMAC SHA-256 signature verification (constant-time)
+      const isSignatureValid = verifyRazorpaySignature(
+        razorpayOrderId,
+        razorpayPaymentId,
+        razorpaySignature
+      );
+
+      if (!isSignatureValid) {
+        return sendError(
+          res,
+          'Cryptographic payment signature verification failed. Untrusted or forged payload rejected.',
+          400,
+          'INVALID_SIGNATURE'
+        );
+      }
+
+      // 5. Remote verification with Razorpay Gateway API (when credentials are active)
+      const rzpPayment = await fetchRazorpayPayment(razorpayPaymentId);
+      if (rzpPayment) {
+        if (rzpPayment.order_id && rzpPayment.order_id !== razorpayOrderId) {
+          return sendError(res, 'Gateway order ID verification mismatch', 400);
+        }
+        const expectedPaise = Math.round(payment.amount * 100);
+        if (rzpPayment.amount && rzpPayment.amount !== expectedPaise) {
+          return sendError(res, 'Payment amount mismatch between gateway and invoice record', 400);
+        }
+        if (rzpPayment.status !== 'captured' && rzpPayment.status !== 'authorized') {
+          return sendError(res, `Payment has not been captured (Status: ${rzpPayment.status})`, 400);
         }
       }
 
-      const txn = razorpayPaymentId || transactionId || `TXN-${Date.now()}`;
+      // 6. Atomic database settlement in Prisma transaction
       const receiptNo = `UN-REC-${Date.now().toString().slice(-6)}`;
+      const result = await prisma.$transaction(
+        async (tx) => {
+          // Double check concurrency lock
+          const locked = await tx.payment.findUnique({
+            where: { id: paymentId },
+            include: { receipt: true },
+          });
+          if (!locked) throw new Error('Payment invoice missing');
+          if (locked.status === 'PAID') {
+            return { payment: locked, receipt: locked.receipt };
+          }
 
-      const result = await prisma.$transaction(async (tx) => {
-        const updated = await tx.payment.update({
-          where: { id: paymentId },
-          data: {
-            status: 'PAID',
-            paidDate: new Date(),
-            method: (method || 'UPI') as any,
-            transactionId: txn,
-          },
-        });
+          const updated = await tx.payment.update({
+            where: { id: paymentId },
+            data: {
+              status: 'PAID',
+              paidDate: new Date(),
+              method: 'RAZORPAY',
+              transactionId: razorpayPaymentId,
+              orderId: razorpayOrderId,
+            },
+          });
 
-        const receipt = await tx.paymentReceipt.upsert({
-          where: { paymentId },
-          create: {
-            paymentId,
-            receiptNumber: receiptNo,
-          },
-          update: {
-            receiptNumber: receiptNo,
-          },
-        });
+          const receipt = await tx.paymentReceipt.upsert({
+            where: { paymentId },
+            create: {
+              paymentId,
+              receiptNumber: receiptNo,
+            },
+            update: {
+              receiptNumber: receiptNo,
+            },
+          });
 
-        return { payment: updated, receipt };
-      }, { maxWait: 15000, timeout: 30000 });
+          return { payment: updated, receipt };
+        },
+        { maxWait: 15000, timeout: 30000 }
+      );
 
       await AuditService.log({
         propertyId: resident.propertyId,
@@ -496,11 +572,12 @@ export class ResidentController {
         entity: 'Payment',
         entityId: payment.id,
         ipAddress: req.ip,
-        details: `Rent payment of ₹${payment.amount} verified (Txn: ${txn})`,
+        details: `Rent payment of ₹${payment.amount} verified via Razorpay (Txn: ${razorpayPaymentId}, Order: ${razorpayOrderId})`,
       });
 
-      return sendSuccess(res, result, 'Payment verified and receipt generated successfully.');
+      return sendSuccess(res, result, 'Payment cryptographically verified and receipt generated successfully.');
     } catch (error: any) {
+      console.error('[VerifyPayment Error]:', error);
       return sendError(res, error.message || 'Payment verification failed', 500);
     }
   }
@@ -562,8 +639,9 @@ export class ResidentController {
 
   static async createVisitorRequest(req: AuthRequest, res: Response): Promise<Response> {
     try {
-      const { visitorName, visitorMobile, relation, purpose, visitDate, expectedEntryTime, expectedExitTime } = req.body;
-      if (!visitorName || !visitorMobile) {
+      const { visitorName, visitorMobile, visitorPhone, relation, purpose, visitDate, expectedEntryTime, expectedExitTime } = req.body;
+      const mobile = (visitorMobile || visitorPhone || '').trim();
+      if (!visitorName || !mobile) {
         return sendError(res, 'Visitor name and mobile number are required', 400);
       }
 
@@ -577,7 +655,7 @@ export class ResidentController {
           residentId: resident.id,
           propertyId: resident.propertyId,
           visitorName: visitorName.trim(),
-          visitorMobile: visitorMobile.trim(),
+          visitorMobile: mobile,
           relation: relation ? relation.trim() : 'Friend',
           purpose: purpose ? purpose.trim() : 'Personal Visit',
           visitDate: visitDate ? new Date(visitDate) : new Date(),
@@ -766,27 +844,33 @@ export class ResidentController {
       const file = req.file;
       const { title, type } = req.body;
 
-      let fileUrl = 'https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=400';
-      if (file) {
-        const stored = await StorageService.uploadFile(file.buffer, file.originalname, file.mimetype, resident.id);
-        fileUrl = stored.fileUrl;
+      if (!file) {
+        return sendError(res, 'Please provide a document file to upload.', 400);
       }
+
+      const stored = await StorageService.uploadFile(
+        file.buffer,
+        file.originalname,
+        file.mimetype,
+        resident.id
+      );
 
       const doc = await prisma.document.create({
         data: {
           residentId: resident.id,
           propertyId: resident.propertyId,
-          title: title ? title.trim() : 'ID Document',
+          title: title ? title.trim() : file.originalname || 'KYC Document',
           type: (type || 'AADHAAR') as any,
-          fileUrl,
-          fileSize: file?.size || 1024,
-          mimeType: file?.mimetype || 'image/jpeg',
+          fileUrl: stored.fileUrl,
+          fileSize: stored.fileSize,
+          mimeType: stored.mimeType,
           status: 'PENDING',
         },
       });
 
       return sendSuccess(res, doc, 'Document uploaded for verification', 201);
     } catch (error: any) {
+      console.error('[UploadDocument Error]:', error);
       return sendError(res, error.message || 'Document upload failed', 500);
     }
   }
@@ -800,15 +884,53 @@ export class ResidentController {
         where: { id: req.params.id, residentId: resident.id },
       });
 
-      if (!doc) return sendError(res, 'Document not found', 404);
+      if (!doc) return sendError(res, 'Document not found or access denied', 404);
+
+      // Generate secure signed URL with 1-hour expiration
+      const downloadUrl = await StorageService.getSignedUrl(doc.fileUrl, 3600);
 
       return sendSuccess(res, {
-        downloadUrl: doc.fileUrl,
+        downloadUrl,
         title: doc.title,
         mimeType: doc.mimeType,
       });
     } catch (error: any) {
       return sendError(res, error.message || 'Failed to retrieve download link', 500);
+    }
+  }
+
+  static async streamDocumentFile(req: AuthRequest, res: Response): Promise<any> {
+    try {
+      const resident = await ResidentController.getResident(req);
+      if (!resident) return sendError(res, 'Resident profile not found', 404);
+
+      const doc = await prisma.document.findFirst({
+        where: { id: req.params.id, residentId: resident.id },
+      });
+
+      if (!doc) return sendError(res, 'Document not found or access denied', 404);
+
+      // If it's a Supabase storage path or cloud URL, redirect to signed URL
+      if (!doc.fileUrl.startsWith('/uploads/')) {
+        const signedUrl = await StorageService.getSignedUrl(doc.fileUrl, 300);
+        if (signedUrl && (signedUrl.startsWith('http://') || signedUrl.startsWith('https://'))) {
+          return res.redirect(signedUrl);
+        }
+      }
+
+      // If local uploads file
+      const fileName = path.basename(doc.fileUrl);
+      const filePath = path.join(LOCAL_UPLOADS_DIR, fileName);
+
+      if (fs.existsSync(filePath)) {
+        res.setHeader('Content-Type', doc.mimeType || 'application/octet-stream');
+        res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(doc.title)}"`);
+        return fs.createReadStream(filePath).pipe(res);
+      }
+
+      return sendError(res, 'Physical document file not found', 404);
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to stream document', 500);
     }
   }
 

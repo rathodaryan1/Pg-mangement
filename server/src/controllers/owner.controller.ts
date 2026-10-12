@@ -1,10 +1,13 @@
 import { Request, Response } from 'express';
 import * as bcrypt from 'bcryptjs';
 import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
 import { prisma } from '../config/prisma';
 import { sendSuccess, sendError } from '../utils/response';
 import { AuthRequest } from '../middleware/auth';
 import { AuditService } from '../services/audit.service';
+import { StorageService, LOCAL_UPLOADS_DIR } from '../utils/supabase';
 
 const isProd = process.env.NODE_ENV === 'production';
 const isDemoMode = process.env.DEMO_MODE === 'true';
@@ -122,6 +125,43 @@ export class OwnerController {
       const pendingPayments = payments.filter((p) => p.status === 'PENDING' || p.status === 'OVERDUE');
       const overduePayments = payments.filter((p) => p.status === 'OVERDUE');
 
+      // Dynamic 6-month Revenue and Occupancy Trends from DB
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const currentNow = new Date();
+      const revenueTrend = [];
+      const occupancyTrend = [];
+
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(currentNow.getFullYear(), currentNow.getMonth() - i, 1);
+        const y = d.getFullYear();
+        const mIdx = d.getMonth();
+        const mLabel = monthNames[mIdx];
+        const nextMonth = new Date(y, mIdx + 1, 1);
+
+        const mPaid = paidPayments.filter((p) => {
+          const dt = p.paidDate || p.createdAt;
+          return dt >= d && dt < nextMonth;
+        });
+        const mBilled = payments.filter((p) => {
+          const dt = p.dueDate || p.createdAt;
+          return dt >= d && dt < nextMonth;
+        });
+
+        const collected = mPaid.reduce((acc, p) => acc + p.amount, 0);
+        const billed = mBilled.reduce((acc, p) => acc + p.amount, 0);
+
+        revenueTrend.push({
+          month: mLabel,
+          revenue: billed > 0 ? billed : collected,
+          collected,
+        });
+
+        occupancyTrend.push({
+          month: mLabel,
+          occupancy: occupancyRate,
+        });
+      }
+
       return sendSuccess(res, {
         kpis: {
           totalProperties: properties.length,
@@ -139,6 +179,8 @@ export class OwnerController {
           todayVisitorsCount: visitors.filter((v) => new Date(v.visitDate).toDateString() === new Date().toDateString()).length,
           totalStaffCount: staffMembers.length,
         },
+        revenueTrend,
+        occupancyTrend,
         properties: properties.map((p) => ({
           id: p.id,
           name: p.name,
@@ -770,6 +812,7 @@ export class OwnerController {
               name: fullName.trim(),
               role: 'RESIDENT',
               mobile: mobile.trim(),
+              tenantId: req.user?.tenantId || null,
               propertyId: propId,
             },
           });
@@ -927,7 +970,7 @@ export class OwnerController {
             },
           });
         }
-      });
+      }, { maxWait: 15000, timeout: 30000 });
 
       return sendSuccess(res, null, 'Resident move-out completed and bed released.');
     } catch (error: any) {
@@ -1009,7 +1052,8 @@ export class OwnerController {
 
   static async recordManualPayment(req: AuthRequest, res: Response): Promise<Response> {
     try {
-      const { paymentId, amount, paymentMethod, method, transactionId, note, notes } = req.body;
+      const { amount, paymentMethod, method, transactionId, note, notes } = req.body;
+      const paymentId = req.body.paymentId || req.params?.id;
       if (!paymentId) return sendError(res, 'Payment ID is required', 400);
 
       const targetPayment = await prisma.payment.findUnique({ where: { id: paymentId } });
@@ -1188,13 +1232,19 @@ export class OwnerController {
   static async settleDeposit(req: AuthRequest, res: Response): Promise<Response> {
     try {
       const { deductions, refundAmount, notes } = req.body;
+      const deposit = await prisma.securityDeposit.findUnique({ where: { id: req.params.id } });
+      if (!deposit) return sendError(res, 'Deposit record not found', 404);
+
+      const ded = deductions !== undefined ? parseFloat(deductions) : 0;
+      const ref = refundAmount !== undefined ? parseFloat(refundAmount) : Math.max(0, deposit.amount - ded);
+
       const updated = await prisma.securityDeposit.update({
         where: { id: req.params.id },
         data: {
           status: 'REFUNDED',
-          deductions: deductions ? parseFloat(deductions) : 0,
-          refundAmount: refundAmount ? parseFloat(refundAmount) : undefined,
-          notes: notes || 'Deposit settled',
+          deductions: ded,
+          refundAmount: ref,
+          notes: notes || 'Deposit settlement completed',
         },
       });
       return sendSuccess(res, updated, 'Deposit settlement completed');
@@ -1315,8 +1365,9 @@ export class OwnerController {
 
   static async createVisitor(req: AuthRequest, res: Response): Promise<Response> {
     try {
-      const { residentId, visitorName, visitorMobile, relation, purpose, visitDate, expectedTime, propertyId } = req.body;
-      if (!visitorName || !visitorMobile) {
+      const { residentId, visitorName, visitorMobile, visitorPhone, relation, purpose, visitDate, expectedTime, propertyId } = req.body;
+      const mobile = (visitorMobile || visitorPhone || '').trim();
+      if (!visitorName || !mobile) {
         return sendError(res, 'Visitor name and mobile number are required', 400);
       }
 
@@ -1330,7 +1381,7 @@ export class OwnerController {
           propertyId: propId,
           residentId: residentId || null,
           visitorName: visitorName.trim(),
-          visitorMobile: visitorMobile.trim(),
+          visitorMobile: mobile,
           relation: relation ? relation.trim() : 'Guest',
           purpose: purpose ? purpose.trim() : 'Visit',
           visitDate: visitDate ? new Date(visitDate) : new Date(),
@@ -1396,10 +1447,9 @@ export class OwnerController {
     if (!rawToken) return sendError(res, 'QR Pass token is required', 400);
 
     const token = decodeURIComponent(rawToken).trim();
+    // Cryptographically secure lookup strictly by qrPassToken (prevent database ID enumeration)
     const visitor = await prisma.visitorRequest.findFirst({
-      where: {
-        OR: [{ qrPassToken: token }, { id: token }],
-      },
+      where: { qrPassToken: token },
       include: {
         resident: { include: { bed: { include: { room: true } } } },
         property: true,
@@ -1437,8 +1487,151 @@ export class OwnerController {
     });
   }
 
+  static async gateCheckIn(req: Request, res: Response): Promise<Response> {
+    try {
+      const rawToken = req.params?.token;
+      if (!rawToken) return sendError(res, 'Pass token is required for gate check-in', 400);
+
+      const token = decodeURIComponent(rawToken).trim();
+      const visitor = await prisma.visitorRequest.findFirst({
+        where: { qrPassToken: token },
+        include: { property: true, resident: true },
+      });
+
+      if (!visitor) {
+        return sendError(res, 'Visitor pass not found or invalid token', 404);
+      }
+
+      // State machine validation
+      if (visitor.status === 'CHECKED_IN') {
+        return sendError(res, 'Visitor is already checked in.', 400, 'ALREADY_CHECKED_IN');
+      }
+      if (visitor.status === 'CHECKED_OUT') {
+        return sendError(res, 'Visitor pass has already been used and checked out.', 400, 'ALREADY_CHECKED_OUT');
+      }
+      if (visitor.status === 'REJECTED') {
+        return sendError(res, 'Visitor pass was rejected by property administration.', 400, 'PASS_REJECTED');
+      }
+      if (visitor.status === 'CANCELLED') {
+        return sendError(res, 'Visitor pass was cancelled.', 400, 'PASS_CANCELLED');
+      }
+      if (visitor.status !== 'APPROVED') {
+        return sendError(res, `Visitor pass is currently in ${visitor.status} status and cannot be checked in.`, 400, 'NOT_APPROVED');
+      }
+
+      // Atomic state transition
+      const updated = await prisma.$transaction(async (tx) => {
+        const locked = await tx.visitorRequest.findUnique({ where: { id: visitor.id } });
+        if (!locked || locked.status !== 'APPROVED') {
+          throw new Error('Visitor pass is no longer in APPROVED status');
+        }
+
+        return tx.visitorRequest.update({
+          where: { id: visitor.id },
+          data: {
+            status: 'CHECKED_IN',
+            checkInTime: new Date(),
+          },
+          include: {
+            property: true,
+            resident: { include: { bed: { include: { room: true } } } },
+          },
+        });
+      }, { maxWait: 15000, timeout: 30000 });
+
+      await AuditService.log({
+        propertyId: visitor.propertyId,
+        actorId: visitor.resident?.userId || null,
+        actorName: visitor.visitorName,
+        actorRole: 'SYSTEM',
+        action: 'VISITOR_CHECKED_IN',
+        entity: 'VisitorRequest',
+        entityId: visitor.id,
+        ipAddress: req.ip,
+        details: `Visitor ${visitor.visitorName} checked in at security gate via QR token.`,
+      });
+
+      return sendSuccess(res, updated, 'Visitor successfully checked in at gate.');
+    } catch (error: any) {
+      console.error('[Gate Check-In Error]:', error);
+      return sendError(res, error.message || 'Failed to check in visitor', 500);
+    }
+  }
+
+  static async gateCheckOut(req: Request, res: Response): Promise<Response> {
+    try {
+      const rawToken = req.params?.token;
+      if (!rawToken) return sendError(res, 'Pass token is required for gate check-out', 400);
+
+      const token = decodeURIComponent(rawToken).trim();
+      const visitor = await prisma.visitorRequest.findFirst({
+        where: { qrPassToken: token },
+        include: { property: true, resident: true },
+      });
+
+      if (!visitor) {
+        return sendError(res, 'Visitor pass not found or invalid token', 404);
+      }
+
+      // State machine validation
+      if (visitor.status === 'CHECKED_OUT') {
+        return sendError(res, 'Visitor has already checked out.', 400, 'ALREADY_CHECKED_OUT');
+      }
+      if (visitor.status === 'APPROVED') {
+        return sendError(res, 'Visitor has not checked in yet.', 400, 'NOT_CHECKED_IN');
+      }
+      if (visitor.status !== 'CHECKED_IN') {
+        return sendError(res, `Cannot check out visitor in ${visitor.status} status.`, 400, 'INVALID_STATUS');
+      }
+
+      // Atomic state transition
+      const updated = await prisma.$transaction(async (tx) => {
+        const locked = await tx.visitorRequest.findUnique({ where: { id: visitor.id } });
+        if (!locked || locked.status !== 'CHECKED_IN') {
+          throw new Error('Visitor is not in CHECKED_IN status');
+        }
+
+        return tx.visitorRequest.update({
+          where: { id: visitor.id },
+          data: {
+            status: 'CHECKED_OUT',
+            checkOutTime: new Date(),
+          },
+          include: {
+            property: true,
+            resident: { include: { bed: { include: { room: true } } } },
+          },
+        });
+      }, { maxWait: 15000, timeout: 30000 });
+
+      await AuditService.log({
+        propertyId: visitor.propertyId,
+        actorId: visitor.resident?.userId || null,
+        actorName: visitor.visitorName,
+        actorRole: 'SYSTEM',
+        action: 'VISITOR_CHECKED_OUT',
+        entity: 'VisitorRequest',
+        entityId: visitor.id,
+        ipAddress: req.ip,
+        details: `Visitor ${visitor.visitorName} checked out at security gate via QR token.`,
+      });
+
+      return sendSuccess(res, updated, 'Visitor successfully checked out at gate.');
+    } catch (error: any) {
+      console.error('[Gate Check-Out Error]:', error);
+      return sendError(res, error.message || 'Failed to check out visitor', 500);
+    }
+  }
+
   static async checkInVisitor(req: AuthRequest, res: Response): Promise<Response> {
     try {
+      const visitor = await prisma.visitorRequest.findUnique({ where: { id: req.params.id } });
+      if (!visitor) return sendError(res, 'Visitor pass not found', 404);
+
+      if (visitor.status === 'CHECKED_IN') return sendError(res, 'Visitor is already checked in', 400);
+      if (visitor.status === 'CHECKED_OUT') return sendError(res, 'Visitor has already checked out', 400);
+      if (visitor.status !== 'APPROVED') return sendError(res, `Visitor pass is not approved (Status: ${visitor.status})`, 400);
+
       const updated = await prisma.visitorRequest.update({
         where: { id: req.params.id },
         data: {
@@ -1454,6 +1647,12 @@ export class OwnerController {
 
   static async checkOutVisitor(req: AuthRequest, res: Response): Promise<Response> {
     try {
+      const visitor = await prisma.visitorRequest.findUnique({ where: { id: req.params.id } });
+      if (!visitor) return sendError(res, 'Visitor pass not found', 404);
+
+      if (visitor.status === 'CHECKED_OUT') return sendError(res, 'Visitor has already checked out', 400);
+      if (visitor.status !== 'CHECKED_IN') return sendError(res, `Visitor has not checked in (Status: ${visitor.status})`, 400);
+
       const updated = await prisma.visitorRequest.update({
         where: { id: req.params.id },
         data: {
@@ -1576,7 +1775,7 @@ export class OwnerController {
         }
 
         return comp;
-      });
+      }, { maxWait: 15000, timeout: 30000 });
 
       return sendSuccess(res, updated, 'Complaint status updated');
     } catch (error: any) {
@@ -1884,6 +2083,59 @@ export class OwnerController {
     }
   }
 
+  static async downloadDocument(req: AuthRequest, res: Response): Promise<Response> {
+    try {
+      const { propertyFilter } = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
+      const doc = await prisma.document.findFirst({
+        where: { id: req.params.id, ...propertyFilter },
+      });
+
+      if (!doc) return sendError(res, 'Document not found or access denied', 404);
+
+      const downloadUrl = await StorageService.getSignedUrl(doc.fileUrl, 3600);
+      return sendSuccess(res, {
+        downloadUrl,
+        title: doc.title,
+        mimeType: doc.mimeType,
+      });
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to retrieve download link', 500);
+    }
+  }
+
+  static async streamDocumentFile(req: AuthRequest, res: Response): Promise<any> {
+    try {
+      const { propertyFilter } = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
+      const doc = await prisma.document.findFirst({
+        where: { id: req.params.id, ...propertyFilter },
+      });
+
+      if (!doc) return sendError(res, 'Document not found or access denied', 404);
+
+      // If Supabase / cloud URL, redirect to signed URL
+      if (!doc.fileUrl.startsWith('/uploads/')) {
+        const signedUrl = await StorageService.getSignedUrl(doc.fileUrl, 300);
+        if (signedUrl && (signedUrl.startsWith('http://') || signedUrl.startsWith('https://'))) {
+          return res.redirect(signedUrl);
+        }
+      }
+
+      // If local uploads file
+      const fileName = path.basename(doc.fileUrl);
+      const filePath = path.join(LOCAL_UPLOADS_DIR, fileName);
+
+      if (fs.existsSync(filePath)) {
+        res.setHeader('Content-Type', doc.mimeType || 'application/octet-stream');
+        res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(doc.title)}"`);
+        return fs.createReadStream(filePath).pipe(res);
+      }
+
+      return sendError(res, 'Physical document file not found', 404);
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to stream document', 500);
+    }
+  }
+
   // ==========================================================================
   // 14. NOTICES
   // ==========================================================================
@@ -2068,16 +2320,65 @@ export class OwnerController {
         prisma.resident.findMany({ where: propFilter }),
       ]);
 
-      const totalRevenue = payments.filter((p) => p.status === 'PAID').reduce((sum, p) => sum + p.amount, 0);
+      const paidPayments = payments.filter((p) => p.status === 'PAID');
+      const pendingPayments = payments.filter((p) => p.status === 'PENDING' || p.status === 'OVERDUE');
+      const totalCollected = paidPayments.reduce((sum, p) => sum + p.amount, 0);
+      const totalOutstanding = pendingPayments.reduce((sum, p) => sum + p.amount, 0);
+      const totalRevenue = totalCollected;
       const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
       const netProfit = totalRevenue - totalExpenses;
       const totalBeds = beds.length;
       const occupiedBeds = beds.filter((b) => b.status === 'OCCUPIED').length;
       const occupancyRate = totalBeds > 0 ? Math.round((occupiedBeds / totalBeds) * 100) : 0;
 
+      // Group real expenses by category
+      const expenseCategoryMap: Record<string, number> = {};
+      expenses.forEach((e) => {
+        const cat = e.category || 'OTHER';
+        expenseCategoryMap[cat] = (expenseCategoryMap[cat] || 0) + e.amount;
+      });
+      const expenseCategories = Object.entries(expenseCategoryMap).map(([category, amount]) => ({
+        category,
+        amount,
+      }));
+
+      // Group real monthly revenue & expenses for the last 6 months
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const now = new Date();
+      const revenueByMonth = [];
+
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const y = d.getFullYear();
+        const mIdx = d.getMonth();
+        const mLabel = `${months[mIdx]} ${y}`;
+        const nextMonth = new Date(y, mIdx + 1, 1);
+
+        const mPaid = paidPayments.filter((p) => {
+          const dt = p.paidDate || p.createdAt;
+          return dt >= d && dt < nextMonth;
+        });
+        const mExpenses = expenses.filter((e) => {
+          const dt = e.date || e.createdAt;
+          return dt >= d && dt < nextMonth;
+        });
+
+        const rev = mPaid.reduce((acc, p) => acc + p.amount, 0);
+        const exp = mExpenses.reduce((acc, e) => acc + e.amount, 0);
+
+        revenueByMonth.push({
+          month: mLabel,
+          revenue: rev,
+          expenses: exp,
+          net: rev - exp,
+        });
+      }
+
       return sendSuccess(res, {
         summary: {
           totalRevenue,
+          totalCollected,
+          totalOutstanding,
           totalExpenses,
           netProfit,
           totalBeds,
@@ -2086,14 +2387,11 @@ export class OwnerController {
           occupancyRate,
           totalResidents: residents.filter((r) => r.status === 'ACTIVE').length,
         },
-        monthlyBreakdown: [
-          { month: 'Jun', revenue: Math.round(totalRevenue * 0.2), expenses: Math.round(totalExpenses * 0.2) },
-          { month: 'Jul', revenue: Math.round(totalRevenue * 0.25), expenses: Math.round(totalExpenses * 0.25) },
-          { month: 'Aug', revenue: Math.round(totalRevenue * 0.25), expenses: Math.round(totalExpenses * 0.25) },
-          { month: 'Sep', revenue: Math.round(totalRevenue * 0.3), expenses: Math.round(totalExpenses * 0.3) },
-        ],
-        paymentsList: payments.slice(0, 20),
-        expensesList: expenses.slice(0, 20),
+        monthlyBreakdown: revenueByMonth,
+        revenueByMonth,
+        expenseCategories,
+        paymentsList: payments,
+        expensesList: expenses,
       });
     } catch (error: any) {
       return sendError(res, error.message || 'Failed to generate reports', 500);

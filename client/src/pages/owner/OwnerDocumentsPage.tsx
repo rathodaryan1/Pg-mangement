@@ -40,6 +40,22 @@ export const OwnerDocumentsPage: React.FC = () => {
 
   // Document preview modal
   const [previewDoc, setPreviewDoc] = useState<any | null>(null);
+  const [previewSignedUrl, setPreviewSignedUrl] = useState<string | null>(null);
+
+  const handleOpenPreview = async (doc: any) => {
+    setPreviewDoc(doc);
+    setPreviewSignedUrl(null);
+    try {
+      const res = await ownerApi.downloadDocument(doc.id);
+      if (res?.downloadUrl) {
+        setPreviewSignedUrl(res.downloadUrl);
+      } else {
+        setPreviewSignedUrl(`/api/owner/documents/${doc.id}/file`);
+      }
+    } catch {
+      setPreviewSignedUrl(`/api/owner/documents/${doc.id}/file`);
+    }
+  };
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -167,7 +183,7 @@ export const OwnerDocumentsPage: React.FC = () => {
             <Button
               variant="secondary"
               size="xs"
-              onClick={() => setPreviewDoc(d)}
+              onClick={() => handleOpenPreview(d)}
               leftIcon={<Eye className="w-3 h-3 text-[#0B4036]" />}
             >
               View
@@ -338,15 +354,15 @@ export const OwnerDocumentsPage: React.FC = () => {
             </div>
 
             <div className="min-h-64 max-h-[65vh] overflow-auto flex items-center justify-center bg-slate-900/5 rounded-xl border border-dashed border-[#DDE2DD] p-4">
-              {previewDoc.fileUrl?.endsWith('.pdf') ? (
-                <iframe src={previewDoc.fileUrl} title={previewDoc.title} className="w-full h-96 rounded-lg" />
+              {previewSignedUrl?.endsWith('.pdf') || previewDoc.fileUrl?.endsWith('.pdf') ? (
+                <iframe src={previewSignedUrl || `/api/owner/documents/${previewDoc.id}/file`} title={previewDoc.title} className="w-full h-96 rounded-lg" />
               ) : (
                 <img
-                  src={previewDoc.fileUrl}
+                  src={previewSignedUrl || `/api/owner/documents/${previewDoc.id}/file`}
                   alt={previewDoc.title}
                   className="max-h-96 object-contain rounded-lg shadow-sm"
                   onError={(e: any) => {
-                    e.target.src = 'https://placehold.co/600x400/0B4036/FFFFFF?text=Document+Secured+in+Supabase+Storage';
+                    e.target.src = 'https://placehold.co/600x400/0B4036/FFFFFF?text=Document+Secured+in+Storage';
                   }}
                 />
               )}
@@ -355,16 +371,21 @@ export const OwnerDocumentsPage: React.FC = () => {
             <div className="flex justify-between items-center pt-2 border-t border-[#DDE2DD]">
               <span className="text-[11px] text-[#8A928D]">Protected KYC Record</span>
               <div className="flex items-center gap-2">
-                {previewDoc.fileUrl && (
-                  <a
-                    href={previewDoc.fileUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#0B4036] text-white flex items-center gap-1.5 hover:bg-[#08332c]"
-                  >
-                    <Download className="w-3.5 h-3.5" /> Open / Download Original
-                  </a>
-                )}
+                <Button
+                  variant="primary"
+                  size="sm"
+                  className="bg-[#0B4036] text-white flex items-center gap-1.5 hover:bg-[#08332c]"
+                  onClick={() => {
+                    if (previewSignedUrl && (previewSignedUrl.startsWith('http://') || previewSignedUrl.startsWith('https://'))) {
+                      window.open(previewSignedUrl, '_blank');
+                    } else {
+                      window.open(`/api/owner/documents/${previewDoc.id}/file`, '_blank');
+                    }
+                  }}
+                  leftIcon={<Download className="w-3.5 h-3.5" />}
+                >
+                  Open / Download Original
+                </Button>
                 <Button variant="secondary" size="sm" onClick={() => setPreviewDoc(null)}>
                   Close
                 </Button>

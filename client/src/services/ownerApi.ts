@@ -414,6 +414,10 @@ export const ownerApi = {
     const res = await api.get<any[]>('/owner/documents', propertyId ? { propertyId } : undefined);
     return { data: (res.data as any[]) || [] };
   },
+  downloadDocument: async (id: string): Promise<{ downloadUrl: string; title: string; mimeType: string }> => {
+    const res = await api.get<{ downloadUrl: string; title: string; mimeType: string }>(`/owner/documents/${id}/download`);
+    return res.data!;
+  },
   verifyDocument: async (id: string, data: { status: string; rejectionReason?: string }): Promise<{ data: any }> => {
     const res = await api.patch<any>(`/owner/documents/${id}/verify`, data);
     return { data: res.data };

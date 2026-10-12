@@ -48,6 +48,7 @@ router.post('/complaints/:id/comments', ResidentController.addComplaintComment a
 router.get('/documents', ResidentController.getDocuments as any);
 router.post('/documents', upload.single('file') as any, ResidentController.uploadDocument as any);
 router.get('/documents/:id/download', ResidentController.downloadDocument as any);
+router.get('/documents/:id/file', ResidentController.streamDocumentFile as any);
 
 // 8. Leave Requests
 router.get('/leave', ResidentController.getLeaveRequests as any);

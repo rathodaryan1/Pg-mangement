@@ -10,7 +10,7 @@ export interface UploadResult {
 }
 
 // Local storage directory fallback for uploads
-const LOCAL_UPLOADS_DIR = path.join(__dirname, '../../uploads');
+export const LOCAL_UPLOADS_DIR = path.join(__dirname, '../../uploads');
 if (!fs.existsSync(LOCAL_UPLOADS_DIR)) {
   try {
     fs.mkdirSync(LOCAL_UPLOADS_DIR, { recursive: true });
@@ -22,6 +22,7 @@ if (!fs.existsSync(LOCAL_UPLOADS_DIR)) {
 export class StorageService {
   /**
    * Uploads a file buffer either to Supabase Storage or to secure local storage.
+   * Fails closed in production if persistent cloud storage is not available.
    */
   static async uploadFile(
     fileBuffer: Buffer,
@@ -31,8 +32,10 @@ export class StorageService {
   ): Promise<UploadResult> {
     const sanitizedExt = path.extname(originalName).toLowerCase() || '.pdf';
     const uniqueFileName = `${folder}/${Date.now()}-${Math.random().toString(36).substring(2, 9)}${sanitizedExt}`;
+    const isProd = config.nodeEnv === 'production';
+    const allowLocalFallback = process.env.ALLOW_LOCAL_STORAGE === 'true' || !isProd;
 
-    // If Supabase Storage credentials are fully provided
+    // 1. Attempt upload to Supabase Storage if configured
     if (config.supabase.url && config.supabase.serviceRoleKey) {
       try {
         const url = `${config.supabase.url}/storage/v1/object/${config.supabase.storageBucket}/${uniqueFileName}`;
@@ -54,13 +57,24 @@ export class StorageService {
             mimeType,
           };
         }
-        console.warn('[Storage] Supabase upload failed, falling back to local secure storage:', await response.text());
-      } catch (supabaseError) {
-        console.warn('[Storage] Supabase connection failed, using local storage:', supabaseError);
+        const errorText = await response.text();
+        console.error('[Storage] Supabase cloud upload failed:', errorText);
+
+        if (!allowLocalFallback) {
+          throw new Error(`Cloud storage upload failed: ${errorText}. Production requires persistent storage.`);
+        }
+      } catch (supabaseError: any) {
+        console.error('[Storage] Supabase connection error:', supabaseError.message);
+        if (!allowLocalFallback) {
+          throw new Error(`Persistent cloud storage is unavailable: ${supabaseError.message}`);
+        }
       }
+    } else if (!allowLocalFallback) {
+      throw new Error('Supabase Storage credentials (SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY) are missing in production.');
     }
 
-    // Secure local fallback storage
+    // 2. Local fallback storage (development only)
+    console.warn('[Storage] Storing document in local development uploads directory.');
     const targetPath = path.join(LOCAL_UPLOADS_DIR, path.basename(uniqueFileName));
     await fs.promises.writeFile(targetPath, fileBuffer);
 
@@ -76,9 +90,18 @@ export class StorageService {
    * Generates a secure, time-limited signed URL for viewing/downloading private documents.
    */
   static async getSignedUrl(filePath: string, expiresInSeconds = 3600): Promise<string> {
+    if (!filePath) return '';
+
+    // If already a full public HTTP URL, return as-is
+    if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
+      return filePath;
+    }
+
+    // If it's a Supabase storage path and credentials exist
     if (config.supabase.url && config.supabase.serviceRoleKey && !filePath.startsWith('/uploads/')) {
       try {
-        const signUrl = `${config.supabase.url}/storage/v1/object/sign/${config.supabase.storageBucket}/${filePath}`;
+        const cleanPath = filePath.replace(/^\/+/, '');
+        const signUrl = `${config.supabase.url}/storage/v1/object/sign/${config.supabase.storageBucket}/${cleanPath}`;
         const response = await fetch(signUrl, {
           method: 'POST',
           headers: {
@@ -89,15 +112,19 @@ export class StorageService {
         });
 
         if (response.ok) {
-          const data = await response.json() as { signedURL: string };
-          return `${config.supabase.url}/storage/v1${data.signedURL}`;
+          const data = (await response.json()) as { signedURL: string };
+          if (data?.signedURL) {
+            return `${config.supabase.url}/storage/v1${data.signedURL}`;
+          }
+        } else {
+          console.warn('[Storage] Failed to generate signed URL from Supabase:', await response.text());
         }
       } catch (err) {
-        console.warn('[Storage] Failed to generate signed URL from Supabase:', err);
+        console.warn('[Storage] Supabase signed URL generation exception:', err);
       }
     }
 
-    // Fallback: direct API stream route or relative path
+    // Fallback: direct path
     return filePath;
   }
 }

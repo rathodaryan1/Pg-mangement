@@ -83,11 +83,16 @@ export const ResidentDocumentsPage: React.FC = () => {
     }
   };
 
-  const handleDownload = async (docId: string, title: string) => {
+  const handleDownload = async (docId: string, _title: string) => {
     try {
       const result = await residentApi.downloadDocument(docId);
-      if (result.downloadUrl) {
-        window.open(result.downloadUrl, '_blank');
+      if (result?.downloadUrl) {
+        if (result.downloadUrl.startsWith('http://') || result.downloadUrl.startsWith('https://')) {
+          window.open(result.downloadUrl, '_blank');
+        } else {
+          // Direct backend file route
+          window.open(`/api/resident/documents/${docId}/file`, '_blank');
+        }
       } else {
         toast.error('Download link currently unavailable.');
       }

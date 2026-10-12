@@ -330,24 +330,28 @@ export const OwnerDashboardPage: React.FC = () => {
     value: r.id
   }));
 
-  // Revenue Trend Mock Data for clean Recharts
-  const revenueData = [
-    { month: 'May', revenue: 380000, collected: 365000 },
-    { month: 'Jun', revenue: 395000, collected: 390000 },
-    { month: 'Jul', revenue: 410000, collected: 405000 },
-    { month: 'Aug', revenue: 415000, collected: 410000 },
-    { month: 'Sep', revenue: 425000, collected: 418000 },
-    { month: 'Oct', revenue: 428000, collected: 404000 }
-  ];
+  // Real dynamic database-backed trend metrics
+  const revenueData = (dashboardData?.revenueTrend && dashboardData.revenueTrend.length > 0)
+    ? dashboardData.revenueTrend
+    : [
+        { month: 'May', revenue: 0, collected: 0 },
+        { month: 'Jun', revenue: 0, collected: 0 },
+        { month: 'Jul', revenue: 0, collected: 0 },
+        { month: 'Aug', revenue: 0, collected: 0 },
+        { month: 'Sep', revenue: 0, collected: 0 },
+        { month: 'Oct', revenue: 0, collected: 0 }
+      ];
 
-  const occupancyTrendData = [
-    { month: 'May', occupancy: 88 },
-    { month: 'Jun', occupancy: 91 },
-    { month: 'Jul', occupancy: 90 },
-    { month: 'Aug', occupancy: 93 },
-    { month: 'Sep', occupancy: 95 },
-    { month: 'Oct', occupancy: 94 }
-  ];
+  const occupancyTrendData = (dashboardData?.occupancyTrend && dashboardData.occupancyTrend.length > 0)
+    ? dashboardData.occupancyTrend
+    : [
+        { month: 'May', occupancy: kpis.occupancyPercentage || 0 },
+        { month: 'Jun', occupancy: kpis.occupancyPercentage || 0 },
+        { month: 'Jul', occupancy: kpis.occupancyPercentage || 0 },
+        { month: 'Aug', occupancy: kpis.occupancyPercentage || 0 },
+        { month: 'Sep', occupancy: kpis.occupancyPercentage || 0 },
+        { month: 'Oct', occupancy: kpis.occupancyPercentage || 0 }
+      ];
 
   const ownerDisplayName = user?.name ? user.name.split(' ')[0] : 'Owner';
 

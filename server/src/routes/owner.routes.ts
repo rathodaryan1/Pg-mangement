@@ -51,6 +51,7 @@ router.post('/residents/:id/move-out', OwnerController.moveOutResident as any);
 // 7. Finance & Payments
 router.get('/payments', OwnerController.getPayments as any);
 router.post('/payments/record-manual', OwnerController.recordManualPayment as any);
+router.post('/payments/:id/record-manual', OwnerController.recordManualPayment as any);
 router.post('/payments/create-invoice', OwnerController.createInvoice as any);
 router.patch('/payments/:id', OwnerController.updatePayment as any);
 router.delete('/payments/:id', OwnerController.cancelPayment as any);
@@ -106,6 +107,8 @@ router.delete('/tasks/:id', OwnerController.archiveTask as any);
 
 // 15. Documents & KYC Verification
 router.get('/documents', OwnerController.getDocuments as any);
+router.get('/documents/:id/download', OwnerController.downloadDocument as any);
+router.get('/documents/:id/file', OwnerController.streamDocumentFile as any);
 router.patch('/documents/:id/verify', OwnerController.verifyDocument as any);
 
 // 16. Notices & Announcements (CRUD)

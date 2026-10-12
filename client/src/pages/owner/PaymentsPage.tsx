@@ -31,6 +31,7 @@ import { Table } from '../../components/ui/Table';
 import { Modal } from '../../components/ui/Modal';
 import { useAuth } from '../../context/AuthContext';
 import { ownerApi } from '../../services/ownerApi';
+import { downloadCsv } from '../../utils/csv';
 import type { PaymentRecord } from '../../types';
 
 export const PaymentsPage: React.FC = () => {
@@ -240,14 +241,68 @@ export const PaymentsPage: React.FC = () => {
   };
 
   const handleDeleteExpense = async (id: string) => {
-    if (!confirm('Are you sure you want to remove this expense entry?')) return;
+    if (!window.confirm('Are you sure you want to delete this expense record?')) return;
     try {
       await ownerApi.archiveExpense(id);
-      setToastMessage('Expense entry archived.');
-      setTimeout(() => setToastMessage(null), 3500);
+      setToastMessage('Expense deleted successfully.');
+      setTimeout(() => setToastMessage(null), 3000);
       fetchData();
     } catch (err: any) {
       toast.error(err.message || 'Failed to delete expense');
+    }
+  };
+
+  const handleExportActiveTabCSV = () => {
+    try {
+      if (activeTab === 'payments') {
+        const headers = ['Invoice ID', 'Category', 'Billing Period', 'Resident Name', 'Room Number', 'Amount (INR)', 'Status', 'Due Date', 'Paid Date', 'Payment Method', 'Transaction ID'];
+        const rows = filteredPayments.map((p) => [
+          p.id,
+          p.category,
+          p.period,
+          p.residentName || 'N/A',
+          p.roomNumber || 'N/A',
+          p.amount,
+          p.status,
+          p.dueDate ? new Date(p.dueDate).toLocaleDateString() : '',
+          p.paidDate ? new Date(p.paidDate).toLocaleDateString() : '',
+          p.method || '',
+          p.transactionId || '',
+        ]);
+        downloadCsv('UrbanNest_Rent_Payments_Ledger', headers, rows);
+        setToastMessage('Rent payments ledger CSV downloaded!');
+      } else if (activeTab === 'deposits') {
+        const headers = ['Deposit ID', 'Resident Name', 'Deposit Amount (INR)', 'Status', 'Paid Date', 'Deductions (INR)', 'Refund Amount (INR)', 'Notes'];
+        const rows = deposits.map((d) => [
+          d.id,
+          d.resident?.fullName || d.residentName || 'N/A',
+          d.amount,
+          d.status,
+          d.paidAt ? new Date(d.paidAt).toLocaleDateString() : '',
+          d.deductions || 0,
+          d.refundAmount || 0,
+          d.notes || '',
+        ]);
+        downloadCsv('UrbanNest_Security_Deposits_Ledger', headers, rows);
+        setToastMessage('Security deposits ledger CSV downloaded!');
+      } else {
+        const headers = ['Expense ID', 'Title', 'Category', 'Vendor', 'Amount (INR)', 'Expense Date', 'Notes'];
+        const rows = expenses.map((e) => [
+          e.id,
+          e.title,
+          e.category,
+          e.vendor || '',
+          e.amount,
+          e.date ? new Date(e.date).toLocaleDateString() : '',
+          e.notes || e.description || '',
+        ]);
+        downloadCsv('UrbanNest_Operating_Expenses_Ledger', headers, rows);
+        setToastMessage('Operating expenses ledger CSV downloaded!');
+      }
+      setTimeout(() => setToastMessage(null), 3500);
+    } catch (err: any) {
+      console.error('CSV export failed:', err);
+      toast.error('Failed to export CSV ledger');
     }
   };
 
@@ -320,6 +375,14 @@ export const PaymentsPage: React.FC = () => {
             leftIcon={<TrendingDown className="w-3.5 h-3.5 text-rose-500" />}
           >
             Add Expense
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportActiveTabCSV}
+            leftIcon={<Download className="w-3.5 h-3.5 text-[#0B4036]" />}
+          >
+            Export CSV
           </Button>
         </div>
       </div>

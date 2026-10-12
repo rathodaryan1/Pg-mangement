@@ -44,13 +44,13 @@ export const Modal: React.FC<ModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-fade-in overflow-y-auto">
       <div
-        className={`w-full ${widthClasses[maxWidth]} bg-white border border-[#DDE2DD] rounded-2xl shadow-xl overflow-hidden transform transition-all animate-slide-up`}
+        className={`w-full ${widthClasses[maxWidth]} max-h-[90vh] flex flex-col bg-white border border-[#DDE2DD] rounded-2xl shadow-xl overflow-hidden transform transition-all animate-slide-up my-auto`}
         onClick={(e) => e.stopPropagation()}
       >
         {(title || description) && (
-          <div className="flex items-start justify-between p-6 border-b border-[#DDE2DD]">
+          <div className="flex items-start justify-between p-6 border-b border-[#DDE2DD] shrink-0 bg-white">
             <div>
               {title && <h3 className="text-lg font-bold text-[#18231F]">{title}</h3>}
               {description && <p className="mt-1 text-xs text-[#68736D]">{description}</p>}
@@ -64,7 +64,7 @@ export const Modal: React.FC<ModalProps> = ({
           </div>
         )}
 
-        <div className="p-6">{children}</div>
+        <div className="p-6 overflow-y-auto flex-1">{children}</div>
       </div>
     </div>
   );

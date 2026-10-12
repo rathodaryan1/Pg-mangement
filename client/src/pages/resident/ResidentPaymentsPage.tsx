@@ -18,8 +18,10 @@ import { StatusBadge, Badge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
 import { residentApi } from '../../services/residentApi';
 import { toast } from '../../context/ToastContext';
+import { useAuth } from '../../context/AuthContext';
 
 export const ResidentPaymentsPage: React.FC = () => {
+  const { user } = useAuth();
   const [payments, setPayments] = useState<any[]>([]);
   const [securityDeposit, setSecurityDeposit] = useState<any | null>(null);
   const [summary, setSummary] = useState<{
@@ -88,29 +90,106 @@ export const ResidentPaymentsPage: React.FC = () => {
     }
   };
 
+  const loadRazorpayScript = (): Promise<boolean> => {
+    return new Promise((resolve) => {
+      if ((window as any).Razorpay) {
+        resolve(true);
+        return;
+      }
+      const existing = document.querySelector('script[src="https://checkout.razorpay.com/v1/checkout.js"]');
+      if (existing) {
+        existing.addEventListener('load', () => resolve(true));
+        existing.addEventListener('error', () => resolve(false));
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
   const handleProcessPayment = async () => {
     if (!selectedPayment) return;
     setIsProcessingPayment(true);
 
     try {
-      // 1. Create order
+      // 1. Create official order on server
       const order: any = await residentApi.createPaymentOrder(selectedPayment.id, paymentMethod);
 
-      // 2. Verify payment on backend
-      const result: any = await residentApi.verifyPayment({
-        paymentId: selectedPayment.id,
-        method: paymentMethod,
-        transactionId: `TXN${Date.now()}`,
-        razorpayOrderId: order.orderId,
-      });
+      if (!order?.orderId) {
+        throw new Error('Order creation failed: missing order ID.');
+      }
 
-      setPaymentSuccessMessage(`Payment of ₹${selectedPayment.amount} confirmed! Receipt #${result.receipt?.receiptNumber || 'RCP-ACTIVE'} generated.`);
-      toast.success('Payment completed successfully.');
-      await fetchPayments();
+      // 2. Load Razorpay Checkout SDK
+      const isLoaded = await loadRazorpayScript();
+      if (!isLoaded || !(window as any).Razorpay) {
+        throw new Error('Failed to load Razorpay Checkout gateway SDK. Please verify internet connectivity.');
+      }
+
+      // 3. Launch official Razorpay Checkout Modal
+      const options = {
+        key: order.keyId,
+        amount: order.amountInPaise || Math.round(selectedPayment.amount * 100),
+        currency: order.currency || 'INR',
+        name: 'Urban Nest PG',
+        description: `Rent Settlement — ${selectedPayment.period || 'Monthly Invoice'}`,
+        order_id: order.orderId,
+        prefill: {
+          name: user?.name || '',
+          email: user?.email || '',
+          contact: user?.mobile || '',
+        },
+        theme: {
+          color: '#0B4036',
+        },
+        handler: async (response: {
+          razorpay_payment_id: string;
+          razorpay_order_id: string;
+          razorpay_signature: string;
+        }) => {
+          setIsProcessingPayment(true);
+          try {
+            // Cryptographic server-side verification
+            const result: any = await residentApi.verifyPayment({
+              paymentId: selectedPayment.id,
+              razorpayOrderId: response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpaySignature: response.razorpay_signature,
+            });
+
+            setPayModalOpen(false);
+            setPaymentSuccessMessage(
+              `Payment of ₹${selectedPayment.amount} confirmed! Receipt #${result.receipt?.receiptNumber || 'RCP-ACTIVE'} generated.`
+            );
+            toast.success('Payment verified and recorded successfully!');
+            await fetchPayments();
+          } catch (verifyErr: any) {
+            console.error('Payment verification failed:', verifyErr);
+            toast.error(verifyErr.message || 'Payment signature verification failed.');
+          } finally {
+            setIsProcessingPayment(false);
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            setIsProcessingPayment(false);
+            toast.info('Payment window closed. Invoice remains pending.');
+          },
+        },
+      };
+
+      const rzpInstance = new (window as any).Razorpay(options);
+      rzpInstance.on('payment.failed', (resp: any) => {
+        setIsProcessingPayment(false);
+        toast.error(resp.error?.description || 'Payment transaction failed or declined.');
+      });
+      rzpInstance.open();
     } catch (err: any) {
-      console.error('Payment processing failed:', err);
+      console.error('Payment processing initialization failed:', err);
       toast.error(err.message || 'Payment processing failed. Please retry.');
-    } finally {
       setIsProcessingPayment(false);
     }
   };

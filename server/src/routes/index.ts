@@ -122,9 +122,11 @@ router.use('/resident', residentRoutes);
 // Owner / Admin Portal Routes
 router.use('/owner', ownerRoutes);
 
-// Gate Verification Route for Camera Scans
+// Gate Verification & Security Pass Check-In / Check-Out Routes
 router.get('/gate/verify/:token', OwnerController.verifyVisitorQRByToken as any);
 router.post('/gate/verify', OwnerController.verifyVisitorQR as any);
+router.post('/gate/check-in/:token', OwnerController.gateCheckIn as any);
+router.post('/gate/check-out/:token', OwnerController.gateCheckOut as any);
 
 // Webhook Handlers
 router.use('/webhooks', webhookRoutes);

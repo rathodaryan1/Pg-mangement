@@ -15,6 +15,7 @@ import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../context/AuthContext';
 import ownerApi from '../../services/ownerApi';
+import { downloadCsv } from '../../utils/csv';
 
 export const ReportsPage: React.FC = () => {
   const { activeProperty } = useAuth();
@@ -40,11 +41,61 @@ export const ReportsPage: React.FC = () => {
   }, [activeProperty, dateRange]);
 
   const handleExportCSV = (reportName: string) => {
-    setToastMessage(`Exporting ${reportName} to CSV...`);
-    setTimeout(() => {
+    if (!reportData) {
+      setToastMessage('Report data is still loading...');
+      return;
+    }
+
+    try {
+      if (reportName === 'Revenue_Vs_Expenses_Report') {
+        const headers = ['Month', 'Revenue Collected (INR)', 'Operating Expenses (INR)', 'Net Operating Income (INR)'];
+        const rows = (reportData.revenueByMonth || []).map((m: any) => [
+          m.month,
+          m.revenue,
+          m.expenses,
+          m.revenue - m.expenses,
+        ]);
+        downloadCsv('Revenue_Vs_Expenses_Report', headers, rows);
+      } else if (reportName === 'Expense_Categories_Report') {
+        const totalExp = (reportData.expenseCategories || []).reduce((acc: number, c: any) => acc + (c.amount || 0), 0);
+        const headers = ['Expense Category', 'Total Amount (INR)', 'Share of OPEX (%)'];
+        const rows = (reportData.expenseCategories || []).map((c: any) => [
+          c.category,
+          c.amount,
+          totalExp > 0 ? `${Math.round((c.amount / totalExp) * 100)}%` : '0%',
+        ]);
+        downloadCsv('Expense_Categories_Report', headers, rows);
+      } else {
+        // Master Financial Report
+        const headers = ['Report Section', 'Metric / Item', 'Value (INR / Count)', 'Notes'];
+        const rows = [
+          ['Executive Summary', 'Occupancy Rate', `${reportData.summary?.occupancyRate || 0}%`, `${reportData.summary?.occupiedBeds || 0} of ${reportData.summary?.totalBeds || 0} beds occupied`],
+          ['Executive Summary', 'Total Collected Revenue', reportData.summary?.totalCollected || 0, 'Settled rent & utility invoices'],
+          ['Executive Summary', 'Outstanding Rent', reportData.summary?.totalOutstanding || 0, 'Pending or overdue invoices'],
+          ['Executive Summary', 'Total Operating Expenses', reportData.summary?.totalExpenses || 0, 'OPEX bills settled'],
+          ['Executive Summary', 'Net Operating Income (NOI)', reportData.summary?.netProfit || 0, 'Revenue minus OPEX'],
+          ...((reportData.revenueByMonth || []).map((m: any) => [
+            'Monthly Trend',
+            m.month,
+            `Rev: ₹${m.revenue} | Exp: ₹${m.expenses}`,
+            `Net: ₹${m.revenue - m.expenses}`,
+          ])),
+          ...((reportData.expenseCategories || []).map((c: any) => [
+            'Expense Breakdown',
+            c.category,
+            c.amount,
+            'Categorized OPEX disbursement',
+          ])),
+        ];
+        downloadCsv('UrbanNest_Master_Financial_Report', headers, rows);
+      }
+
       setToastMessage(`${reportName}.csv downloaded successfully!`);
-      setTimeout(() => setToastMessage(null), 3000);
-    }, 1000);
+      setTimeout(() => setToastMessage(null), 3500);
+    } catch (err: any) {
+      console.error('CSV Export Error:', err);
+      setToastMessage('Failed to generate CSV export.');
+    }
   };
 
   return (
@@ -103,10 +154,10 @@ export const ReportsPage: React.FC = () => {
             <BedDouble className="w-4 h-4 text-[#0B4036] dark:text-[#C8A45D]" />
           </div>
           <div className="text-2xl font-black text-slate-900 dark:text-white">
-            {reportData?.summary?.occupancyRate || 75}%
+            {reportData?.summary?.occupancyRate || 0}%
           </div>
           <p className="text-[11px] text-slate-500">
-            {reportData?.summary?.occupiedBeds || 18} of {reportData?.summary?.totalBeds || 24} Beds Occupied
+            {reportData?.summary?.occupiedBeds || 0} of {reportData?.summary?.totalBeds || 0} Beds Occupied
           </p>
         </Card>
 
@@ -116,7 +167,7 @@ export const ReportsPage: React.FC = () => {
             <TrendingUp className="w-4 h-4 text-emerald-600" />
           </div>
           <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
-            ₹{(reportData?.summary?.totalCollected || 14000).toLocaleString('en-IN')}
+            ₹{(reportData?.summary?.totalCollected || 0).toLocaleString('en-IN')}
           </div>
           <p className="text-[11px] text-slate-500">Rent collections this period</p>
         </Card>
@@ -127,7 +178,7 @@ export const ReportsPage: React.FC = () => {
             <DollarSign className="w-4 h-4 text-rose-600" />
           </div>
           <div className="text-2xl font-black text-rose-600 dark:text-rose-400">
-            ₹{(reportData?.summary?.totalOutstanding || 28000).toLocaleString('en-IN')}
+            ₹{(reportData?.summary?.totalOutstanding || 0).toLocaleString('en-IN')}
           </div>
           <p className="text-[11px] text-slate-500">Pending & overdue invoices</p>
         </Card>
@@ -138,7 +189,7 @@ export const ReportsPage: React.FC = () => {
             <BarChart3 className="w-4 h-4 text-amber-600" />
           </div>
           <div className="text-2xl font-black text-amber-600 dark:text-amber-400">
-            ₹{(reportData?.summary?.totalExpenses || 22199).toLocaleString('en-IN')}
+            ₹{(reportData?.summary?.totalExpenses || 0).toLocaleString('en-IN')}
           </div>
           <p className="text-[11px] text-slate-500">Electricity, Wi-Fi, Supplies</p>
         </Card>

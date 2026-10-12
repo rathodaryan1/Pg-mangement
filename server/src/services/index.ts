@@ -8,6 +8,12 @@ import { config } from '../config/env';
 export const createRazorpayOrder = async (amount: number, receiptId: string) => {
   const { keyId, keySecret } = config.razorpay;
 
+  if (amount <= 0) {
+    throw new Error('Payment amount must be greater than zero');
+  }
+
+  const isProd = config.nodeEnv === 'production';
+
   if (keyId && keySecret) {
     try {
       const authHeader = Buffer.from(`${keyId}:${keySecret}`).toString('base64');
@@ -28,13 +34,22 @@ export const createRazorpayOrder = async (amount: number, receiptId: string) => 
       if (response.ok) {
         return await response.json();
       }
-      console.warn('[Razorpay] Gateway error:', await response.text());
-    } catch (err) {
-      console.error('[Razorpay] Connection error:', err);
+      const errorText = await response.text();
+      console.error('[Razorpay] Gateway order creation failed:', errorText);
+      if (isProd) {
+        throw new Error(`Razorpay gateway order creation rejected: ${errorText}`);
+      }
+    } catch (err: any) {
+      console.error('[Razorpay] Connection error:', err.message);
+      if (isProd) {
+        throw new Error(`Razorpay connection failure: ${err.message}`);
+      }
     }
+  } else if (isProd) {
+    throw new Error('Production Razorpay credentials (RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET) are missing.');
   }
 
-  // Development sandbox order format
+  // Development sandbox fallback order
   return {
     id: `order_dev_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
     amount: Math.round(amount * 100),
@@ -51,17 +66,60 @@ export const verifyRazorpaySignature = (
   signature: string
 ): boolean => {
   const { keySecret } = config.razorpay;
-  if (!keySecret) {
-    // In dev without Razorpay keys, verify that signature and IDs are provided
-    return Boolean(orderId && paymentId);
+
+  if (!orderId || !paymentId || !signature) {
+    return false;
   }
 
-  const generatedSignature = crypto
-    .createHmac('sha256', keySecret)
-    .update(`${orderId}|${paymentId}`)
-    .digest('hex');
+  if (!keySecret) {
+    if (config.nodeEnv === 'production') {
+      throw new Error('Server-side RAZORPAY_KEY_SECRET is not configured in production.');
+    }
+    // Fail-safe: even in dev without secret, do not blindly return true unless explicitly testing
+    return false;
+  }
 
-  return generatedSignature === signature;
+  try {
+    const generatedSignature = crypto
+      .createHmac('sha256', keySecret)
+      .update(`${orderId}|${paymentId}`)
+      .digest('hex');
+
+    const sigBuf = Buffer.from(signature, 'utf8');
+    const genBuf = Buffer.from(generatedSignature, 'utf8');
+
+    if (sigBuf.length !== genBuf.length) {
+      return false;
+    }
+
+    return crypto.timingSafeEqual(sigBuf, genBuf);
+  } catch (err) {
+    console.error('[Razorpay] Cryptographic signature verification error:', err);
+    return false;
+  }
+};
+
+export const fetchRazorpayPayment = async (paymentId: string): Promise<any | null> => {
+  const { keyId, keySecret } = config.razorpay;
+  if (!keyId || !keySecret || !paymentId) return null;
+
+  try {
+    const authHeader = Buffer.from(`${keyId}:${keySecret}`).toString('base64');
+    const response = await fetch(`https://api.razorpay.com/v1/payments/${encodeURIComponent(paymentId)}`, {
+      headers: {
+        Authorization: `Basic ${authHeader}`,
+      },
+    });
+
+    if (response.ok) {
+      return await response.json();
+    }
+    console.warn(`[Razorpay] Payment fetch returned status ${response.status} for ${paymentId}`);
+    return null;
+  } catch (err) {
+    console.error('[Razorpay] Error fetching payment status from gateway:', err);
+    return null;
+  }
 };
 
 // ==========================================
