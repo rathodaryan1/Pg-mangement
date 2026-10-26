@@ -6,6 +6,7 @@ import ownerRoutes from './owner.routes';
 import superAdminRoutes from './super-admin.routes';
 import webhookRoutes from './webhook.routes';
 import { OwnerController } from '../controllers/owner.controller';
+import { PublicController } from '../controllers/public.controller';
 
 const router = Router();
 
@@ -127,6 +128,10 @@ router.get('/gate/verify/:token', OwnerController.verifyVisitorQRByToken as any)
 router.post('/gate/verify', OwnerController.verifyVisitorQR as any);
 router.post('/gate/check-in/:token', OwnerController.gateCheckIn as any);
 router.post('/gate/check-out/:token', OwnerController.gateCheckOut as any);
+
+// Public Enquiries & Contact Form
+router.post('/public/enquiry', PublicController.submitEnquiry as any);
+router.post('/contact/enquiry', PublicController.submitEnquiry as any);
 
 // Webhook Handlers
 router.use('/webhooks', webhookRoutes);

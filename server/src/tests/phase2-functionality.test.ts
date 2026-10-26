@@ -803,18 +803,87 @@ export async function runPhase2FunctionalityTests() {
       record('ISOLATION', 'Strict Isolation: Resident Notices', 'FAIL', `Tenant A notice leaked to Tenant B resident!`);
     }
 
-    // Test 31: Tenant B Owner cannot settle Tenant A's deposit
-    const crossSettleDepRes = await fetch(`${BASE_URL}/owner/deposits/${createdDepositId}/settle`, {
+    // Test 31: Strict Cross-Tenant Deposit Settlement Isolation
+    // Create a new, unsettled deposit for Tenant A to strictly test isolation
+    const isolationDepositA = await prisma.securityDeposit.create({
+      data: {
+        residentId: residentAId,
+        propertyId: propertyAId,
+        amount: 25000,
+        status: 'PAID',
+        paidAt: new Date(),
+        deductions: 0,
+        refundAmount: null,
+        notes: 'Pre-isolation test baseline deposit',
+      },
+    });
+
+    // 1. Tenant B Owner attempts unauthorized settlement of Tenant A's deposit
+    const crossSettleDepRes = await fetch(`${BASE_URL}/owner/deposits/${isolationDepositA.id}/settle`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${ownerBToken}`,
       },
-      body: JSON.stringify({ deductions: 500 }),
+      body: JSON.stringify({ deductions: 5000, notes: 'Malicious deduction attempt by foreign tenant' }),
     });
-    // In our system, settleDeposit checks property isolation
-    if (crossSettleDepRes.status === 403 || crossSettleDepRes.status === 404 || crossSettleDepRes.status === 401 || crossSettleDepRes.status === 200) {
-      record('ISOLATION', 'Tenant Deposit Settlement Isolation', 'PASS', `Cross-tenant settlement checked.`);
+
+    // Cross-tenant settlement MUST return 403 or 404. An HTTP 200 must strictly FAIL.
+    const isDenied = crossSettleDepRes.status === 403 || crossSettleDepRes.status === 404;
+
+    // 2. Verify that deposit's status, refund amount, deductions, and notes remain unchanged
+    const postAttemptDeposit = await prisma.securityDeposit.findUnique({
+      where: { id: isolationDepositA.id },
+    });
+    const depositUnmutated =
+      postAttemptDeposit?.status === 'PAID' &&
+      postAttemptDeposit?.deductions === 0 &&
+      postAttemptDeposit?.refundAmount === null &&
+      postAttemptDeposit?.notes === 'Pre-isolation test baseline deposit';
+
+    // 3. Verify no spurious payment or receipt was created
+    const spuriousReceipts = await prisma.paymentReceipt.findMany({
+      where: {
+        payment: {
+          residentId: residentAId,
+          notes: { contains: isolationDepositA.id },
+        },
+      },
+    });
+
+    // 4. Verify that the authorized tenant (Owner A) can still settle its own deposit
+    const authorizedSettleRes = await fetch(`${BASE_URL}/owner/deposits/${isolationDepositA.id}/settle`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${ownerAToken}`,
+      },
+      body: JSON.stringify({ deductions: 2500, notes: 'Legitimate check-out inspection deduction' }),
+    });
+    const authorizedSettleData: any = await authorizedSettleRes.json();
+    const finalDeposit = await prisma.securityDeposit.findUnique({
+      where: { id: isolationDepositA.id },
+    });
+    const authorizedSettlementSucceeded =
+      authorizedSettleRes.status === 200 &&
+      finalDeposit?.status === 'REFUNDED' &&
+      finalDeposit?.deductions === 2500 &&
+      finalDeposit?.refundAmount === 22500;
+
+    if (isDenied && depositUnmutated && spuriousReceipts.length === 0 && authorizedSettlementSucceeded) {
+      record(
+        'ISOLATION',
+        'Strict Cross-Tenant Deposit Settlement Isolation',
+        'PASS',
+        `Unauthorized settlement strictly denied (HTTP ${crossSettleDepRes.status}), state preserved, authorized settlement completed (₹22,500 refund).`
+      );
+    } else {
+      record(
+        'ISOLATION',
+        'Strict Cross-Tenant Deposit Settlement Isolation',
+        'FAIL',
+        `Denied: ${isDenied} (status ${crossSettleDepRes.status}), Unmutated: ${depositUnmutated}, Spurious receipts: ${spuriousReceipts.length}, Auth settled: ${authorizedSettlementSucceeded}`
+      );
     }
 
   } finally {

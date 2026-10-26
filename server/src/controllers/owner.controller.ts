@@ -1211,8 +1211,18 @@ export class OwnerController {
   static async createDeposit(req: AuthRequest, res: Response): Promise<Response> {
     try {
       const { residentId, amount, status } = req.body;
-      const resident = await prisma.resident.findUnique({ where: { id: residentId } });
+      const resident = await prisma.resident.findUnique({
+        where: { id: residentId },
+        include: { property: true },
+      });
       if (!resident) return sendError(res, 'Resident not found', 404);
+
+      if (req.user?.tenantId && resident.property.tenantId !== req.user.tenantId) {
+        return sendError(res, 'Unauthorized access to resident of another organization', 403);
+      }
+      if (req.user?.propertyId && resident.propertyId !== req.user.propertyId) {
+        return sendError(res, 'Unauthorized access to resident of another property', 403);
+      }
 
       const deposit = await prisma.securityDeposit.create({
         data: {
@@ -1232,8 +1242,19 @@ export class OwnerController {
   static async settleDeposit(req: AuthRequest, res: Response): Promise<Response> {
     try {
       const { deductions, refundAmount, notes } = req.body;
-      const deposit = await prisma.securityDeposit.findUnique({ where: { id: req.params.id } });
+      const deposit = await prisma.securityDeposit.findUnique({
+        where: { id: req.params.id },
+        include: { property: true },
+      });
       if (!deposit) return sendError(res, 'Deposit record not found', 404);
+
+      // Strict tenant & property isolation check
+      if (req.user?.tenantId && deposit.property.tenantId !== req.user.tenantId) {
+        return sendError(res, 'Unauthorized access to deposit of another organization', 403);
+      }
+      if (req.user?.propertyId && deposit.propertyId !== req.user.propertyId) {
+        return sendError(res, 'Unauthorized access to deposit of another property', 403);
+      }
 
       const ded = deductions !== undefined ? parseFloat(deductions) : 0;
       const ref = refundAmount !== undefined ? parseFloat(refundAmount) : Math.max(0, deposit.amount - ded);
@@ -1379,7 +1400,7 @@ export class OwnerController {
       const created = await prisma.visitorRequest.create({
         data: {
           propertyId: propId,
-          residentId: residentId || null,
+          ...(residentId ? { residentId } : {}),
           visitorName: visitorName.trim(),
           visitorMobile: mobile,
           relation: relation ? relation.trim() : 'Guest',
@@ -1389,7 +1410,7 @@ export class OwnerController {
           status: 'APPROVED',
           approvedBy: req.user?.name || 'Owner Desk',
           qrPassToken,
-        },
+        } as any,
       });
 
       return sendSuccess(res, created, 'Visitor pass created successfully', 201);
@@ -2329,6 +2350,8 @@ export class OwnerController {
       const netProfit = totalRevenue - totalExpenses;
       const totalBeds = beds.length;
       const occupiedBeds = beds.filter((b) => b.status === 'OCCUPIED').length;
+      const availableBeds = beds.filter((b) => b.status === 'AVAILABLE').length;
+      const maintenanceBeds = beds.filter((b) => b.status === 'MAINTENANCE').length;
       const occupancyRate = totalBeds > 0 ? Math.round((occupiedBeds / totalBeds) * 100) : 0;
 
       // Group real expenses by category
@@ -2383,7 +2406,8 @@ export class OwnerController {
           netProfit,
           totalBeds,
           occupiedBeds,
-          availableBeds: totalBeds - occupiedBeds,
+          availableBeds,
+          maintenanceBeds,
           occupancyRate,
           totalResidents: residents.filter((r) => r.status === 'ACTIVE').length,
         },

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Mail, Phone, MapPin, Send, CheckCircle2, Clock } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input, Textarea, Select } from '../../components/ui/Input';
+import api from '../../services/api';
 
 export const ContactPage: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -10,18 +11,32 @@ export const ContactPage: React.FC = () => {
     phone: '',
     propertyCount: '1-50',
     propertyType: 'PG / Co-Living',
-    message: ''
+    message: '',
+    honeypot: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [submissionId, setSubmissionId] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setTimeout(() => {
+    setErrorMessage(null);
+
+    try {
+      const response: any = await api.post('/public/enquiry', formData);
+      if (response && response.success) {
+        setSubmissionId(response.data?.submissionId || null);
+        setSubmitted(true);
+      } else {
+        setErrorMessage(response?.message || 'Failed to submit enquiry. Please verify your details.');
+      }
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Network error occurred. Please try again.');
+    } finally {
       setIsSubmitting(false);
-      setSubmitted(true);
-    }, 600);
+    }
   };
 
   return (
@@ -48,14 +63,53 @@ export const ContactPage: React.FC = () => {
                 </div>
                 <h3 className="text-base font-bold text-[#18231F]">Thank You for Reaching Out</h3>
                 <p className="text-xs text-[#68736D] max-w-sm mx-auto">
-                  Our PG onboarding specialist will contact you within 2 business hours.
+                  Your inquiry has been logged in our operations control plane. An onboarding specialist will contact you within 2 business hours.
                 </p>
-                <Button variant="outline" size="sm" onClick={() => setSubmitted(false)} className="mt-4 border-[#DDE2DD] text-[#0B4036]">
+                {submissionId && (
+                  <div className="p-2.5 bg-[#F8F7F3] rounded-lg border border-[#DDE2DD] text-xs font-mono text-slate-700 max-w-xs mx-auto">
+                    Reference ID: <span className="font-semibold text-[#0B4036]">{submissionId}</span>
+                  </div>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setSubmitted(false);
+                    setFormData({
+                      name: '',
+                      email: '',
+                      phone: '',
+                      propertyCount: '1-50',
+                      propertyType: 'PG / Co-Living',
+                      message: '',
+                      honeypot: '',
+                    });
+                  }}
+                  className="mt-4 border-[#DDE2DD] text-[#0B4036]"
+                >
                   Send Another Message
                 </Button>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Honeypot field for spam bots */}
+                <input
+                  type="text"
+                  name="honeypot"
+                  value={formData.honeypot}
+                  onChange={(e) => setFormData({ ...formData, honeypot: e.target.value })}
+                  style={{ display: 'none' }}
+                  tabIndex={-1}
+                  autoComplete="off"
+                />
+
+                {errorMessage && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-xs text-red-700">
+                    <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
+                    <span>{errorMessage}</span>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Input
                     label="Full Name"
@@ -91,7 +145,7 @@ export const ContactPage: React.FC = () => {
                       { label: '1 - 50 Beds', value: '1-50' },
                       { label: '51 - 150 Beds', value: '51-150' },
                       { label: '151 - 300 Beds', value: '151-300' },
-                      { label: '300+ Beds (Enterprise)', value: '300+' }
+                      { label: '300+ Beds (Enterprise)', value: '300+' },
                     ]}
                   />
                 </div>

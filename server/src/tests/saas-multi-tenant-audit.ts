@@ -6,18 +6,30 @@ import jwt from 'jsonwebtoken';
 
 let resolvedApiBase = process.env.API_BASE || '';
 
-async function getApiBase() {
+async function getApiBase(): Promise<string> {
   if (resolvedApiBase) return resolvedApiBase;
+
+  // 1. Default to local isolated test environment
+  const localUrl = process.env.TEST_API_URL || 'http://127.0.0.1:5000/api';
   try {
-    const localRes = await fetch('http://localhost:5000/health', { signal: AbortSignal.timeout(1500) });
+    const healthUrl = localUrl.replace(/\/api$/, '') + '/health';
+    const localRes = await fetch(healthUrl, { signal: AbortSignal.timeout(1500) });
     if (localRes.ok) {
-      resolvedApiBase = 'http://localhost:5000/api';
+      resolvedApiBase = localUrl;
       return resolvedApiBase;
     }
   } catch {
-    // Local server not running, fallback to live backend
+    // Local server not actively polling
   }
-  resolvedApiBase = 'https://pg-mangement.onrender.com/api';
+
+  // 2. Strict safety: Never silently fall back to live production backend (Render/Vercel)
+  if (process.env.ALLOW_EXTERNAL_TEST_API === 'true' && process.env.EXTERNAL_TEST_API_URL) {
+    resolvedApiBase = process.env.EXTERNAL_TEST_API_URL;
+    return resolvedApiBase;
+  }
+
+  // Default safely to isolated local test URL without remote leakage
+  resolvedApiBase = localUrl;
   return resolvedApiBase;
 }
 
@@ -608,6 +620,7 @@ export async function runSaasMultiTenantAudit() {
         headers: ownerAHeaders,
         body: {
           propertyId: propertyAId,
+          residentId: residentAId,
           visitorName: 'Aditya Singh',
           visitorMobile: '+919876543210',
           relation: 'Friend',
@@ -620,7 +633,8 @@ export async function runSaasMultiTenantAudit() {
       const qrToken = visitorPassRes.data?.data?.qrPassToken;
       if (qrToken) {
         const verifyRes = await apiRequest(`/gate/verify/${qrToken}`);
-        if (verifyRes.ok && verifyRes.data?.data?.pass?.visitorName === 'Aditya Singh') {
+        const verifiedVisitorName = verifyRes.data?.data?.pass?.visitorName || verifyRes.data?.data?.visitorName;
+        if (verifyRes.ok && verifiedVisitorName === 'Aditya Singh') {
           record('QR Gate System', 'Machine-Scannable QR Pass Verification', 'PASS', `Verified pass for token ${qrToken}`);
         } else {
           record('QR Gate System', 'Machine-Scannable QR Pass Verification', 'FAIL', 'Verification response payload invalid', verifyRes.data?.error);

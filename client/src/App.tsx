@@ -148,6 +148,7 @@ const AppRoutes: React.FC = () => {
       <Route path="/super-admin/dashboard" element={<ProtectedSuperAdminRoute><SuperAdminDashboardPage /></ProtectedSuperAdminRoute>} />
       <Route path="/super-admin/tenants" element={<ProtectedSuperAdminRoute><SuperAdminTenantsPage /></ProtectedSuperAdminRoute>} />
       <Route path="/super-admin/tenants/new" element={<ProtectedSuperAdminRoute><SuperAdminTenantsPage /></ProtectedSuperAdminRoute>} />
+      <Route path="/super-admin/properties" element={<ProtectedSuperAdminRoute><SuperAdminTenantsPage /></ProtectedSuperAdminRoute>} />
       <Route path="/super-admin/tenants/:id" element={<ProtectedSuperAdminRoute><SuperAdminTenantDetailPage /></ProtectedSuperAdminRoute>} />
       <Route path="/super-admin/owners" element={<ProtectedSuperAdminRoute><SuperAdminOwnersPage /></ProtectedSuperAdminRoute>} />
       <Route path="/super-admin/users" element={<ProtectedSuperAdminRoute><SuperAdminUsersPage /></ProtectedSuperAdminRoute>} />
@@ -168,7 +169,11 @@ const AppRoutes: React.FC = () => {
          ======================================================== */}
       <Route path="/owner/dashboard" element={<ProtectedOwnerRoute><OwnerDashboardPage /></ProtectedOwnerRoute>} />
       <Route path="/owner/properties" element={<ProtectedOwnerRoute><PropertiesPage /></ProtectedOwnerRoute>} />
+      <Route path="/owner/buildings" element={<ProtectedOwnerRoute><PropertiesPage /></ProtectedOwnerRoute>} />
+      <Route path="/owner/floors" element={<ProtectedOwnerRoute><PropertiesPage /></ProtectedOwnerRoute>} />
       <Route path="/owner/rooms" element={<ProtectedOwnerRoute><RoomsPage /></ProtectedOwnerRoute>} />
+      <Route path="/owner/beds" element={<ProtectedOwnerRoute><RoomsPage /></ProtectedOwnerRoute>} />
+      <Route path="/owner/allocations" element={<ProtectedOwnerRoute><RoomsPage /></ProtectedOwnerRoute>} />
       <Route path="/owner/residents" element={<ProtectedOwnerRoute><ResidentsPage /></ProtectedOwnerRoute>} />
       <Route path="/owner/residents/lifecycle" element={<ProtectedOwnerRoute><ResidentLifecyclePage /></ProtectedOwnerRoute>} />
       <Route path="/owner/staff" element={<ProtectedOwnerRoute><StaffPage /></ProtectedOwnerRoute>} />

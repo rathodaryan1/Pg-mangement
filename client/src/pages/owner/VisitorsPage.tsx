@@ -22,6 +22,7 @@ import type { Column } from '../../components/ui/Table';
 import { Table } from '../../components/ui/Table';
 import { Modal } from '../../components/ui/Modal';
 import { QRPassCard } from '../../components/ui/QRPassCard';
+import { QrCameraScanner } from '../../components/ui/QrCameraScanner';
 import { useAuth } from '../../context/AuthContext';
 import { ownerApi } from '../../services/ownerApi';
 import type { VisitorRequest } from '../../types';
@@ -37,6 +38,7 @@ export const VisitorsPage: React.FC = () => {
   const [gateScanModalOpen, setGateScanModalOpen] = useState(false);
   const [createVisitorModalOpen, setCreateVisitorModalOpen] = useState(false);
   const [qrCodeInput, setQrCodeInput] = useState('');
+  const [scanMode, setScanMode] = useState<'CAMERA' | 'MANUAL'>('CAMERA');
   const [qrVerificationResult, setQrVerificationResult] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -152,16 +154,15 @@ export const VisitorsPage: React.FC = () => {
     }
   };
 
-  const handleVerifyQR = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const executeVerify = async (tokenStr: string) => {
     try {
-      if (!qrCodeInput.trim()) return;
+      if (!tokenStr || !tokenStr.trim()) return;
       
-      // Extract the actual token if the scanner read the full URL
-      let tokenToVerify = qrCodeInput.trim();
+      let tokenToVerify = tokenStr.trim();
       if (tokenToVerify.includes('/gate/verify/')) {
         tokenToVerify = tokenToVerify.split('/gate/verify/').pop() || tokenToVerify;
       }
+      setQrCodeInput(tokenToVerify);
 
       const res = await ownerApi.verifyVisitorQR(tokenToVerify);
       setQrVerificationResult(res.data);
@@ -173,6 +174,11 @@ export const VisitorsPage: React.FC = () => {
     } catch (err: any) {
       setQrVerificationResult({ valid: false, message: err.message || 'Verification failed' });
     }
+  };
+
+  const handleVerifyQR = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await executeVerify(qrCodeInput);
   };
 
   const filteredVisitors = visitors.filter((v) => {
@@ -457,25 +463,50 @@ export const VisitorsPage: React.FC = () => {
         maxWidth="md"
       >
         <div className="space-y-4">
-          <p className="text-xs text-slate-500">
-            Enter the visitor's secure QR pass code or paste cryptographic verification payload to validate entry
-            permissions.
-          </p>
+          {/* Scanner Mode Toggle */}
+          <div className="flex rounded-lg bg-slate-100 dark:bg-slate-800 p-1 text-xs">
+            <button
+              type="button"
+              onClick={() => setScanMode('CAMERA')}
+              className={`flex-1 py-1.5 font-semibold rounded-md transition ${
+                scanMode === 'CAMERA'
+                  ? 'bg-white dark:bg-slate-700 shadow text-[#0B4036] dark:text-[#C8A45D]'
+                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              Live Camera Scanner
+            </button>
+            <button
+              type="button"
+              onClick={() => setScanMode('MANUAL')}
+              className={`flex-1 py-1.5 font-semibold rounded-md transition ${
+                scanMode === 'MANUAL'
+                  ? 'bg-white dark:bg-slate-700 shadow text-[#0B4036] dark:text-[#C8A45D]'
+                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              Manual / Barcode Gun
+            </button>
+          </div>
 
-          <form onSubmit={handleVerifyQR} className="space-y-3">
-            <Input
-              label="QR Pass Code / Signature Payload"
-              placeholder="e.g. UN-PASS-..."
-              value={qrCodeInput}
-              onChange={(e) => setQrCodeInput(e.target.value)}
-              required
-            />
-            <div className="flex justify-end gap-2">
-              <Button variant="primary" size="sm" type="submit" leftIcon={<ShieldCheck className="w-3.5 h-3.5" />}>
-                Verify Authenticity
-              </Button>
-            </div>
-          </form>
+          {scanMode === 'CAMERA' ? (
+            <QrCameraScanner onScan={(decoded) => executeVerify(decoded)} />
+          ) : (
+            <form onSubmit={handleVerifyQR} className="space-y-3">
+              <Input
+                label="QR Pass Code / Signature Payload"
+                placeholder="e.g. UN-PASS-..."
+                value={qrCodeInput}
+                onChange={(e) => setQrCodeInput(e.target.value)}
+                required
+              />
+              <div className="flex justify-end gap-2">
+                <Button variant="primary" size="sm" type="submit" leftIcon={<ShieldCheck className="w-3.5 h-3.5" />}>
+                  Verify Authenticity
+                </Button>
+              </div>
+            </form>
+          )}
 
           {qrVerificationResult && (
             <div

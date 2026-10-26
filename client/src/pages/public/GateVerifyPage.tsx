@@ -1,6 +1,6 @@
-import { toast, useToast } from '../../context/ToastContext';
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { toast } from '../../context/ToastContext';
 import {
   ShieldCheck,
   CheckCircle2,
@@ -13,16 +13,21 @@ import {
   LogIn,
   LogOut,
   ArrowLeft,
-  RefreshCw
+  RefreshCw,
+  Camera,
 } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { StatusBadge } from '../../components/ui/Badge';
+import { Input } from '../../components/ui/Input';
+import { QrCameraScanner } from '../../components/ui/QrCameraScanner';
 import api from '../../lib/api';
 
 export const GateVerifyPage: React.FC = () => {
   const { token } = useParams<{ token: string }>();
-  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
+  const [manualToken, setManualToken] = useState('');
+  const [isLoading, setIsLoading] = useState(Boolean(token));
   const [result, setResult] = useState<any | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
@@ -30,12 +35,10 @@ export const GateVerifyPage: React.FC = () => {
 
   const verifyPass = async () => {
     if (!token) {
-      setError('No QR pass token provided in verification URL.');
       setIsLoading(false);
       return;
     }
 
-    setIsLoading(false);
     setIsLoading(true);
     setError(null);
     try {
@@ -99,8 +102,54 @@ export const GateVerifyPage: React.FC = () => {
           <p className="text-xs text-[#526058]">Real-time Digital Visitor QR Verification</p>
         </div>
 
+        {/* No Token: Live In-App Camera Scanner View */}
+        {!token && (
+          <Card className="p-6 bg-white border-[#DDE2DD] shadow-sm space-y-4">
+            <div className="text-center space-y-1">
+              <h3 className="text-sm font-bold text-[#18231F]">Live Gate Camera Scanner</h3>
+              <p className="text-xs text-slate-500">
+                Point your camera at the visitor's digital QR pass to verify authenticity.
+              </p>
+            </div>
+
+            <QrCameraScanner
+              scannerId="gate-verify-reader"
+              onScan={(scannedToken) => {
+                navigate(`/gate/verify/${scannedToken}`);
+              }}
+            />
+
+            <div className="pt-3 border-t border-slate-100 space-y-2">
+              <p className="text-xs font-semibold text-slate-600 text-center">Or Enter Pass Code Manually</p>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (manualToken.trim()) {
+                    let cleaned = manualToken.trim();
+                    if (cleaned.includes('/gate/verify/')) {
+                      cleaned = cleaned.split('/gate/verify/').pop() || cleaned;
+                    }
+                    navigate(`/gate/verify/${cleaned}`);
+                  }
+                }}
+                className="flex gap-2"
+              >
+                <Input
+                  placeholder="e.g. UN-PASS-..."
+                  value={manualToken}
+                  onChange={(e) => setManualToken(e.target.value)}
+                  className="text-xs"
+                />
+                <Button type="submit" variant="primary" size="sm" className="bg-[#0B4036] text-white shrink-0">
+                  Verify
+                </Button>
+              </form>
+            </div>
+          </Card>
+        )}
+
         {/* Loading State */}
-        {isLoading && (
+        {token && isLoading && (
           <Card className="p-8 text-center bg-white border-[#DDE2DD] shadow-sm">
             <div className="w-8 h-8 border-3 border-[#0B4036]/20 border-t-[#0B4036] rounded-full animate-spin mx-auto mb-3" />
             <p className="text-xs text-[#526058]">Verifying cryptographic gate pass token...</p>
@@ -108,7 +157,7 @@ export const GateVerifyPage: React.FC = () => {
         )}
 
         {/* Error / Invalid Pass State */}
-        {!isLoading && (!isValid || error) && (
+        {token && !isLoading && (!isValid || error) && (
           <Card className="p-6 bg-white border-rose-200 shadow-sm space-y-4">
             <div className="flex items-center gap-3 p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-900">
               <XCircle className="w-6 h-6 text-rose-600 shrink-0" />
@@ -136,7 +185,7 @@ export const GateVerifyPage: React.FC = () => {
         )}
 
         {/* Valid Verified Pass State */}
-        {!isLoading && isValid && visitor && (
+        {token && !isLoading && isValid && visitor && (
           <Card className="p-6 bg-white border-emerald-200 shadow-sm space-y-4">
             {/* Status Banner */}
             <div className="flex items-center justify-between p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900">

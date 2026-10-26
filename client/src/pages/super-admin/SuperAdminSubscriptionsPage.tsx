@@ -13,6 +13,7 @@ import {
   Sliders,
   ExternalLink,
   ShieldAlert,
+  AlertCircle,
 } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -293,6 +294,13 @@ export const SuperAdminSubscriptionsPage: React.FC = () => {
         maxWidth="md"
       >
         <form onSubmit={handleSaveSubscription} className="space-y-4 pt-1">
+          <div className="p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-[11px] text-amber-800 flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0 text-amber-600 mt-0.5" />
+            <span>
+              <strong>Administrative Override:</strong> Adjusts plan quotas, trial windows, and entitlement status directly. Changes are recorded in SaaS audit logs and do not fabricate online payment gateway records.
+            </span>
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-[#18231F] mb-1">Subscription Plan</label>

@@ -1,6 +1,10 @@
 import { config } from '../config/env';
 
-const PROD_URL = process.env.TARGET_URL || 'https://pg-mangement.onrender.com/api';
+const PROD_URL =
+  process.env.TARGET_URL ||
+  (process.env.ALLOW_LIVE_PROD_AUDIT === 'true'
+    ? 'https://pg-mangement.onrender.com/api'
+    : 'http://127.0.0.1:5000/api');
 
 interface TestResult {
   category: string;

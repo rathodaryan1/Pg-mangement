@@ -16,6 +16,7 @@
     "clsx": "^2.1.1",
     "framer-motion": "^11.2.6",
     "html2canvas": "^1.4.1",
+    "html5-qrcode": "^2.3.8",
     "jspdf": "^2.5.1",
     "lucide-react": "^0.379.0",
     "qrcode": "^1.5.4",

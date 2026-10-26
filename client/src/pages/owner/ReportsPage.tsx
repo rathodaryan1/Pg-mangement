@@ -156,9 +156,17 @@ export const ReportsPage: React.FC = () => {
           <div className="text-2xl font-black text-slate-900 dark:text-white">
             {reportData?.summary?.occupancyRate || 0}%
           </div>
-          <p className="text-[11px] text-slate-500">
-            {reportData?.summary?.occupiedBeds || 0} of {reportData?.summary?.totalBeds || 0} Beds Occupied
-          </p>
+          <div className="flex items-center gap-2 text-[11px] text-slate-500">
+            <span>{reportData?.summary?.occupiedBeds || 0} Occupied</span>
+            <span>•</span>
+            <span className="text-emerald-600 font-medium">{reportData?.summary?.availableBeds || 0} Available</span>
+            {(reportData?.summary?.maintenanceBeds || 0) > 0 && (
+              <>
+                <span>•</span>
+                <span className="text-amber-600 font-medium">{reportData?.summary?.maintenanceBeds} Maintenance</span>
+              </>
+            )}
+          </div>
         </Card>
 
         <Card className="p-5 space-y-2">
