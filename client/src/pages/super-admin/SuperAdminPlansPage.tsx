@@ -151,6 +151,23 @@ export const SuperAdminPlansPage: React.FC = () => {
     }
   };
 
+  const handleDeletePlan = async (planId: string) => {
+    if (!editingPlan) return;
+    try {
+      setSaving(true);
+      const res = await api.delete(`/super-admin/plans/${planId}`);
+      if (res.success) {
+        toast.success(`Plan "${editingPlan.name}" deleted.`);
+        setIsModalOpen(false);
+        fetchPlans();
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to delete plan.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -352,13 +369,29 @@ export const SuperAdminPlansPage: React.FC = () => {
             />
           </div>
 
-          <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" size="sm" type="button" onClick={() => setIsModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button variant="primary" size="sm" type="submit" disabled={saving}>
-              {saving ? 'Saving...' : 'Save Tier Settings'}
-            </Button>
+          <div className="flex items-center justify-between gap-2 pt-2 border-t border-[#DDE2DD]">
+            {editingPlan ? (
+              <Button
+                variant="outline"
+                size="sm"
+                type="button"
+                onClick={() => handleDeletePlan(editingPlan.id)}
+                disabled={saving}
+                className="text-rose-600 border-rose-300 hover:bg-rose-50"
+              >
+                <Trash2 className="w-3.5 h-3.5 mr-1" />
+                Delete Plan
+              </Button>
+            ) : <div />}
+
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" type="button" onClick={() => setIsModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button variant="primary" size="sm" type="submit" disabled={saving}>
+                {saving ? 'Saving...' : 'Save Tier Settings'}
+              </Button>
+            </div>
           </div>
         </form>
       </Modal>

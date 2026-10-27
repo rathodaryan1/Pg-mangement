@@ -69,6 +69,13 @@ export const SuperAdminTenantDetailPage: React.FC = () => {
   const [overrideResidents, setOverrideResidents] = useState(50);
   const [isUpdatingSub, setIsUpdatingSub] = useState(false);
 
+  // Archive & Delete Modals
+  const [archiveModalOpen, setArchiveModalOpen] = useState(false);
+  const [isArchiving, setIsArchiving] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const fetchTenant = async () => {
     if (!id) return;
     setIsLoading(true);
@@ -171,17 +178,48 @@ export const SuperAdminTenantDetailPage: React.FC = () => {
     }
   };
 
-  const handleArchive = async () => {
+  const handleOpenArchive = () => {
+    setArchiveModalOpen(true);
+  };
+
+  const handleConfirmArchive = async () => {
     if (!id || !tenant) return;
-    if (!window.confirm(`Are you sure you want to archive "${tenant.name}"? Active logins will be disabled.`)) {
-      return;
-    }
+    setIsArchiving(true);
     try {
       await superAdminApi.archiveTenant(id);
       toast.success(`Tenant "${tenant.name}" archived.`);
+      setArchiveModalOpen(false);
       fetchTenant();
     } catch (err: any) {
       toast.error(err.message || 'Failed to archive tenant.');
+    } finally {
+      setIsArchiving(false);
+    }
+  };
+
+  const handleOpenDelete = () => {
+    setDeleteConfirmText('');
+    setDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!id || !tenant) return;
+    if (deleteConfirmText.trim() !== tenant.name.trim()) {
+      toast.error(`Please type "${tenant.name}" exactly to confirm deletion.`);
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      await superAdminApi.deleteTenant(id);
+      toast.success(`Tenant "${tenant.name}" permanently deleted.`);
+      setDeleteModalOpen(false);
+      navigate('/super-admin/tenants');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to delete tenant.');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -476,8 +514,12 @@ export const SuperAdminTenantDetailPage: React.FC = () => {
                 <Button variant="secondary" size="xs" onClick={handleToggleSuspend} className="w-full justify-start text-xs">
                   {tenant.status === 'SUSPENDED' ? 'Reactivate Tenant Access' : 'Suspend Tenant Organization'}
                 </Button>
-                <Button variant="outline" size="xs" onClick={handleArchive} className="w-full justify-start text-xs text-rose-700 border-rose-300 hover:bg-rose-100">
-                  Archive Tenant Permanently
+                <Button variant="outline" size="xs" onClick={handleOpenArchive} className="w-full justify-start text-xs text-amber-700 border-amber-300 hover:bg-amber-100">
+                  Archive Tenant Organization
+                </Button>
+                <Button variant="outline" size="xs" onClick={handleOpenDelete} className="w-full justify-start text-xs text-rose-700 border-rose-300 hover:bg-rose-100">
+                  <Trash2 className="w-3.5 h-3.5 mr-1 text-rose-600" />
+                  Permanently Delete Organization
                 </Button>
               </div>
             </Card>
@@ -758,6 +800,81 @@ export const SuperAdminTenantDetailPage: React.FC = () => {
             </Button>
             <Button variant="primary" size="sm" type="submit" isLoading={isUpdatingSub}>
               Save Changes
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Archive Modal */}
+      <Modal
+        isOpen={archiveModalOpen}
+        onClose={() => setArchiveModalOpen(false)}
+        title="Archive Tenant Organization"
+      >
+        <div className="space-y-4">
+          <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 space-y-1">
+            <p className="font-bold">Notice of Organization Archival</p>
+            <p>
+              Archiving <strong>"{tenant.name}"</strong> will immediately deactivate all user sessions, prevent owner/staff logins, and set the tenant status to ARCHIVED. Historical audit records and financial receipts will be preserved for compliance.
+            </p>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2 border-t border-[#DDE2DD]">
+            <Button variant="secondary" size="sm" onClick={() => setArchiveModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="primary" size="sm" onClick={handleConfirmArchive} isLoading={isArchiving} className="bg-amber-700 hover:bg-amber-800 text-white">
+              Confirm Archival
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        title="Danger: Permanently Delete Tenant"
+      >
+        <form onSubmit={handleConfirmDelete} className="space-y-4">
+          <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-900 space-y-2">
+            <p className="font-bold flex items-center gap-1.5 text-rose-800">
+              <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+              Destructive Action: Permanent Erasure
+            </p>
+            <p>
+              This will permanently delete <strong>"{tenant.name}"</strong>, along with all associated properties ({properties.length}), rooms ({totalRooms}), and user accounts ({tenant.users?.length || 0}).
+            </p>
+            <p className="font-semibold text-rose-800">
+              This operation cannot be undone. An immutable audit record will log this administrative action.
+            </p>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold text-[#18231F]">
+              To confirm, type <span className="font-mono font-bold text-rose-700">{tenant.name}</span> below:
+            </label>
+            <Input
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder={tenant.name}
+              required
+            />
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2 border-t border-[#DDE2DD]">
+            <Button variant="secondary" size="sm" type="button" onClick={() => setDeleteModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              type="submit"
+              disabled={deleteConfirmText.trim() !== tenant.name.trim()}
+              isLoading={isDeleting}
+              className="bg-rose-600 hover:bg-rose-700 text-white border-transparent disabled:opacity-40"
+            >
+              Delete Organization Permanently
             </Button>
           </div>
         </form>

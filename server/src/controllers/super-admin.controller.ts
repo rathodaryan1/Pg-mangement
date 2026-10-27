@@ -6,17 +6,31 @@ import { config } from '../config/env';
 import { sendSuccess, sendError, sendCreated } from '../utils/response';
 import { AuthRequest } from '../middleware/auth';
 
+async function withDbRetry<T>(fn: () => Promise<T>, retries = 3): Promise<T> {
+  for (let i = 0; i <= retries; i++) {
+    try {
+      return await fn();
+    } catch (err: any) {
+      if (i === retries) throw err;
+      await new Promise((r) => setTimeout(r, 400 * (i + 1)));
+    }
+  }
+  throw new Error('Database operation failed after retries');
+}
+
 export class SuperAdminController {
   // -------------------------------------------------------------
   // 1. DASHBOARD & GLOBAL PLATFORM METRICS
   // -------------------------------------------------------------
   static async getDashboardStats(req: AuthRequest, res: Response): Promise<Response | void> {
     try {
-      // Resiliently query tenant counts using groupBy (single query)
-      const tenantStatusCounts = await prisma.tenant.groupBy({
-        by: ['status'],
-        _count: { id: true },
-      }).catch(() => []);
+      // Resiliently query tenant counts using groupBy (single query with retry)
+      const tenantStatusCounts = await withDbRetry(() =>
+        prisma.tenant.groupBy({
+          by: ['status'],
+          _count: { id: true },
+        })
+      ).catch(() => []);
 
       let totalTenants = 0;
       let activeTenants = 0;
@@ -32,10 +46,12 @@ export class SuperAdminController {
       }
 
       // User roles counts using groupBy
-      const userRoleCounts = await prisma.user.groupBy({
-        by: ['role'],
-        _count: { id: true },
-      }).catch(() => []);
+      const userRoleCounts = await withDbRetry(() =>
+        prisma.user.groupBy({
+          by: ['role'],
+          _count: { id: true },
+        })
+      ).catch(() => []);
 
       let totalOwners = 0;
       let totalStaff = 0;
@@ -47,15 +63,17 @@ export class SuperAdminController {
         }
       }
 
-      const totalProperties = await prisma.property.count().catch(() => 0);
-      const totalResidents = await prisma.resident.count({ where: { status: 'ACTIVE' } }).catch(() => 0);
-      const totalRooms = await prisma.room.count().catch(() => 0);
+      const totalProperties = await withDbRetry(() => prisma.property.count()).catch(() => 0);
+      const totalResidents = await withDbRetry(() => prisma.resident.count({ where: { status: 'ACTIVE' } })).catch(() => 0);
+      const totalRooms = await withDbRetry(() => prisma.room.count()).catch(() => 0);
 
       // Beds counts using groupBy
-      const bedStatusCounts = await prisma.bed.groupBy({
-        by: ['status'],
-        _count: { id: true },
-      }).catch(() => []);
+      const bedStatusCounts = await withDbRetry(() =>
+        prisma.bed.groupBy({
+          by: ['status'],
+          _count: { id: true },
+        })
+      ).catch(() => []);
 
       let totalBeds = 0;
       let occupiedBeds = 0;
@@ -65,16 +83,20 @@ export class SuperAdminController {
         if (item.status === 'OCCUPIED') occupiedBeds = count;
       }
 
-      const recentAuditLogs = await prisma.auditLog.findMany({
-        take: 10,
-        orderBy: { timestamp: 'desc' },
-        include: { tenant: { select: { name: true, slug: true } } },
-      }).catch(() => []);
+      const recentAuditLogs = await withDbRetry(() =>
+        prisma.auditLog.findMany({
+          take: 10,
+          orderBy: { timestamp: 'desc' },
+          include: { tenant: { select: { name: true, slug: true } } },
+        })
+      ).catch(() => []);
 
-      const tenantsByPlan = await prisma.tenant.groupBy({
-        by: ['plan'],
-        _count: { id: true },
-      }).catch(() => []);
+      const tenantsByPlan = await withDbRetry(() =>
+        prisma.tenant.groupBy({
+          by: ['plan'],
+          _count: { id: true },
+        })
+      ).catch(() => []);
 
       const occupancyRate = totalBeds > 0 ? Math.round((occupiedBeds / totalBeds) * 100) : 0;
 
@@ -168,8 +190,8 @@ export class SuperAdminController {
         ];
       }
 
-      const [total, tenants] = await Promise.all([
-        prisma.tenant.count({ where }),
+      const total = await withDbRetry(() => prisma.tenant.count({ where }));
+      const tenants = await withDbRetry(() =>
         prisma.tenant.findMany({
           where,
           skip,
@@ -187,8 +209,8 @@ export class SuperAdminController {
               },
             },
           },
-        }),
-      ]);
+        })
+      );
 
       return sendSuccess(
         res,
@@ -280,12 +302,12 @@ export class SuperAdminController {
         .replace(/(^-|-$)/g, '') + `-${Math.random().toString(36).substring(2, 6)}`;
 
       // Check duplicate email
-      const existingUser = await prisma.user.findUnique({ where: { email: ownerEmailAddr } });
+      const existingUser = await withDbRetry(() => prisma.user.findUnique({ where: { email: ownerEmailAddr } }));
       if (existingUser) {
         return sendError(res, `User with email ${ownerEmailAddr} already exists`, 409, 'DUPLICATE_EMAIL');
       }
 
-      const existingTenant = await prisma.tenant.findUnique({ where: { email: tenantEmail } });
+      const existingTenant = await withDbRetry(() => prisma.tenant.findUnique({ where: { email: tenantEmail } }));
       if (existingTenant) {
         return sendError(res, `Tenant organization with email ${tenantEmail} already exists`, 409, 'DUPLICATE_TENANT_EMAIL');
       }
@@ -309,8 +331,8 @@ export class SuperAdminController {
         maxResidents = 3000;
       }
 
-      // Execute atomic transaction
-      const result = await prisma.$transaction(async (tx) => {
+      // Execute atomic transaction with retry
+      const result = await withDbRetry(() => prisma.$transaction(async (tx) => {
         // 1. Create Tenant
         const newTenant = await tx.tenant.create({
           data: {
@@ -414,7 +436,7 @@ export class SuperAdminController {
         });
 
         return { tenant: newTenant, owner: newOwner, property: initialProperty };
-      }, { maxWait: 15000, timeout: 30000 });
+      }, { maxWait: 15000, timeout: 30000 }));
 
       return sendCreated(
         res,
@@ -492,24 +514,38 @@ export class SuperAdminController {
     try {
       const { id } = req.params;
 
-      const tenant = await prisma.tenant.findUnique({ where: { id } });
+      const tenant = await withDbRetry(() =>
+        prisma.tenant.findUnique({
+          where: { id },
+          include: {
+            _count: {
+              select: {
+                properties: true,
+                users: true,
+              },
+            },
+          },
+        })
+      );
       if (!tenant) {
         return sendError(res, 'Tenant not found', 404, 'NOT_FOUND');
       }
 
-      await prisma.tenant.delete({ where: { id } });
+      await withDbRetry(() => prisma.tenant.delete({ where: { id } }));
 
-      await prisma.auditLog.create({
-        data: {
-          actorId: req.user?.id || null,
-          actorName: req.user?.name || 'Super Administrator',
-          actorRole: 'SUPER_ADMIN',
-          action: 'TENANT_DELETED',
-          entity: 'Tenant',
-          entityId: id,
-          details: `Permanently deleted PG tenant "${tenant.name}" (${tenant.email})`,
-        },
-      });
+      await withDbRetry(() =>
+        prisma.auditLog.create({
+          data: {
+            actorId: req.user?.id || null,
+            actorName: req.user?.name || 'Super Administrator',
+            actorRole: 'SUPER_ADMIN',
+            action: 'TENANT_DELETED',
+            entity: 'Tenant',
+            entityId: id,
+            details: `Permanently deleted PG tenant "${tenant.name}" (${tenant.email}) with ${tenant._count?.properties || 0} properties and ${tenant._count?.users || 0} users`,
+          },
+        })
+      ).catch(() => {});
 
       return sendSuccess(res, { id, name: tenant.name }, 'Tenant deleted permanently');
     } catch (error: any) {
@@ -866,8 +902,8 @@ export class SuperAdminController {
       if (tenantId && tenantId !== 'ALL') where.tenantId = String(tenantId);
       if (action && action !== 'ALL') where.action = String(action);
 
-      const [total, logs] = await Promise.all([
-        prisma.auditLog.count({ where }),
+      const total = await withDbRetry(() => prisma.auditLog.count({ where }));
+      const logs = await withDbRetry(() =>
         prisma.auditLog.findMany({
           where,
           skip,
@@ -877,8 +913,8 @@ export class SuperAdminController {
             tenant: { select: { name: true, slug: true } },
             actor: { select: { name: true, email: true, role: true } },
           },
-        }),
-      ]);
+        })
+      );
 
       return sendSuccess(
         res,
@@ -921,8 +957,8 @@ export class SuperAdminController {
         ];
       }
 
-      const [total, users] = await Promise.all([
-        prisma.user.count({ where }),
+      const total = await withDbRetry(() => prisma.user.count({ where }));
+      const users = await withDbRetry(() =>
         prisma.user.findMany({
           where,
           skip,
@@ -940,8 +976,8 @@ export class SuperAdminController {
             tenant: { select: { id: true, name: true, slug: true, status: true } },
             property: { select: { id: true, name: true, city: true } },
           },
-        }),
-      ]);
+        })
+      );
 
       return sendSuccess(
         res,
@@ -1183,8 +1219,8 @@ export class SuperAdminController {
         ];
       }
 
-      const [total, tickets] = await Promise.all([
-        prisma.supportTicket.count({ where }),
+      const total = await withDbRetry(() => prisma.supportTicket.count({ where }));
+      const tickets = await withDbRetry(() =>
         prisma.supportTicket.findMany({
           where,
           skip,
@@ -1193,8 +1229,8 @@ export class SuperAdminController {
           include: {
             tenant: { select: { id: true, name: true, slug: true, email: true } },
           },
-        }),
-      ]);
+        })
+      );
 
       return sendSuccess(
         res,
