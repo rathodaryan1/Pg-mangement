@@ -1311,7 +1311,7 @@ export class SuperAdminController {
   // -------------------------------------------------------------
   static async getSettings(req: AuthRequest, res: Response): Promise<Response | void> {
     try {
-      const settingsList = await prisma.setting.findMany();
+      const settingsList = await withDbRetry(() => prisma.setting.findMany());
       const settingsMap: Record<string, string> = {
         platformName: 'Urban Nest SaaS',
         supportEmail: 'support@urbannest.com',
@@ -1339,23 +1339,27 @@ export class SuperAdminController {
       const settingsData: Record<string, any> = req.body;
 
       for (const [key, value] of Object.entries(settingsData)) {
-        await prisma.setting.upsert({
-          where: { key },
-          update: { value: String(value) },
-          create: { key, value: String(value) },
-        });
+        await withDbRetry(() =>
+          prisma.setting.upsert({
+            where: { key },
+            update: { value: String(value) },
+            create: { key, value: String(value) },
+          })
+        );
       }
 
-      await prisma.auditLog.create({
-        data: {
-          actorId: req.user?.id || null,
-          actorName: req.user?.name || 'Super Administrator',
-          actorRole: 'SUPER_ADMIN',
-          action: 'SETTINGS_UPDATED',
-          entity: 'Setting',
-          details: `Super Admin updated platform configuration settings`,
-        },
-      });
+      await withDbRetry(() =>
+        prisma.auditLog.create({
+          data: {
+            actorId: req.user?.id || null,
+            actorName: req.user?.name || 'Super Administrator',
+            actorRole: 'SUPER_ADMIN',
+            action: 'SETTINGS_UPDATED',
+            entity: 'Setting',
+            details: `Super Admin updated platform configuration settings`,
+          },
+        })
+      ).catch(() => {});
 
       return sendSuccess(res, settingsData, 'Platform settings saved successfully');
     } catch (error: any) {

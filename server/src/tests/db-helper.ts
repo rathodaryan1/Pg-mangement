@@ -1,4 +1,4 @@
-export async function withDbRetry<T>(fn: () => Promise<T>, retries = 3, delayMs = 1000): Promise<T> {
+export async function withDbRetry<T>(fn: () => Promise<T>, retries = 5, delayMs = 1500): Promise<T> {
   let lastError: any;
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {

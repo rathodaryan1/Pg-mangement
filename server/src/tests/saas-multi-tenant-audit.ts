@@ -715,7 +715,7 @@ export async function runSaasMultiTenantAudit() {
       if (settingsSaveRes.ok) {
         record('Platform Settings', 'Database Persisted Global Settings', 'PASS', 'Settings saved and audit logged');
       } else {
-        record('Platform Settings', 'Database Persisted Global Settings', 'FAIL', 'Failed to save settings');
+        record('Platform Settings', 'Database Persisted Global Settings', 'FAIL', `Failed to save settings (Status ${settingsSaveRes.status}): ${JSON.stringify(settingsSaveRes.data)}`);
       }
     } catch (err: any) {
       record('Support & Settings', 'Support Ticket / Settings Workflow', 'FAIL', undefined, err.message);
