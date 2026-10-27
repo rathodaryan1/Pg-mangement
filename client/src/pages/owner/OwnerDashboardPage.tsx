@@ -305,20 +305,26 @@ export const OwnerDashboardPage: React.FC = () => {
   }
 
   const kpis = dashboardData?.kpis || {
-    totalProperties: 1,
+    totalProperties: 0,
+    totalBuildings: 0,
     totalRooms: 0,
-    totalBeds: 48,
-    occupiedBeds: 45,
-    availableBeds: 3,
-    totalOccupancyPercentage: 94,
-    activeResidents: 45,
-    monthlyRevenue: 428000,
-    outstandingRent: 24000,
-    totalDeposits: 890000,
-    openComplaints: 1,
-    pendingVisitors: 2,
-    staffCount: 6,
-    lowInventoryAlerts: 1
+    totalBeds: 0,
+    occupiedBeds: 0,
+    availableBeds: 0,
+    totalOccupancyPercentage: 0,
+    occupancyRate: 0,
+    activeResidents: 0,
+    monthlyRevenue: 0,
+    totalRevenueCollected: 0,
+    outstandingRent: 0,
+    totalOutstandingRent: 0,
+    totalDeposits: 0,
+    totalSecurityDeposits: 0,
+    openComplaints: 0,
+    openComplaintsCount: 0,
+    pendingVisitors: 0,
+    staffCount: 0,
+    lowInventoryAlerts: 0
   };
 
   const recentTickets = dashboardData?.recentComplaints || [];
@@ -400,28 +406,28 @@ export const OwnerDashboardPage: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard
           title="Occupancy Rate"
-          value={`${kpis.totalOccupancyPercentage || kpis.occupancyRate || 94}%`}
-          subtitle={`${kpis.occupiedBeds || 45} of ${kpis.totalBeds || 48} Beds Occupied`}
+          value={`${kpis.totalOccupancyPercentage ?? kpis.occupancyRate ?? kpis.occupancyPercentage ?? 0}%`}
+          subtitle={`${kpis.occupiedBeds || 0} of ${kpis.totalBeds || 0} Beds Occupied`}
           icon={BedDouble}
-          trend={{ value: '+2.4%', isPositive: true }}
+          trend={{ value: `${kpis.occupancyPercentage || 0}% active`, isPositive: true }}
           color="forest"
           onClick={() => navigate('/owner/rooms')}
         />
 
         <KPICard
           title="Total Revenue"
-          value={`₹${(kpis.totalRevenueCollected || kpis.monthlyRevenue || 428000).toLocaleString('en-IN')}`}
+          value={`₹${(kpis.totalRevenueCollected ?? kpis.monthlyRevenue ?? 0).toLocaleString('en-IN')}`}
           subtitle="Monthly cycle collections"
           icon={CreditCard}
-          trend={{ value: '+4.1%', isPositive: true }}
+          trend={{ value: 'Live collections', isPositive: true }}
           color="forest"
           onClick={() => navigate('/owner/payments')}
         />
 
         <KPICard
           title="Rent Pending"
-          value={`₹${(kpis.totalOutstandingRent || kpis.outstandingRent || 24000).toLocaleString('en-IN')}`}
-          subtitle={`${overduePayments.length || 2} overdue invoices`}
+          value={`₹${(kpis.totalOutstandingRent ?? kpis.outstandingRent ?? kpis.pendingCollections ?? 0).toLocaleString('en-IN')}`}
+          subtitle={`${overduePayments.length} overdue invoices`}
           icon={Wallet}
           color="gold"
           onClick={() => navigate('/owner/payments')}
@@ -429,10 +435,10 @@ export const OwnerDashboardPage: React.FC = () => {
 
         <KPICard
           title="Open Tickets"
-          value={kpis.openComplaints || kpis.openComplaintsCount || 1}
+          value={kpis.openComplaints ?? kpis.openComplaintsCount ?? 0}
           subtitle="Maintenance requests"
           icon={Wrench}
-          color={kpis.openComplaints > 0 ? 'amber' : 'forest'}
+          color={(kpis.openComplaints || kpis.openComplaintsCount || 0) > 0 ? 'amber' : 'forest'}
           onClick={() => navigate('/owner/maintenance')}
         />
       </div>

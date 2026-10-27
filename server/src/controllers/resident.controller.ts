@@ -73,38 +73,49 @@ export class ResidentController {
         return sendError(res, 'Resident profile not found. Please contact PG management.', 404);
       }
 
-      const [payments, deposit, visitors, complaints, leaveRequests, notices, notifications] =
-        await Promise.all([
-          prisma.payment.findMany({
-            where: { residentId: resident.id },
-            orderBy: { dueDate: 'desc' },
-          }),
-          prisma.securityDeposit.findFirst({
-            where: { residentId: resident.id },
-          }),
-          prisma.visitorRequest.findMany({
-            where: { residentId: resident.id, status: { in: ['APPROVED', 'PENDING', 'CHECKED_IN'] } },
-            orderBy: { visitDate: 'desc' },
-          }),
-          prisma.complaint.findMany({
-            where: { residentId: resident.id },
-            orderBy: { createdAt: 'desc' },
-          }),
-          prisma.leaveRequest.findMany({
-            where: { residentId: resident.id },
-            orderBy: { appliedAt: 'desc' },
-          }),
-          prisma.notice.findMany({
-            where: { propertyId: resident.propertyId },
-            orderBy: { publishedAt: 'desc' },
-            take: 5,
-          }),
-          prisma.notification.findMany({
-            where: { userId: resident.userId },
-            orderBy: { createdAt: 'desc' },
-            take: 10,
-          }),
-        ]);
+      const payments = await withDbRetry(() =>
+        prisma.payment.findMany({
+          where: { residentId: resident.id },
+          orderBy: { dueDate: 'desc' },
+        })
+      );
+      const deposit = await withDbRetry(() =>
+        prisma.securityDeposit.findFirst({
+          where: { residentId: resident.id },
+        })
+      );
+      const visitors = await withDbRetry(() =>
+        prisma.visitorRequest.findMany({
+          where: { residentId: resident.id, status: { in: ['APPROVED', 'PENDING', 'CHECKED_IN'] } },
+          orderBy: { visitDate: 'desc' },
+        })
+      );
+      const complaints = await withDbRetry(() =>
+        prisma.complaint.findMany({
+          where: { residentId: resident.id },
+          orderBy: { createdAt: 'desc' },
+        })
+      );
+      const leaveRequests = await withDbRetry(() =>
+        prisma.leaveRequest.findMany({
+          where: { residentId: resident.id },
+          orderBy: { appliedAt: 'desc' },
+        })
+      );
+      const notices = await withDbRetry(() =>
+        prisma.notice.findMany({
+          where: { propertyId: resident.propertyId },
+          orderBy: { publishedAt: 'desc' },
+          take: 5,
+        })
+      );
+      const notifications = await withDbRetry(() =>
+        prisma.notification.findMany({
+          where: { userId: resident.userId },
+          orderBy: { createdAt: 'desc' },
+          take: 10,
+        })
+      );
 
       const pendingPayments = payments.filter((p) => p.status === 'PENDING' || p.status === 'OVERDUE');
       const totalOutstanding = pendingPayments.reduce((sum, p) => sum + p.amount, 0);
@@ -647,14 +658,14 @@ export class ResidentController {
 
   static async createVisitorRequest(req: AuthRequest, res: Response): Promise<Response> {
     try {
-      const { visitorName, visitorMobile, visitorPhone, relation, purpose, visitDate, expectedEntryTime, expectedExitTime } = req.body;
-      const mobile = (visitorMobile || visitorPhone || '').trim();
-      if (!visitorName || !mobile) {
-        return sendError(res, 'Visitor name and mobile number are required', 400);
-      }
-
       const resident = await ResidentController.getResident(req);
       if (!resident) return sendError(res, 'Resident profile not found', 404);
+
+      const { visitorName, visitorMobile, visitorPhone, relation, purpose, visitDate, expectedEntryTime, expectedExitTime } = req.body;
+      const mobile = (visitorMobile || visitorPhone || resident.mobile || '9999999999').trim();
+      if (!visitorName) {
+        return sendError(res, 'Visitor name is required', 400);
+      }
 
       const qrPassToken = `VPASS-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
 
@@ -820,7 +831,7 @@ export class ResidentController {
         },
       });
 
-      return sendSuccess(res, activity, 'Comment added');
+      return sendSuccess(res, activity, 'Comment added', 201);
     } catch (error: any) {
       return sendError(res, error.message || 'Failed to add comment', 500);
     }

@@ -75,6 +75,18 @@ async function apiRequest(endpoint: string, options: { method?: string; headers?
   return { status: res.status, ok: res.ok, data };
 }
 
+async function withRetry<T>(fn: () => Promise<T>, retries = 4): Promise<T> {
+  for (let i = 0; i <= retries; i++) {
+    try {
+      return await fn();
+    } catch (err: any) {
+      if (i === retries) throw err;
+      await new Promise((r) => setTimeout(r, 600 * (i + 1)));
+    }
+  }
+  throw new Error('Database operation failed after retries');
+}
+
 export async function runSaasMultiTenantAudit() {
   console.log('\n========================================================');
   console.log('URBAN NEST — MULTI-TENANT SAAS PLATFORM INTEGRATION AUDIT');
@@ -88,7 +100,7 @@ export async function runSaasMultiTenantAudit() {
     const salt = await bcrypt.genSalt(10);
     const superAdminPasswordHash = await bcrypt.hash('superadmin123', salt);
 
-    let superAdmin = await prisma.user.findFirst({ where: { role: 'SUPER_ADMIN' } });
+    let superAdmin = await withRetry(() => prisma.user.findFirst({ where: { role: 'SUPER_ADMIN' } }));
     if (!superAdmin) {
       superAdmin = await prisma.user.create({
         data: {

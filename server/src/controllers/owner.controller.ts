@@ -12,6 +12,18 @@ import { StorageService, LOCAL_UPLOADS_DIR } from '../utils/supabase';
 const isProd = process.env.NODE_ENV === 'production';
 const isDemoMode = process.env.DEMO_MODE === 'true';
 
+async function withDbRetry<T>(fn: () => Promise<T>, retries = 3): Promise<T> {
+  for (let i = 0; i <= retries; i++) {
+    try {
+      return await fn();
+    } catch (err: any) {
+      if (i === retries) throw err;
+      await new Promise((r) => setTimeout(r, 400 * (i + 1)));
+    }
+  }
+  throw new Error('Database operation failed after retries');
+}
+
 export class OwnerController {
   private static async resolvePropertyScope(req: AuthRequest, targetPropertyId?: string): Promise<{ propertyId?: string; propertyFilter: any; tenantFilter: any }> {
     const isSuperAdmin = req.user?.role === 'SUPER_ADMIN';
@@ -64,58 +76,72 @@ export class OwnerController {
     try {
       const { propertyId, propertyFilter, tenantFilter } = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
 
-      const [
-        properties,
-        totalBuildings,
-        rooms,
-        beds,
-        residents,
-        payments,
-        deposits,
-        complaints,
-        visitors,
-        inventoryItems,
-        staffMembers,
-        recentNotices,
-        tasks,
-      ] = await Promise.all([
+      const properties = await withDbRetry(() =>
         prisma.property.findMany({
           where: propertyId ? { id: propertyId } : tenantFilter,
           include: { buildings: true, rooms: { include: { beds: true } }, residents: true },
-        }),
-        prisma.building.count({ where: propertyFilter }),
-        prisma.room.findMany({ where: propertyFilter, include: { beds: true } }),
-        prisma.bed.findMany({ where: propertyId ? { room: { propertyId } } : (req.user?.tenantId ? { room: { property: { tenantId: req.user.tenantId } } } : {}) }),
+        })
+      );
+      const totalBuildings = await withDbRetry(() =>
+        prisma.building.count({ where: propertyFilter })
+      );
+      const rooms = await withDbRetry(() =>
+        prisma.room.findMany({ where: propertyFilter, include: { beds: true } })
+      );
+      const beds = await withDbRetry(() =>
+        prisma.bed.findMany({
+          where: propertyId
+            ? { room: { propertyId } }
+            : (req.user?.tenantId ? { room: { property: { tenantId: req.user.tenantId } } } : {}),
+        })
+      );
+      const residents = await withDbRetry(() =>
         prisma.resident.findMany({
           where: propertyFilter,
           include: { bed: { include: { room: true } } },
-        }),
+        })
+      );
+      const payments = await withDbRetry(() =>
         prisma.payment.findMany({
           where: propertyFilter,
           include: { resident: true },
           orderBy: { createdAt: 'desc' },
-        }),
-        prisma.securityDeposit.findMany({ where: propertyFilter }),
+        })
+      );
+      const deposits = await withDbRetry(() =>
+        prisma.securityDeposit.findMany({ where: propertyFilter })
+      );
+      const complaints = await withDbRetry(() =>
         prisma.complaint.findMany({
           where: propertyFilter,
           include: { resident: true },
           orderBy: { createdAt: 'desc' },
-        }),
+        })
+      );
+      const visitors = await withDbRetry(() =>
         prisma.visitorRequest.findMany({
           where: propertyFilter,
           include: { resident: true },
           orderBy: { createdAt: 'desc' },
-        }),
-        prisma.inventoryItem.findMany({ where: propertyFilter }),
+        })
+      );
+      const inventoryItems = await withDbRetry(() =>
+        prisma.inventoryItem.findMany({ where: propertyFilter })
+      );
+      const staffMembers = await withDbRetry(() =>
         prisma.user.findMany({
           where: {
             role: { in: ['MANAGER', 'RECEPTIONIST', 'ACCOUNTANT', 'MAINTENANCE'] },
             ...(req.user?.tenantId ? { tenantId: req.user.tenantId } : {}),
           },
-        }),
-        prisma.notice.findMany({ where: propertyFilter, orderBy: { publishedAt: 'desc' }, take: 5 }),
-        prisma.operationalTask.findMany({ where: propertyFilter, take: 5 }),
-      ]);
+        })
+      );
+      const recentNotices = await withDbRetry(() =>
+        prisma.notice.findMany({ where: propertyFilter, orderBy: { publishedAt: 'desc' }, take: 5 })
+      );
+      const tasks = await withDbRetry(() =>
+        prisma.operationalTask.findMany({ where: propertyFilter, take: 5 })
+      );
 
       const totalBedsCount = beds.length;
       const occupiedBedsCount = beds.filter((b) => b.status === 'OCCUPIED').length;
@@ -169,15 +195,30 @@ export class OwnerController {
           totalRooms: rooms.length,
           totalBeds: totalBedsCount,
           occupiedBeds: occupiedBedsCount,
+          availableBeds: availableBedsCount,
           vacantBeds: availableBedsCount,
+          occupancyRate,
           occupancyPercentage: occupancyRate,
+          totalOccupancyPercentage: occupancyRate,
           monthlyRevenue: paidPayments.reduce((acc, p) => acc + p.amount, 0),
+          totalRevenueCollected: paidPayments.reduce((acc, p) => acc + p.amount, 0),
           pendingCollections: pendingPayments.reduce((acc, p) => acc + p.amount, 0),
+          outstandingRent: pendingPayments.reduce((acc, p) => acc + p.amount, 0),
+          totalOutstandingRent: pendingPayments.reduce((acc, p) => acc + p.amount, 0),
           overdueRentAmount: overduePayments.reduce((acc, p) => acc + p.amount, 0),
+          totalSecurityDeposits: deposits.reduce((acc, d) => acc + (d.status === 'PAID' ? d.amount : 0), 0),
+          totalDeposits: deposits.reduce((acc, d) => acc + (d.status === 'PAID' ? d.amount : 0), 0),
           activeResidentsCount: residents.filter((r) => r.status === 'ACTIVE').length,
+          activeResidents: residents.filter((r) => r.status === 'ACTIVE').length,
           openComplaintsCount: complaints.filter((c) => c.status !== 'RESOLVED' && c.status !== 'CLOSED').length,
+          openComplaints: complaints.filter((c) => c.status !== 'RESOLVED' && c.status !== 'CLOSED').length,
+          pendingVisitorsCount: visitors.filter((v) => v.status === 'PENDING').length,
+          pendingVisitors: visitors.filter((v) => v.status === 'PENDING').length,
           todayVisitorsCount: visitors.filter((v) => new Date(v.visitDate).toDateString() === new Date().toDateString()).length,
+          staffCount: staffMembers.length,
           totalStaffCount: staffMembers.length,
+          lowStockAlertsCount: inventoryItems.filter((i) => i.quantity <= i.minQuantity).length,
+          lowInventoryAlerts: inventoryItems.filter((i) => i.quantity <= i.minQuantity).length,
         },
         revenueTrend,
         occupancyTrend,
@@ -339,6 +380,12 @@ export class OwnerController {
   static async updateProperty(req: AuthRequest, res: Response): Promise<Response> {
     try {
       const { name, address, city, phone, email, upiId, gstNumber } = req.body;
+      const target = await prisma.property.findUnique({ where: { id: req.params.id } });
+      if (!target) return sendError(res, 'Property not found', 404);
+      if (req.user?.role !== 'SUPER_ADMIN' && req.user?.tenantId && target.tenantId !== req.user.tenantId) {
+        return sendError(res, 'Access forbidden: Cannot update property belonging to another organization', 403, 'FORBIDDEN');
+      }
+
       const updated = await prisma.property.update({
         where: { id: req.params.id },
         data: {
@@ -372,6 +419,20 @@ export class OwnerController {
 
   static async archiveProperty(req: AuthRequest, res: Response): Promise<Response> {
     try {
+      const property = await prisma.property.findUnique({ where: { id: req.params.id } });
+      if (!property) return sendError(res, 'Property not found', 404);
+      if (req.user?.role !== 'SUPER_ADMIN' && req.user?.tenantId && property.tenantId !== req.user.tenantId) {
+        return sendError(res, 'Access forbidden: Cannot delete property belonging to another organization', 403, 'FORBIDDEN');
+      }
+
+      // Check for active residents
+      const activeResidents = await prisma.resident.count({
+        where: { propertyId: property.id, status: { in: ['ACTIVE', 'NOTICE_PERIOD', 'PENDING_MOVE_IN'] } },
+      });
+      if (activeResidents > 0) {
+        return sendError(res, 'Cannot delete property with active residents. Please reallocate or complete move-outs first.', 400);
+      }
+
       await prisma.property.delete({
         where: { id: req.params.id },
       });
@@ -568,6 +629,30 @@ export class OwnerController {
       const propId = propertyId || (await OwnerController.resolvePropertyScope(req)).propertyId;
       if (!propId) return sendError(res, 'Property ID is required', 400);
 
+      // Verify uniqueness of room number within property
+      const existing = await prisma.room.findUnique({
+        where: {
+          number_propertyId: {
+            number: String(number).trim(),
+            propertyId: propId,
+          },
+        },
+      });
+      if (existing) {
+        return sendError(res, `Room number "${number}" already exists in this property`, 400);
+      }
+
+      if (floorId) {
+        const floor = await prisma.floor.findUnique({
+          where: { id: floorId },
+          include: { building: true },
+        });
+        if (!floor) return sendError(res, 'Specified floor does not exist', 404);
+        if (floor.building.propertyId !== propId) {
+          return sendError(res, 'Specified floor belongs to a different property', 400);
+        }
+      }
+
       const cap = parseInt(capacity || '2', 10);
       const rent = parseFloat(baseRent || '14000');
       const dep = deposit ? parseFloat(deposit) : rent * 2;
@@ -649,6 +734,17 @@ export class OwnerController {
 
   static async archiveRoom(req: AuthRequest, res: Response): Promise<Response> {
     try {
+      // Check for active residents in this room before deletion
+      const activeResidentsInRoom = await prisma.resident.count({
+        where: {
+          bed: { roomId: req.params.id },
+          status: { in: ['ACTIVE', 'NOTICE_PERIOD', 'PENDING_MOVE_IN'] },
+        },
+      });
+      if (activeResidentsInRoom > 0) {
+        return sendError(res, 'Cannot delete or archive room containing active residents. Please reallocate or move-out residents first.', 400);
+      }
+
       await prisma.room.delete({ where: { id: req.params.id } });
       return sendSuccess(res, null, 'Room archived successfully');
     } catch (error: any) {
@@ -659,6 +755,17 @@ export class OwnerController {
   static async updateBedStatus(req: AuthRequest, res: Response): Promise<Response> {
     try {
       const { status, monthlyRent } = req.body;
+
+      if (status === 'AVAILABLE') {
+        const bed = await prisma.bed.findUnique({
+          where: { id: req.params.id },
+          include: { resident: true },
+        });
+        if (bed?.resident && (bed.resident.status === 'ACTIVE' || bed.resident.status === 'NOTICE_PERIOD')) {
+          return sendError(res, 'Cannot mark bed as AVAILABLE while an active resident is allocated. Please process a move-out or transfer first.', 400);
+        }
+      }
+
       const updated = await prisma.bed.update({
         where: { id: req.params.id },
         data: {
@@ -798,6 +905,23 @@ export class OwnerController {
       const propId = propertyId || (await OwnerController.resolvePropertyScope(req)).propertyId;
       if (!propId) return sendError(res, 'Property ID is required', 400);
 
+      // Check if bed is already occupied or under maintenance
+      if (bedId) {
+        const bed = await prisma.bed.findUnique({
+          where: { id: bedId },
+          include: { room: true },
+        });
+        if (!bed) {
+          return sendError(res, 'Specified bed does not exist', 404);
+        }
+        if (bed.status === 'OCCUPIED') {
+          return sendError(res, 'Selected bed is already occupied. Please select an available bed.', 400);
+        }
+        if (bed.status === 'MAINTENANCE') {
+          return sendError(res, 'Selected bed is currently under maintenance.', 400);
+        }
+      }
+
       const salt = await bcrypt.genSalt(10);
       const defaultHash = await bcrypt.hash('admin123', salt);
 
@@ -893,7 +1017,10 @@ export class OwnerController {
         details: `Onboarded resident ${result.fullName} (${result.email})`,
       });
 
-      return sendSuccess(res, result, 'Resident onboarded successfully', 201);
+      return sendSuccess(res, {
+        ...result,
+        resident: result,
+      }, 'Resident onboarded successfully', 201);
     } catch (error: any) {
       console.error('[OwnerController.moveInResident] Error:', error);
       return sendError(res, error.message || 'Failed to onboard resident', 500);
@@ -937,7 +1064,7 @@ export class OwnerController {
       const resident = await prisma.resident.findUnique({ where: { id: residentId } });
       if (!resident) return sendError(res, 'Resident not found', 404);
 
-      await prisma.$transaction(async (tx) => {
+      const updatedResident = await prisma.$transaction(async (tx) => {
         // 1. Release Bed
         if (resident.bedId) {
           await tx.bed.update({
@@ -947,7 +1074,7 @@ export class OwnerController {
         }
 
         // 2. Mark Resident as MOVED_OUT
-        await tx.resident.update({
+        const updated = await tx.resident.update({
           where: { id: residentId },
           data: {
             status: 'MOVED_OUT',
@@ -970,9 +1097,14 @@ export class OwnerController {
             },
           });
         }
+
+        return updated;
       }, { maxWait: 15000, timeout: 30000 });
 
-      return sendSuccess(res, null, 'Resident move-out completed and bed released.');
+      return sendSuccess(res, {
+        ...updatedResident,
+        status: 'MOVED_OUT',
+      }, 'Resident move-out completed and bed released.');
     } catch (error: any) {
       return sendError(res, error.message || 'Failed to complete move-out', 500);
     }
@@ -1087,7 +1219,12 @@ export class OwnerController {
           },
         });
 
-        return { payment: updated, receipt };
+        return {
+          ...updated,
+          receiptNumber: receipt.receiptNumber,
+          payment: updated,
+          receipt,
+        };
       }, { maxWait: 15000, timeout: 30000 });
 
       return sendSuccess(res, result, 'Manual payment recorded successfully');
@@ -1195,7 +1332,9 @@ export class OwnerController {
 
   static async getDeposits(req: AuthRequest, res: Response): Promise<Response> {
     try {
+      const { propertyFilter } = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
       const deposits = await prisma.securityDeposit.findMany({
+        where: propertyFilter,
         include: {
           resident: { include: { bed: { include: { room: true } } } },
           property: true,
