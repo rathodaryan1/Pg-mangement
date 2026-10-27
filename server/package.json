@@ -8,6 +8,7 @@
     "start": "node dist/index.js",
     "dev": "nodemon src/index.ts",
     "test:saas": "node dist/tests/saas-multi-tenant-audit.js",
+    "test:resident": "npx ts-node src/tests/resident-portal.test.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev --name init",
     "prisma:seed": "ts-node prisma/seed.ts",

@@ -24,6 +24,7 @@ router.get('/room', ResidentController.getRoomDetails as any);
 // 3. Profile
 router.get('/profile', ResidentController.getProfile as any);
 router.patch('/profile', ResidentController.updateProfile as any);
+router.post('/change-password', ResidentController.changePassword as any);
 
 // 4. Payments
 router.get('/payments', ResidentController.getPayments as any);

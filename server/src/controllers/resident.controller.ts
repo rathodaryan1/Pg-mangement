@@ -1097,6 +1097,57 @@ export class ResidentController {
       return sendError(res, error.message || 'Failed to trigger SOS alert', 500);
     }
   }
+
+  // ==========================================================================
+  // 11. CHANGE PASSWORD
+  // ==========================================================================
+  static async changePassword(req: AuthRequest, res: Response): Promise<Response> {
+    try {
+      const resident = await ResidentController.getResident(req);
+      if (!resident) return sendError(res, 'Resident profile not found', 404);
+
+      const { currentPassword, newPassword } = req.body;
+      if (!currentPassword || !newPassword) {
+        return sendError(res, 'Current password and new password are required', 400);
+      }
+      if (newPassword.length < 6) {
+        return sendError(res, 'New password must be at least 6 characters long', 400);
+      }
+
+      const user = await prisma.user.findUnique({ where: { id: resident.userId } });
+      if (!user) return sendError(res, 'User account not found', 404);
+
+      // Import bcrypt dynamically to compare
+      const bcrypt = await import('bcryptjs');
+      const isValid = await bcrypt.compare(currentPassword, user.passwordHash);
+      if (!isValid) {
+        return sendError(res, 'Current password is incorrect', 401);
+      }
+
+      const newHash = await bcrypt.hash(newPassword, 10);
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { passwordHash: newHash },
+      });
+
+      await AuditService.log({
+        propertyId: resident.propertyId,
+        actorId: resident.userId,
+        actorName: resident.fullName,
+        actorRole: 'RESIDENT',
+        action: 'PASSWORD_CHANGED',
+        entity: 'User',
+        entityId: user.id,
+        ipAddress: req.ip,
+        details: `Resident ${resident.fullName} changed their account password`,
+      });
+
+      return sendSuccess(res, null, 'Password changed successfully');
+    } catch (error: any) {
+      console.error('[ChangePassword Error]:', error);
+      return sendError(res, error.message || 'Failed to change password', 500);
+    }
+  }
 }
 
 export default ResidentController;

@@ -17,7 +17,7 @@ import { Button } from '../../components/ui/Button';
 import { StatusBadge, Badge } from '../../components/ui/Badge';
 import { Input } from '../../components/ui/Input';
 import { residentApi } from '../../services/residentApi';
-import { toast, useToast } from '../../context/ToastContext';
+import { useToast } from '../../context/ToastContext';
 
 export const ResidentProfilePage: React.FC = () => {
   const { toast } = useToast();
@@ -109,10 +109,7 @@ export const ResidentProfilePage: React.FC = () => {
 
     setIsSaving(true);
     try {
-      await residentApi.updateProfile({
-        currentPassword,
-        newPassword,
-      });
+      await residentApi.changePassword(currentPassword, newPassword);
 
       setPasswordSuccess(true);
       setCurrentPassword('');

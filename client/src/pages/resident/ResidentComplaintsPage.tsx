@@ -17,7 +17,7 @@ import { Input, Select, Textarea } from '../../components/ui/Input';
 import { Modal } from '../../components/ui/Modal';
 import { Timeline } from '../../components/ui/Timeline';
 import { residentApi } from '../../services/residentApi';
-import { toast, useToast } from '../../context/ToastContext';
+import { useToast } from '../../context/ToastContext';
 
 export const ResidentComplaintsPage: React.FC = () => {
   const { toast } = useToast();

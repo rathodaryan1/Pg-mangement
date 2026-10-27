@@ -1,4 +1,4 @@
-import { toast, useToast } from '../../context/ToastContext';
+import { toast } from '../../context/ToastContext';
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
@@ -13,7 +13,6 @@ import {
   Siren,
   User,
   LogOut,
-  ArrowRightLeft,
   ShieldAlert,
   Shield,
   CheckCircle
@@ -44,7 +43,7 @@ const RESIDENT_NAV_ITEMS: ResidentNavItem[] = [
 ];
 
 export const ResidentLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, switchRole, logout } = useAuth();
+  const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [sosModalOpen, setSosModalOpen] = useState(false);
@@ -86,20 +85,6 @@ export const ResidentLayout: React.FC<{ children: React.ReactNode }> = ({ childr
             <Siren className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">EMERGENCY SOS</span>
           </button>
-
-          {/* Switch Role Launcher */}
-          <Button
-            variant="outline"
-            size="xs"
-            className="hidden lg:flex text-xs text-[#0B4036] font-semibold border-[#DDE2DD] hover:bg-[#EAF2EE]"
-            onClick={() => {
-              switchRole('OWNER');
-              navigate('/owner/dashboard');
-            }}
-            leftIcon={<ArrowRightLeft className="w-3 h-3 text-[#C8A45D]" />}
-          >
-            Switch to Owner
-          </Button>
 
           {/* User Profile */}
           <div className="flex items-center gap-2 pl-2 border-l border-[#DDE2DD] dark:border-slate-800">

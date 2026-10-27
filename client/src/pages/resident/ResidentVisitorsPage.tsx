@@ -18,7 +18,7 @@ import { Input, Select } from '../../components/ui/Input';
 import { Modal } from '../../components/ui/Modal';
 import { QRPassCard } from '../../components/ui/QRPassCard';
 import { residentApi } from '../../services/residentApi';
-import { toast, useToast } from '../../context/ToastContext';
+import { useToast } from '../../context/ToastContext';
 
 export const ResidentVisitorsPage: React.FC = () => {
   const { toast } = useToast();

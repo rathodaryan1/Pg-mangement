@@ -15,7 +15,7 @@ import { StatusBadge } from '../../components/ui/Badge';
 import { Input, Textarea } from '../../components/ui/Input';
 import { Modal } from '../../components/ui/Modal';
 import { residentApi } from '../../services/residentApi';
-import { toast, useToast } from '../../context/ToastContext';
+import { useToast } from '../../context/ToastContext';
 
 export const ResidentLeavePage: React.FC = () => {
   const { toast } = useToast();

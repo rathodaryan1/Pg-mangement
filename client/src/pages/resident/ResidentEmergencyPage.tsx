@@ -14,7 +14,7 @@ import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { Textarea } from '../../components/ui/Input';
 import { residentApi } from '../../services/residentApi';
-import { toast, useToast } from '../../context/ToastContext';
+import { useToast } from '../../context/ToastContext';
 
 export const ResidentEmergencyPage: React.FC = () => {
   const { toast } = useToast();

@@ -138,6 +138,10 @@ export const residentApi = {
     const res = await api.patch('/resident/profile', data);
     return res.data!;
   },
+  changePassword: async (currentPassword: string, newPassword: string) => {
+    const res = await api.post('/resident/change-password', { currentPassword, newPassword });
+    return res.data!;
+  },
 
   // 4. Payments
   getPayments: async () => {
