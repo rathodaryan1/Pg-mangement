@@ -1,0 +1,843 @@
+// ==============================================================================
+// URBAN NEST — COMPLETE DATABASE ER DIAGRAM (DBML)
+// Multi-Tenant PG & Property Management SaaS Platform
+// Database Provider: PostgreSQL (Supabase Cluster)
+// Generated from: server/prisma/schema.prisma
+// Compatible with: DBdiagram.io and DBML v2 parsers
+// ==============================================================================
+
+Project urban_nest {
+  database_type: 'PostgreSQL'
+  Note: '''
+    # Urban Nest Database Architecture
+    Enterprise Multi-Tenant PG and Property Management SaaS
+    - 27 Relational Entities
+    - 29 Enums
+    - 40 Foreign-Key Integrity Constraints
+    - Strict Multi-Tenant Scoping and Cascading Deletes
+  '''
+}
+
+// ------------------------------------------------------------------------------
+// ENUMS (29 Enums)
+// ------------------------------------------------------------------------------
+
+Enum TenantStatus {
+  TRIAL
+  ACTIVE
+  SUSPENDED
+  CANCELLED
+  EXPIRED
+  ARCHIVED
+}
+
+Enum SubscriptionPlan {
+  TRIAL
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+Enum SubscriptionStatus {
+  ACTIVE
+  TRIALING
+  PAST_DUE
+  CANCELLED
+  EXPIRED
+}
+
+Enum UserRole {
+  SUPER_ADMIN
+  OWNER
+  MANAGER
+  RECEPTIONIST
+  ACCOUNTANT
+  MAINTENANCE
+  RESIDENT
+}
+
+Enum RoomStatus {
+  AVAILABLE
+  FULL
+  MAINTENANCE
+}
+
+Enum BedStatus {
+  AVAILABLE
+  OCCUPIED
+  RESERVED
+  MAINTENANCE
+}
+
+Enum ResidentStatus {
+  PENDING_MOVE_IN
+  ACTIVE
+  NOTICE_PERIOD
+  MOVED_OUT
+  INACTIVE
+}
+
+Enum KycStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+Enum KycDocumentType {
+  AADHAAR
+  PAN
+  PASSPORT
+  VOTER_ID
+}
+
+Enum AgreementStatus {
+  DRAFT
+  ACTIVE
+  EXPIRED
+  TERMINATED
+}
+
+Enum DepositStatus {
+  PENDING
+  PAID
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+Enum PaymentStatus {
+  PENDING
+  PAID
+  OVERDUE
+  APPROVAL_PENDING
+  FAILED
+}
+
+Enum PaymentMethod {
+  CASH
+  UPI
+  NET_BANKING
+  CARD
+  RAZORPAY
+}
+
+Enum ChargeCategory {
+  RENT
+  SECURITY_DEPOSIT
+  ELECTRICITY
+  FOOD
+  MAINTENANCE_FEE
+  LATE_FINE
+  OTHER
+}
+
+Enum VisitorStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CHECKED_IN
+  CHECKED_OUT
+  EXPIRED
+  CANCELLED
+}
+
+Enum ComplaintCategory {
+  PLUMBING
+  ELECTRICAL
+  AIR_CONDITIONING
+  WIFI_INTERNET
+  CLEANING
+  CARPENTRY
+  PEST_CONTROL
+  OTHER
+}
+
+Enum ComplaintPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+Enum ComplaintStatus {
+  REPORTED
+  ASSIGNED
+  IN_PROGRESS
+  WAITING
+  RESOLVED
+  CLOSED
+}
+
+Enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+Enum DocumentType {
+  AADHAAR
+  PAN
+  AGREEMENT
+  POLICE_VERIFICATION
+  RECEIPT
+  OTHER
+}
+
+Enum DocumentStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+Enum NoticeCategory {
+  GENERAL
+  MAINTENANCE
+  PAYMENT
+  EMERGENCY
+  EVENT
+  RULES
+}
+
+Enum SOSStatus {
+  ACTIVE
+  ACKNOWLEDGED
+  RESOLVED
+}
+
+Enum ExpenseCategory {
+  ELECTRICITY
+  WATER
+  MAINTENANCE
+  SALARY
+  INTERNET
+  SUPPLIES
+  FOOD
+  OTHER
+}
+
+Enum AssetCondition {
+  EXCELLENT
+  GOOD
+  NEEDS_REPAIR
+  REPLACED
+  LOW_STOCK
+}
+
+Enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+Enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+Enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+Enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  WAITING_FOR_CUSTOMER
+  RESOLVED
+  CLOSED
+}
+
+// ------------------------------------------------------------------------------
+// TABLES (27 Models)
+// ------------------------------------------------------------------------------
+
+Table Tenant {
+  id                         varchar            [pk, not null, note: 'UUID v4 generated']
+  name                       varchar            [not null]
+  slug                       varchar            [unique, not null]
+  email                      varchar            [unique, not null]
+  phone                      varchar           
+  address                    varchar           
+  city                       varchar            [default: 'Ahmedabad']
+  state                      varchar            [default: 'Gujarat']
+  country                    varchar            [not null, default: 'India']
+  status                     TenantStatus       [not null, default: 'TRIAL']
+  plan                       SubscriptionPlan   [not null, default: 'TRIAL']
+  subscriptionStatus         SubscriptionStatus [not null, default: 'TRIALING']
+  trialEndsAt                timestamp         
+  subscriptionStartedAt      timestamp         
+  subscriptionEndsAt         timestamp         
+  maxProperties              integer            [not null, default: 1]
+  maxRooms                   integer            [not null, default: 20]
+  maxResidents               integer            [not null, default: 50]
+  createdAt                  timestamp          [not null, default: `now()`]
+  updatedAt                  timestamp          [not null]
+
+  indexes {
+    (slug)
+    (status)
+    (plan)
+  }
+}
+
+Table Plan {
+  id                         varchar            [pk, not null, note: 'UUID v4 generated']
+  name                       varchar            [unique, not null]
+  tier                       SubscriptionPlan   [unique, not null]
+  priceMonthly               decimal            [not null]
+  priceYearly                decimal            [not null]
+  maxProperties              integer            [not null]
+  maxRooms                   integer            [not null]
+  maxResidents               integer            [not null]
+  features                   varchar            [not null]
+  isActive                   boolean            [not null, default: true]
+  createdAt                  timestamp          [not null, default: `now()`]
+  updatedAt                  timestamp          [not null]
+}
+
+Table User {
+  id                         varchar            [pk, not null, note: 'UUID v4 generated']
+  email                      varchar            [unique, not null]
+  passwordHash               varchar            [not null]
+  name                       varchar            [not null]
+  role                       UserRole           [not null, default: 'RESIDENT']
+  mobile                     varchar           
+  avatarUrl                  varchar           
+  tenantId                   varchar           
+  propertyId                 varchar           
+  createdAt                  timestamp          [not null, default: `now()`]
+  updatedAt                  timestamp          [not null]
+
+  indexes {
+    (email)
+    (role)
+    (tenantId)
+  }
+}
+
+Table Property {
+  id                         varchar            [pk, not null, note: 'UUID v4 generated']
+  tenantId                   varchar           
+  name                       varchar            [not null]
+  address                    varchar            [not null]
+  city                       varchar            [not null, default: 'Ahmedabad']
+  phone                      varchar           
+  email                      varchar           
+  upiId                      varchar           
+  gstNumber                  varchar           
+  razorpayKeyId              varchar           
+  razorpayKeySecret          varchar           
+  createdAt                  timestamp          [not null, default: `now()`]
+  updatedAt                  timestamp          [not null]
+}
+
+Table Building {
+  id                         varchar            [pk, not null, note: 'UUID v4 generated']
+  name                       varchar            [not null]
+  propertyId                 varchar            [not null]
+  createdAt                  timestamp          [not null, default: `now()`]
+  updatedAt                  timestamp          [not null]
+}
+
+Table Floor {
+  id                         varchar            [pk, not null, note: 'UUID v4 generated']
+  floorNumber                integer            [not null]
+  buildingId                 varchar            [not null]
+  createdAt                  timestamp          [not null, default: `now()`]
+  updatedAt                  timestamp          [not null]
+}
+
+Table Room {
+  id                         varchar            [pk, not null, note: 'UUID v4 generated']
+  number                     varchar            [not null]
+  type                       varchar            [not null]
+  capacity                   integer            [not null]
+  baseRent                   decimal            [not null]
+  deposit                    decimal            [not null]
+  status                     RoomStatus         [not null, default: 'AVAILABLE']
+  amenities                  varchar            [not null]
+  floorId                    varchar           
+  propertyId                 varchar            [not null]
+  createdAt                  timestamp          [not null, default: `now()`]
+  updatedAt                  timestamp          [not null]
+
+  indexes {
+    (number, propertyId) [unique]
+  }
+}
+
+Table Bed {
+  id                         varchar            [pk, not null, note: 'UUID v4 generated']
+  bedNumber                  varchar            [not null]
+  roomId                     varchar            [not null]
+  status                     BedStatus          [not null, default: 'AVAILABLE']
+  monthlyRent                decimal            [not null]
+  createdAt                  timestamp          [not null, default: `now()`]
+  updatedAt                  timestamp          [not null]
+
+  indexes {
+    (bedNumber, roomId) [unique]
+  }
+}
+
+Table Resident {
+  id                         varchar            [pk, not null, note: 'UUID v4 generated']
+  userId                     varchar            [unique, not null]
+  propertyId                 varchar            [not null]
+  bedId                      varchar            [unique]
+  fullName                   varchar            [not null]
+  email                      varchar            [not null]
+  mobile                     varchar            [not null]
+  alternateMobile            varchar           
+  gender                     varchar           
+  emergencyContactName       varchar            [not null]
+  emergencyContactRelation   varchar            [not null]
+  emergencyContactPhone      varchar            [not null]
+  kycStatus                  KycStatus          [not null, default: 'PENDING']
+  kycDocumentType            KycDocumentType    [not null, default: 'AADHAAR']
+  kycDocumentNumber          varchar           
+  joiningDate                timestamp          [not null, default: `now()`]
+  expectedMoveOutDate        timestamp         
+  status                     ResidentStatus     [not null, default: 'ACTIVE']
+  permanentAddress           varchar           
+  workCompany                varchar           
+  createdAt                  timestamp          [not null, default: `now()`]
+  updatedAt                  timestamp          [not null]
+
+  indexes {
+    (propertyId)
+    (status)
+  }
+}
+
+Table Agreement {
+  id                         varchar            [pk, not null, note: 'UUID v4 generated']
+  residentId                 varchar            [not null]
+  propertyId                 varchar            [not null]
+  agreementNumber            varchar            [unique, not null]
+  validFrom                  timestamp          [not null]
+  validTill                  timestamp          [not null]
+  signedUrl                  varchar           
+  status                     AgreementStatus    [not null, default: 'ACTIVE']
+  createdAt                  timestamp          [not null, default: `now()`]
+  updatedAt                  timestamp          [not null]
+}
+
+Table SecurityDeposit {
+  id                         varchar            [pk, not null, note: 'UUID v4 generated']
+  residentId                 varchar            [not null]
+  propertyId                 varchar            [not null]
+  amount                     decimal            [not null]
+  status                     DepositStatus      [not null, default: 'PENDING']
+  paidAt                     timestamp         
+  refundAmount               decimal           
+  deductions                 decimal            [default: 0]
+  notes                      varchar           
+  createdAt                  timestamp          [not null, default: `now()`]
+  updatedAt                  timestamp          [not null]
+}
+
+Table Payment {
+  id                         varchar            [pk, not null, note: 'UUID v4 generated']
+  residentId                 varchar            [not null]
+  propertyId                 varchar            [not null]
+  amount                     decimal            [not null]
+  category                   ChargeCategory     [not null, default: 'RENT']
+  period                     varchar            [not null]
+  dueDate                    timestamp          [not null]
+  paidDate                   timestamp         
+  status                     PaymentStatus      [not null, default: 'PENDING']
+  method                     PaymentMethod     
+  transactionId              varchar           
+  orderId                    varchar           
+  notes                      varchar           
+  createdAt                  timestamp          [not null, default: `now()`]
+  updatedAt                  timestamp          [not null]
+
+  indexes {
+    (residentId)
+    (propertyId)
+    (status)
+  }
+}
+
+Table PaymentReceipt {
+  id                         varchar            [pk, not null, note: 'UUID v4 generated']
+  paymentId                  varchar            [unique, not null]
+  receiptNumber              varchar            [unique, not null]
+  generatedAt                timestamp          [not null, default: `now()`]
+  pdfUrl                     varchar           
+  createdAt                  timestamp          [not null, default: `now()`]
+}
+
+Table VisitorRequest {
+  id                         varchar            [pk, not null, note: 'UUID v4 generated']
+  residentId                 varchar           
+  propertyId                 varchar            [not null]
+  visitorName                varchar            [not null]
+  visitorMobile              varchar            [not null]
+  relation                   varchar            [not null]
+  purpose                    varchar            [not null]
+  visitDate                  timestamp          [not null]
+  expectedEntryTime          varchar            [not null]
+  expectedExitTime           varchar           
+  status                     VisitorStatus      [not null, default: 'PENDING']
+  approvedBy                 varchar           
+  qrPassToken                varchar            [unique, not null, note: 'UUID v4 generated']
+  checkInTime                timestamp         
+  checkOutTime               timestamp         
+  createdAt                  timestamp          [not null, default: `now()`]
+  updatedAt                  timestamp          [not null]
+
+  indexes {
+    (residentId)
+    (propertyId)
+    (status)
+  }
+}
+
+Table Complaint {
+  id                         varchar            [pk, not null, note: 'UUID v4 generated']
+  ticketNumber               varchar            [unique, not null]
+  residentId                 varchar            [not null]
+  propertyId                 varchar            [not null]
+  roomId                     varchar           
+  title                      varchar            [not null]
+  description                varchar            [not null]
+  category                   ComplaintCategory  [not null, default: 'OTHER']
+  priority                   ComplaintPriority  [not null, default: 'MEDIUM']
+  status                     ComplaintStatus    [not null, default: 'REPORTED']
+  assignedStaff              varchar           
+  resolvedAt                 timestamp         
+  rating                     integer           
+  feedback                   varchar           
+  createdAt                  timestamp          [not null, default: `now()`]
+  updatedAt                  timestamp          [not null]
+
+  indexes {
+    (residentId)
+    (propertyId)
+    (status)
+  }
+}
+
+Table MaintenanceActivity {
+  id                         varchar            [pk, not null, note: 'UUID v4 generated']
+  complaintId                varchar            [not null]
+  status                     ComplaintStatus    [not null]
+  updatedBy                  varchar            [not null]
+  comment                    varchar            [not null]
+  timestamp                  timestamp          [not null, default: `now()`]
+}
+
+Table LeaveRequest {
+  id                         varchar            [pk, not null, note: 'UUID v4 generated']
+  residentId                 varchar            [not null]
+  propertyId                 varchar            [not null]
+  fromDate                   timestamp          [not null]
+  toDate                     timestamp          [not null]
+  reason                     varchar            [not null]
+  status                     LeaveStatus        [not null, default: 'PENDING']
+  approvedBy                 varchar           
+  appliedAt                  timestamp          [not null, default: `now()`]
+  updatedAt                  timestamp          [not null]
+
+  indexes {
+    (residentId)
+    (propertyId)
+  }
+}
+
+Table Document {
+  id                         varchar            [pk, not null, note: 'UUID v4 generated']
+  residentId                 varchar            [not null]
+  propertyId                 varchar            [not null]
+  title                      varchar            [not null]
+  type                       DocumentType       [not null, default: 'OTHER']
+  fileUrl                    varchar            [not null]
+  fileSize                   integer           
+  mimeType                   varchar           
+  status                     DocumentStatus     [not null, default: 'PENDING']
+  rejectionReason            varchar           
+  uploadedAt                 timestamp          [not null, default: `now()`]
+  updatedAt                  timestamp          [not null]
+
+  indexes {
+    (residentId)
+    (propertyId)
+  }
+}
+
+Table Notice {
+  id                         varchar            [pk, not null, note: 'UUID v4 generated']
+  propertyId                 varchar            [not null]
+  title                      varchar            [not null]
+  content                    varchar            [not null]
+  category                   NoticeCategory     [not null, default: 'GENERAL']
+  isImportant                boolean            [not null, default: false]
+  publishedAt                timestamp          [not null, default: `now()`]
+  expiresAt                  timestamp         
+  publisherName              varchar            [not null, default: 'Urban Nest Management']
+  createdAt                  timestamp          [not null, default: `now()`]
+  updatedAt                  timestamp          [not null]
+
+  indexes {
+    (propertyId)
+  }
+}
+
+Table Notification {
+  id                         varchar            [pk, not null, note: 'UUID v4 generated']
+  userId                     varchar            [not null]
+  residentId                 varchar           
+  title                      varchar            [not null]
+  message                    varchar            [not null]
+  type                       varchar            [not null, default: 'INFO']
+  isRead                     boolean            [not null, default: false]
+  linkUrl                    varchar           
+  createdAt                  timestamp          [not null, default: `now()`]
+
+  indexes {
+    (userId)
+    (isRead)
+  }
+}
+
+Table SOSEvent {
+  id                         varchar            [pk, not null, note: 'UUID v4 generated']
+  residentId                 varchar            [not null]
+  propertyId                 varchar            [not null]
+  status                     SOSStatus          [not null, default: 'ACTIVE']
+  triggeredAt                timestamp          [not null, default: `now()`]
+  acknowledgedBy             varchar           
+  resolvedAt                 timestamp         
+  notes                      varchar           
+
+  indexes {
+    (residentId)
+    (propertyId)
+  }
+}
+
+Table AuditLog {
+  id                         varchar            [pk, not null, note: 'UUID v4 generated']
+  tenantId                   varchar           
+  propertyId                 varchar           
+  actorId                    varchar           
+  actorName                  varchar            [not null]
+  actorRole                  varchar            [not null]
+  action                     varchar            [not null]
+  entity                     varchar            [not null]
+  entityId                   varchar           
+  timestamp                  timestamp          [not null, default: `now()`]
+  ipAddress                  varchar           
+  details                    varchar            [not null]
+
+  indexes {
+    (tenantId)
+    (propertyId)
+    (timestamp)
+  }
+}
+
+Table Setting {
+  key                        varchar            [pk, not null]
+  value                      varchar            [not null]
+}
+
+Table Expense {
+  id                         varchar            [pk, not null, note: 'UUID v4 generated']
+  propertyId                 varchar            [not null]
+  title                      varchar            [not null]
+  category                   ExpenseCategory    [not null, default: 'OTHER']
+  amount                     decimal            [not null]
+  vendor                     varchar           
+  date                       timestamp          [not null, default: `now()`]
+  receiptUrl                 varchar           
+  notes                      varchar           
+  createdAt                  timestamp          [not null, default: `now()`]
+  updatedAt                  timestamp          [not null]
+
+  indexes {
+    (propertyId)
+    (date)
+  }
+}
+
+Table InventoryItem {
+  id                         varchar            [pk, not null, note: 'UUID v4 generated']
+  propertyId                 varchar            [not null]
+  name                       varchar            [not null]
+  category                   varchar            [not null]
+  quantity                   integer            [not null, default: 1]
+  minQuantity                integer            [not null, default: 2]
+  status                     AssetCondition     [not null, default: 'GOOD']
+  location                   varchar           
+  purchaseDate               timestamp         
+  vendor                     varchar           
+  cost                       decimal           
+  warrantyExpiry             timestamp         
+  createdAt                  timestamp          [not null, default: `now()`]
+  updatedAt                  timestamp          [not null]
+
+  indexes {
+    (propertyId)
+  }
+}
+
+Table OperationalTask {
+  id                         varchar            [pk, not null, note: 'UUID v4 generated']
+  propertyId                 varchar            [not null]
+  title                      varchar            [not null]
+  category                   varchar            [not null]
+  priority                   TaskPriority       [not null, default: 'MEDIUM']
+  assignedTo                 varchar           
+  dueDate                    timestamp         
+  status                     TaskStatus         [not null, default: 'PENDING']
+  notes                      varchar           
+  createdAt                  timestamp          [not null, default: `now()`]
+  updatedAt                  timestamp          [not null]
+
+  indexes {
+    (propertyId)
+  }
+}
+
+Table SupportTicket {
+  id                         varchar            [pk, not null, note: 'UUID v4 generated']
+  tenantId                   varchar           
+  creatorEmail               varchar            [not null]
+  creatorName                varchar           
+  subject                    varchar            [not null]
+  description                varchar            [not null]
+  priority                   TicketPriority     [not null, default: 'MEDIUM']
+  status                     TicketStatus       [not null, default: 'OPEN']
+  assignedAdmin              varchar           
+  internalNotes              varchar           
+  createdAt                  timestamp          [not null, default: `now()`]
+  updatedAt                  timestamp          [not null]
+
+  indexes {
+    (tenantId)
+    (status)
+  }
+}
+
+// ------------------------------------------------------------------------------
+// LOGICAL MODULES / TABLEGROUPS (DBdiagram.io Grouping)
+// ------------------------------------------------------------------------------
+
+TableGroup saas_tenant_billing {
+  Tenant
+  Plan
+}
+
+TableGroup user_auth {
+  User
+}
+
+TableGroup property_hierarchy {
+  Property
+  Building
+  Floor
+  Room
+  Bed
+}
+
+TableGroup resident_lifecycle {
+  Resident
+  Agreement
+  SecurityDeposit
+  LeaveRequest
+}
+
+TableGroup finance_billing {
+  Payment
+  PaymentReceipt
+  Expense
+}
+
+TableGroup visitor_gate_security {
+  VisitorRequest
+}
+
+TableGroup maintenance_complaints {
+  Complaint
+  MaintenanceActivity
+}
+
+TableGroup documents_storage {
+  Document
+}
+
+TableGroup communication_notices {
+  Notice
+  Notification
+}
+
+TableGroup safety_emergency {
+  SOSEvent
+}
+
+TableGroup compliance_settings {
+  AuditLog
+  Setting
+}
+
+TableGroup operations_inventory {
+  InventoryItem
+  OperationalTask
+}
+
+TableGroup platform_support {
+  SupportTicket
+}
+
+// ------------------------------------------------------------------------------
+// FOREIGN KEY RELATIONSHIPS (40 Explicit Foreign Keys)
+// ------------------------------------------------------------------------------
+Ref: User.tenantId > Tenant.id [delete: cascade]
+Ref: User.propertyId > Property.id
+Ref: Property.tenantId > Tenant.id [delete: cascade]
+Ref: Building.propertyId > Property.id [delete: cascade]
+Ref: Floor.buildingId > Building.id [delete: cascade]
+Ref: Room.floorId > Floor.id [delete: set null]
+Ref: Room.propertyId > Property.id [delete: cascade]
+Ref: Bed.roomId > Room.id [delete: cascade]
+Ref: Resident.userId - User.id [delete: cascade]
+Ref: Resident.propertyId > Property.id [delete: cascade]
+Ref: Resident.bedId - Bed.id [delete: set null]
+Ref: Agreement.residentId > Resident.id [delete: cascade]
+Ref: Agreement.propertyId > Property.id [delete: cascade]
+Ref: SecurityDeposit.residentId > Resident.id [delete: cascade]
+Ref: SecurityDeposit.propertyId > Property.id [delete: cascade]
+Ref: Payment.residentId > Resident.id [delete: cascade]
+Ref: Payment.propertyId > Property.id [delete: cascade]
+Ref: PaymentReceipt.paymentId - Payment.id [delete: cascade]
+Ref: VisitorRequest.residentId > Resident.id [delete: cascade]
+Ref: VisitorRequest.propertyId > Property.id [delete: cascade]
+Ref: Complaint.residentId > Resident.id [delete: cascade]
+Ref: Complaint.propertyId > Property.id [delete: cascade]
+Ref: Complaint.roomId > Room.id [delete: set null]
+Ref: MaintenanceActivity.complaintId > Complaint.id [delete: cascade]
+Ref: LeaveRequest.residentId > Resident.id [delete: cascade]
+Ref: LeaveRequest.propertyId > Property.id [delete: cascade]
+Ref: Document.residentId > Resident.id [delete: cascade]
+Ref: Document.propertyId > Property.id [delete: cascade]
+Ref: Notice.propertyId > Property.id [delete: cascade]
+Ref: Notification.userId > User.id [delete: cascade]
+Ref: Notification.residentId > Resident.id [delete: cascade]
+Ref: SOSEvent.residentId > Resident.id [delete: cascade]
+Ref: SOSEvent.propertyId > Property.id [delete: cascade]
+Ref: AuditLog.tenantId > Tenant.id [delete: set null]
+Ref: AuditLog.propertyId > Property.id [delete: set null]
+Ref: AuditLog.actorId > User.id [delete: set null]
+Ref: Expense.propertyId > Property.id [delete: cascade]
+Ref: InventoryItem.propertyId > Property.id [delete: cascade]
+Ref: OperationalTask.propertyId > Property.id [delete: cascade]
+Ref: SupportTicket.tenantId > Tenant.id [delete: cascade]

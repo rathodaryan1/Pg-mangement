@@ -1,0 +1,1592 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3200 2200" width="3200" height="2200">
+  <style>
+    .bg { fill: #FFFFFF; }
+    .border { stroke: #000000; stroke-width: 2; fill: none; }
+    .header-box { fill: #F0F0F0; stroke: #000000; stroke-width: 2; }
+    .table-box { fill: #FFFFFF; stroke: #000000; stroke-width: 1.5; }
+    .row-alt { fill: #FAFAFA; }
+    .title-text { font-family: 'Helvetica', 'Arial', sans-serif; font-size: 28px; font-weight: bold; fill: #000000; }
+    .sub-text { font-family: 'Helvetica', 'Arial', sans-serif; font-size: 16px; fill: #555555; }
+    .table-title { font-family: 'Helvetica', 'Arial', sans-serif; font-size: 16px; font-weight: bold; fill: #000000; }
+    .field-pk { font-family: 'Helvetica', 'Arial', sans-serif; font-size: 12px; font-weight: bold; fill: #000000; }
+    .field-name { font-family: 'Helvetica', 'Arial', sans-serif; font-size: 12px; fill: #000000; }
+    .field-type { font-family: 'Courier New', monospace; font-size: 11px; fill: #555555; }
+    .rel-line { stroke: #000000; stroke-width: 1.5; stroke-dasharray: 4, 2; fill: none; }
+    .badge-box { fill: #EAEAEA; stroke: #999999; stroke-width: 1; }
+  </style>
+
+  <!-- Canvas Background -->
+  <rect class="bg" width="3200" height="2200" />
+  <rect class="border" x="20" y="20" width="3160" height="2160" />
+
+  <!-- Title Header Block -->
+  <rect x="20" y="20" width="3160" height="80" fill="#F4F4F4" stroke="#000000" stroke-width="2" />
+  <text class="title-text" x="50" y="60">URBAN NEST — DATABASE ENTITY-RELATIONSHIP DIAGRAM (COMPLETE ERD)</text>
+  <text class="sub-text" x="50" y="86">Enterprise Multi-Tenant PG &amp; Co-Living SaaS Platform  |  27 Relational Entities  |  29 Enums  |  40 Foreign Keys  |  PostgreSQL / Supabase</text>
+
+  <!-- Table: Tenant -->
+  <g id="table-Tenant">
+    <rect class="table-box" x="50" y="130" width="580" height="516" rx="4" />
+    <rect class="header-box" x="50" y="130" width="580" height="36" rx="4" />
+    <text class="table-title" x="66" y="154">Tenant</text>
+    <text class="sub-text" x="614" y="154" text-anchor="end">20 attributes</text>
+    <line x1="50" y1="166" x2="630" y2="166" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="62" y="183">[PK]</text>
+    <text class="field-name" x="125" y="183">id*</text>
+    <text class="field-type" x="614" y="183" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="51" y="190" width="578" height="24" />
+    <line x1="50" y1="190" x2="630" y2="190" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="62" y="207"></text>
+    <text class="field-name" x="125" y="207">name*</text>
+    <text class="field-type" x="614" y="207" text-anchor="end">varchar</text>
+    <line x1="50" y1="214" x2="630" y2="214" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="62" y="231">[UQ]</text>
+    <text class="field-name" x="125" y="231">slug*</text>
+    <text class="field-type" x="614" y="231" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="51" y="238" width="578" height="24" />
+    <line x1="50" y1="238" x2="630" y2="238" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="62" y="255">[UQ]</text>
+    <text class="field-name" x="125" y="255">email*</text>
+    <text class="field-type" x="614" y="255" text-anchor="end">varchar</text>
+    <line x1="50" y1="262" x2="630" y2="262" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="62" y="279"></text>
+    <text class="field-name" x="125" y="279">phone</text>
+    <text class="field-type" x="614" y="279" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="51" y="286" width="578" height="24" />
+    <line x1="50" y1="286" x2="630" y2="286" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="62" y="303"></text>
+    <text class="field-name" x="125" y="303">address</text>
+    <text class="field-type" x="614" y="303" text-anchor="end">varchar</text>
+    <line x1="50" y1="310" x2="630" y2="310" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="62" y="327"></text>
+    <text class="field-name" x="125" y="327">city</text>
+    <text class="field-type" x="614" y="327" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="51" y="334" width="578" height="24" />
+    <line x1="50" y1="334" x2="630" y2="334" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="62" y="351"></text>
+    <text class="field-name" x="125" y="351">state</text>
+    <text class="field-type" x="614" y="351" text-anchor="end">varchar</text>
+    <line x1="50" y1="358" x2="630" y2="358" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="62" y="375"></text>
+    <text class="field-name" x="125" y="375">country*</text>
+    <text class="field-type" x="614" y="375" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="51" y="382" width="578" height="24" />
+    <line x1="50" y1="382" x2="630" y2="382" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="62" y="399"></text>
+    <text class="field-name" x="125" y="399">status*</text>
+    <text class="field-type" x="614" y="399" text-anchor="end">TenantStatus</text>
+    <line x1="50" y1="406" x2="630" y2="406" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="62" y="423"></text>
+    <text class="field-name" x="125" y="423">plan*</text>
+    <text class="field-type" x="614" y="423" text-anchor="end">SubscriptionPlan</text>
+    <rect class="row-alt" x="51" y="430" width="578" height="24" />
+    <line x1="50" y1="430" x2="630" y2="430" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="62" y="447"></text>
+    <text class="field-name" x="125" y="447">subscriptionStatus*</text>
+    <text class="field-type" x="614" y="447" text-anchor="end">SubscriptionStatus</text>
+    <line x1="50" y1="454" x2="630" y2="454" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="62" y="471"></text>
+    <text class="field-name" x="125" y="471">trialEndsAt</text>
+    <text class="field-type" x="614" y="471" text-anchor="end">timestamp</text>
+    <rect class="row-alt" x="51" y="478" width="578" height="24" />
+    <line x1="50" y1="478" x2="630" y2="478" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="62" y="495"></text>
+    <text class="field-name" x="125" y="495">subscriptionStartedAt</text>
+    <text class="field-type" x="614" y="495" text-anchor="end">timestamp</text>
+    <line x1="50" y1="502" x2="630" y2="502" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="62" y="519"></text>
+    <text class="field-name" x="125" y="519">subscriptionEndsAt</text>
+    <text class="field-type" x="614" y="519" text-anchor="end">timestamp</text>
+    <rect class="row-alt" x="51" y="526" width="578" height="24" />
+    <line x1="50" y1="526" x2="630" y2="526" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="62" y="543"></text>
+    <text class="field-name" x="125" y="543">maxProperties*</text>
+    <text class="field-type" x="614" y="543" text-anchor="end">integer</text>
+    <line x1="50" y1="550" x2="630" y2="550" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="62" y="567"></text>
+    <text class="field-name" x="125" y="567">maxRooms*</text>
+    <text class="field-type" x="614" y="567" text-anchor="end">integer</text>
+    <rect class="row-alt" x="51" y="574" width="578" height="24" />
+    <line x1="50" y1="574" x2="630" y2="574" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="62" y="591"></text>
+    <text class="field-name" x="125" y="591">maxResidents*</text>
+    <text class="field-type" x="614" y="591" text-anchor="end">integer</text>
+    <line x1="50" y1="598" x2="630" y2="598" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="62" y="615"></text>
+    <text class="field-name" x="125" y="615">createdAt*</text>
+    <text class="field-type" x="614" y="615" text-anchor="end">timestamp</text>
+    <rect class="row-alt" x="51" y="622" width="578" height="24" />
+    <line x1="50" y1="622" x2="630" y2="622" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="62" y="639"></text>
+    <text class="field-name" x="125" y="639">updatedAt*</text>
+    <text class="field-type" x="614" y="639" text-anchor="end">timestamp</text>
+  </g>
+
+  <!-- Table: Plan -->
+  <g id="table-Plan">
+    <rect class="table-box" x="50" y="666" width="580" height="324" rx="4" />
+    <rect class="header-box" x="50" y="666" width="580" height="36" rx="4" />
+    <text class="table-title" x="66" y="690">Plan</text>
+    <text class="sub-text" x="614" y="690" text-anchor="end">12 attributes</text>
+    <line x1="50" y1="702" x2="630" y2="702" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="62" y="719">[PK]</text>
+    <text class="field-name" x="125" y="719">id*</text>
+    <text class="field-type" x="614" y="719" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="51" y="726" width="578" height="24" />
+    <line x1="50" y1="726" x2="630" y2="726" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="62" y="743">[UQ]</text>
+    <text class="field-name" x="125" y="743">name*</text>
+    <text class="field-type" x="614" y="743" text-anchor="end">varchar</text>
+    <line x1="50" y1="750" x2="630" y2="750" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="62" y="767">[UQ]</text>
+    <text class="field-name" x="125" y="767">tier*</text>
+    <text class="field-type" x="614" y="767" text-anchor="end">SubscriptionPlan</text>
+    <rect class="row-alt" x="51" y="774" width="578" height="24" />
+    <line x1="50" y1="774" x2="630" y2="774" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="62" y="791"></text>
+    <text class="field-name" x="125" y="791">priceMonthly*</text>
+    <text class="field-type" x="614" y="791" text-anchor="end">decimal</text>
+    <line x1="50" y1="798" x2="630" y2="798" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="62" y="815"></text>
+    <text class="field-name" x="125" y="815">priceYearly*</text>
+    <text class="field-type" x="614" y="815" text-anchor="end">decimal</text>
+    <rect class="row-alt" x="51" y="822" width="578" height="24" />
+    <line x1="50" y1="822" x2="630" y2="822" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="62" y="839"></text>
+    <text class="field-name" x="125" y="839">maxProperties*</text>
+    <text class="field-type" x="614" y="839" text-anchor="end">integer</text>
+    <line x1="50" y1="846" x2="630" y2="846" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="62" y="863"></text>
+    <text class="field-name" x="125" y="863">maxRooms*</text>
+    <text class="field-type" x="614" y="863" text-anchor="end">integer</text>
+    <rect class="row-alt" x="51" y="870" width="578" height="24" />
+    <line x1="50" y1="870" x2="630" y2="870" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="62" y="887"></text>
+    <text class="field-name" x="125" y="887">maxResidents*</text>
+    <text class="field-type" x="614" y="887" text-anchor="end">integer</text>
+    <line x1="50" y1="894" x2="630" y2="894" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="62" y="911"></text>
+    <text class="field-name" x="125" y="911">features*</text>
+    <text class="field-type" x="614" y="911" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="51" y="918" width="578" height="24" />
+    <line x1="50" y1="918" x2="630" y2="918" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="62" y="935"></text>
+    <text class="field-name" x="125" y="935">isActive*</text>
+    <text class="field-type" x="614" y="935" text-anchor="end">boolean</text>
+    <line x1="50" y1="942" x2="630" y2="942" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="62" y="959"></text>
+    <text class="field-name" x="125" y="959">createdAt*</text>
+    <text class="field-type" x="614" y="959" text-anchor="end">timestamp</text>
+    <rect class="row-alt" x="51" y="966" width="578" height="24" />
+    <line x1="50" y1="966" x2="630" y2="966" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="62" y="983"></text>
+    <text class="field-name" x="125" y="983">updatedAt*</text>
+    <text class="field-type" x="614" y="983" text-anchor="end">timestamp</text>
+  </g>
+
+  <!-- Table: User -->
+  <g id="table-User">
+    <rect class="table-box" x="50" y="1010" width="580" height="300" rx="4" />
+    <rect class="header-box" x="50" y="1010" width="580" height="36" rx="4" />
+    <text class="table-title" x="66" y="1034">User</text>
+    <text class="sub-text" x="614" y="1034" text-anchor="end">11 attributes</text>
+    <line x1="50" y1="1046" x2="630" y2="1046" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="62" y="1063">[PK]</text>
+    <text class="field-name" x="125" y="1063">id*</text>
+    <text class="field-type" x="614" y="1063" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="51" y="1070" width="578" height="24" />
+    <line x1="50" y1="1070" x2="630" y2="1070" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="62" y="1087">[UQ]</text>
+    <text class="field-name" x="125" y="1087">email*</text>
+    <text class="field-type" x="614" y="1087" text-anchor="end">varchar</text>
+    <line x1="50" y1="1094" x2="630" y2="1094" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="62" y="1111"></text>
+    <text class="field-name" x="125" y="1111">passwordHash*</text>
+    <text class="field-type" x="614" y="1111" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="51" y="1118" width="578" height="24" />
+    <line x1="50" y1="1118" x2="630" y2="1118" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="62" y="1135"></text>
+    <text class="field-name" x="125" y="1135">name*</text>
+    <text class="field-type" x="614" y="1135" text-anchor="end">varchar</text>
+    <line x1="50" y1="1142" x2="630" y2="1142" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="62" y="1159"></text>
+    <text class="field-name" x="125" y="1159">role*</text>
+    <text class="field-type" x="614" y="1159" text-anchor="end">UserRole</text>
+    <rect class="row-alt" x="51" y="1166" width="578" height="24" />
+    <line x1="50" y1="1166" x2="630" y2="1166" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="62" y="1183"></text>
+    <text class="field-name" x="125" y="1183">mobile</text>
+    <text class="field-type" x="614" y="1183" text-anchor="end">varchar</text>
+    <line x1="50" y1="1190" x2="630" y2="1190" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="62" y="1207"></text>
+    <text class="field-name" x="125" y="1207">avatarUrl</text>
+    <text class="field-type" x="614" y="1207" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="51" y="1214" width="578" height="24" />
+    <line x1="50" y1="1214" x2="630" y2="1214" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="62" y="1231">[FK]</text>
+    <text class="field-name" x="125" y="1231">tenantId</text>
+    <text class="field-type" x="614" y="1231" text-anchor="end">varchar</text>
+    <line x1="50" y1="1238" x2="630" y2="1238" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="62" y="1255">[FK]</text>
+    <text class="field-name" x="125" y="1255">propertyId</text>
+    <text class="field-type" x="614" y="1255" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="51" y="1262" width="578" height="24" />
+    <line x1="50" y1="1262" x2="630" y2="1262" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="62" y="1279"></text>
+    <text class="field-name" x="125" y="1279">createdAt*</text>
+    <text class="field-type" x="614" y="1279" text-anchor="end">timestamp</text>
+    <line x1="50" y1="1286" x2="630" y2="1286" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="62" y="1303"></text>
+    <text class="field-name" x="125" y="1303">updatedAt*</text>
+    <text class="field-type" x="614" y="1303" text-anchor="end">timestamp</text>
+  </g>
+
+  <!-- Table: Property -->
+  <g id="table-Property">
+    <rect class="table-box" x="680" y="130" width="580" height="348" rx="4" />
+    <rect class="header-box" x="680" y="130" width="580" height="36" rx="4" />
+    <text class="table-title" x="696" y="154">Property</text>
+    <text class="sub-text" x="1244" y="154" text-anchor="end">13 attributes</text>
+    <line x1="680" y1="166" x2="1260" y2="166" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="692" y="183">[PK]</text>
+    <text class="field-name" x="755" y="183">id*</text>
+    <text class="field-type" x="1244" y="183" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="681" y="190" width="578" height="24" />
+    <line x1="680" y1="190" x2="1260" y2="190" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="692" y="207">[FK]</text>
+    <text class="field-name" x="755" y="207">tenantId</text>
+    <text class="field-type" x="1244" y="207" text-anchor="end">varchar</text>
+    <line x1="680" y1="214" x2="1260" y2="214" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="692" y="231"></text>
+    <text class="field-name" x="755" y="231">name*</text>
+    <text class="field-type" x="1244" y="231" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="681" y="238" width="578" height="24" />
+    <line x1="680" y1="238" x2="1260" y2="238" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="692" y="255"></text>
+    <text class="field-name" x="755" y="255">address*</text>
+    <text class="field-type" x="1244" y="255" text-anchor="end">varchar</text>
+    <line x1="680" y1="262" x2="1260" y2="262" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="692" y="279"></text>
+    <text class="field-name" x="755" y="279">city*</text>
+    <text class="field-type" x="1244" y="279" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="681" y="286" width="578" height="24" />
+    <line x1="680" y1="286" x2="1260" y2="286" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="692" y="303"></text>
+    <text class="field-name" x="755" y="303">phone</text>
+    <text class="field-type" x="1244" y="303" text-anchor="end">varchar</text>
+    <line x1="680" y1="310" x2="1260" y2="310" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="692" y="327"></text>
+    <text class="field-name" x="755" y="327">email</text>
+    <text class="field-type" x="1244" y="327" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="681" y="334" width="578" height="24" />
+    <line x1="680" y1="334" x2="1260" y2="334" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="692" y="351">[FK]</text>
+    <text class="field-name" x="755" y="351">upiId</text>
+    <text class="field-type" x="1244" y="351" text-anchor="end">varchar</text>
+    <line x1="680" y1="358" x2="1260" y2="358" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="692" y="375"></text>
+    <text class="field-name" x="755" y="375">gstNumber</text>
+    <text class="field-type" x="1244" y="375" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="681" y="382" width="578" height="24" />
+    <line x1="680" y1="382" x2="1260" y2="382" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="692" y="399">[FK]</text>
+    <text class="field-name" x="755" y="399">razorpayKeyId</text>
+    <text class="field-type" x="1244" y="399" text-anchor="end">varchar</text>
+    <line x1="680" y1="406" x2="1260" y2="406" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="692" y="423"></text>
+    <text class="field-name" x="755" y="423">razorpayKeySecret</text>
+    <text class="field-type" x="1244" y="423" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="681" y="430" width="578" height="24" />
+    <line x1="680" y1="430" x2="1260" y2="430" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="692" y="447"></text>
+    <text class="field-name" x="755" y="447">createdAt*</text>
+    <text class="field-type" x="1244" y="447" text-anchor="end">timestamp</text>
+    <line x1="680" y1="454" x2="1260" y2="454" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="692" y="471"></text>
+    <text class="field-name" x="755" y="471">updatedAt*</text>
+    <text class="field-type" x="1244" y="471" text-anchor="end">timestamp</text>
+  </g>
+
+  <!-- Table: Building -->
+  <g id="table-Building">
+    <rect class="table-box" x="680" y="498" width="580" height="156" rx="4" />
+    <rect class="header-box" x="680" y="498" width="580" height="36" rx="4" />
+    <text class="table-title" x="696" y="522">Building</text>
+    <text class="sub-text" x="1244" y="522" text-anchor="end">5 attributes</text>
+    <line x1="680" y1="534" x2="1260" y2="534" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="692" y="551">[PK]</text>
+    <text class="field-name" x="755" y="551">id*</text>
+    <text class="field-type" x="1244" y="551" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="681" y="558" width="578" height="24" />
+    <line x1="680" y1="558" x2="1260" y2="558" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="692" y="575"></text>
+    <text class="field-name" x="755" y="575">name*</text>
+    <text class="field-type" x="1244" y="575" text-anchor="end">varchar</text>
+    <line x1="680" y1="582" x2="1260" y2="582" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="692" y="599">[FK]</text>
+    <text class="field-name" x="755" y="599">propertyId*</text>
+    <text class="field-type" x="1244" y="599" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="681" y="606" width="578" height="24" />
+    <line x1="680" y1="606" x2="1260" y2="606" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="692" y="623"></text>
+    <text class="field-name" x="755" y="623">createdAt*</text>
+    <text class="field-type" x="1244" y="623" text-anchor="end">timestamp</text>
+    <line x1="680" y1="630" x2="1260" y2="630" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="692" y="647"></text>
+    <text class="field-name" x="755" y="647">updatedAt*</text>
+    <text class="field-type" x="1244" y="647" text-anchor="end">timestamp</text>
+  </g>
+
+  <!-- Table: Floor -->
+  <g id="table-Floor">
+    <rect class="table-box" x="680" y="674" width="580" height="156" rx="4" />
+    <rect class="header-box" x="680" y="674" width="580" height="36" rx="4" />
+    <text class="table-title" x="696" y="698">Floor</text>
+    <text class="sub-text" x="1244" y="698" text-anchor="end">5 attributes</text>
+    <line x1="680" y1="710" x2="1260" y2="710" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="692" y="727">[PK]</text>
+    <text class="field-name" x="755" y="727">id*</text>
+    <text class="field-type" x="1244" y="727" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="681" y="734" width="578" height="24" />
+    <line x1="680" y1="734" x2="1260" y2="734" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="692" y="751"></text>
+    <text class="field-name" x="755" y="751">floorNumber*</text>
+    <text class="field-type" x="1244" y="751" text-anchor="end">integer</text>
+    <line x1="680" y1="758" x2="1260" y2="758" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="692" y="775">[FK]</text>
+    <text class="field-name" x="755" y="775">buildingId*</text>
+    <text class="field-type" x="1244" y="775" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="681" y="782" width="578" height="24" />
+    <line x1="680" y1="782" x2="1260" y2="782" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="692" y="799"></text>
+    <text class="field-name" x="755" y="799">createdAt*</text>
+    <text class="field-type" x="1244" y="799" text-anchor="end">timestamp</text>
+    <line x1="680" y1="806" x2="1260" y2="806" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="692" y="823"></text>
+    <text class="field-name" x="755" y="823">updatedAt*</text>
+    <text class="field-type" x="1244" y="823" text-anchor="end">timestamp</text>
+  </g>
+
+  <!-- Table: Room -->
+  <g id="table-Room">
+    <rect class="table-box" x="680" y="850" width="580" height="324" rx="4" />
+    <rect class="header-box" x="680" y="850" width="580" height="36" rx="4" />
+    <text class="table-title" x="696" y="874">Room</text>
+    <text class="sub-text" x="1244" y="874" text-anchor="end">12 attributes</text>
+    <line x1="680" y1="886" x2="1260" y2="886" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="692" y="903">[PK]</text>
+    <text class="field-name" x="755" y="903">id*</text>
+    <text class="field-type" x="1244" y="903" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="681" y="910" width="578" height="24" />
+    <line x1="680" y1="910" x2="1260" y2="910" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="692" y="927"></text>
+    <text class="field-name" x="755" y="927">number*</text>
+    <text class="field-type" x="1244" y="927" text-anchor="end">varchar</text>
+    <line x1="680" y1="934" x2="1260" y2="934" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="692" y="951"></text>
+    <text class="field-name" x="755" y="951">type*</text>
+    <text class="field-type" x="1244" y="951" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="681" y="958" width="578" height="24" />
+    <line x1="680" y1="958" x2="1260" y2="958" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="692" y="975"></text>
+    <text class="field-name" x="755" y="975">capacity*</text>
+    <text class="field-type" x="1244" y="975" text-anchor="end">integer</text>
+    <line x1="680" y1="982" x2="1260" y2="982" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="692" y="999"></text>
+    <text class="field-name" x="755" y="999">baseRent*</text>
+    <text class="field-type" x="1244" y="999" text-anchor="end">decimal</text>
+    <rect class="row-alt" x="681" y="1006" width="578" height="24" />
+    <line x1="680" y1="1006" x2="1260" y2="1006" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="692" y="1023"></text>
+    <text class="field-name" x="755" y="1023">deposit*</text>
+    <text class="field-type" x="1244" y="1023" text-anchor="end">decimal</text>
+    <line x1="680" y1="1030" x2="1260" y2="1030" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="692" y="1047"></text>
+    <text class="field-name" x="755" y="1047">status*</text>
+    <text class="field-type" x="1244" y="1047" text-anchor="end">RoomStatus</text>
+    <rect class="row-alt" x="681" y="1054" width="578" height="24" />
+    <line x1="680" y1="1054" x2="1260" y2="1054" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="692" y="1071"></text>
+    <text class="field-name" x="755" y="1071">amenities*</text>
+    <text class="field-type" x="1244" y="1071" text-anchor="end">varchar</text>
+    <line x1="680" y1="1078" x2="1260" y2="1078" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="692" y="1095">[FK]</text>
+    <text class="field-name" x="755" y="1095">floorId</text>
+    <text class="field-type" x="1244" y="1095" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="681" y="1102" width="578" height="24" />
+    <line x1="680" y1="1102" x2="1260" y2="1102" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="692" y="1119">[FK]</text>
+    <text class="field-name" x="755" y="1119">propertyId*</text>
+    <text class="field-type" x="1244" y="1119" text-anchor="end">varchar</text>
+    <line x1="680" y1="1126" x2="1260" y2="1126" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="692" y="1143"></text>
+    <text class="field-name" x="755" y="1143">createdAt*</text>
+    <text class="field-type" x="1244" y="1143" text-anchor="end">timestamp</text>
+    <rect class="row-alt" x="681" y="1150" width="578" height="24" />
+    <line x1="680" y1="1150" x2="1260" y2="1150" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="692" y="1167"></text>
+    <text class="field-name" x="755" y="1167">updatedAt*</text>
+    <text class="field-type" x="1244" y="1167" text-anchor="end">timestamp</text>
+  </g>
+
+  <!-- Table: Bed -->
+  <g id="table-Bed">
+    <rect class="table-box" x="680" y="1194" width="580" height="204" rx="4" />
+    <rect class="header-box" x="680" y="1194" width="580" height="36" rx="4" />
+    <text class="table-title" x="696" y="1218">Bed</text>
+    <text class="sub-text" x="1244" y="1218" text-anchor="end">7 attributes</text>
+    <line x1="680" y1="1230" x2="1260" y2="1230" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="692" y="1247">[PK]</text>
+    <text class="field-name" x="755" y="1247">id*</text>
+    <text class="field-type" x="1244" y="1247" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="681" y="1254" width="578" height="24" />
+    <line x1="680" y1="1254" x2="1260" y2="1254" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="692" y="1271"></text>
+    <text class="field-name" x="755" y="1271">bedNumber*</text>
+    <text class="field-type" x="1244" y="1271" text-anchor="end">varchar</text>
+    <line x1="680" y1="1278" x2="1260" y2="1278" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="692" y="1295">[FK]</text>
+    <text class="field-name" x="755" y="1295">roomId*</text>
+    <text class="field-type" x="1244" y="1295" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="681" y="1302" width="578" height="24" />
+    <line x1="680" y1="1302" x2="1260" y2="1302" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="692" y="1319"></text>
+    <text class="field-name" x="755" y="1319">status*</text>
+    <text class="field-type" x="1244" y="1319" text-anchor="end">BedStatus</text>
+    <line x1="680" y1="1326" x2="1260" y2="1326" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="692" y="1343"></text>
+    <text class="field-name" x="755" y="1343">monthlyRent*</text>
+    <text class="field-type" x="1244" y="1343" text-anchor="end">decimal</text>
+    <rect class="row-alt" x="681" y="1350" width="578" height="24" />
+    <line x1="680" y1="1350" x2="1260" y2="1350" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="692" y="1367"></text>
+    <text class="field-name" x="755" y="1367">createdAt*</text>
+    <text class="field-type" x="1244" y="1367" text-anchor="end">timestamp</text>
+    <line x1="680" y1="1374" x2="1260" y2="1374" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="692" y="1391"></text>
+    <text class="field-name" x="755" y="1391">updatedAt*</text>
+    <text class="field-type" x="1244" y="1391" text-anchor="end">timestamp</text>
+  </g>
+
+  <!-- Table: Resident -->
+  <g id="table-Resident">
+    <rect class="table-box" x="1310" y="130" width="580" height="564" rx="4" />
+    <rect class="header-box" x="1310" y="130" width="580" height="36" rx="4" />
+    <text class="table-title" x="1326" y="154">Resident</text>
+    <text class="sub-text" x="1874" y="154" text-anchor="end">22 attributes</text>
+    <line x1="1310" y1="166" x2="1890" y2="166" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="183">[PK]</text>
+    <text class="field-name" x="1385" y="183">id*</text>
+    <text class="field-type" x="1874" y="183" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="1311" y="190" width="578" height="24" />
+    <line x1="1310" y1="190" x2="1890" y2="190" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="207">[FK,UQ]</text>
+    <text class="field-name" x="1385" y="207">userId*</text>
+    <text class="field-type" x="1874" y="207" text-anchor="end">varchar</text>
+    <line x1="1310" y1="214" x2="1890" y2="214" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="231">[FK]</text>
+    <text class="field-name" x="1385" y="231">propertyId*</text>
+    <text class="field-type" x="1874" y="231" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="1311" y="238" width="578" height="24" />
+    <line x1="1310" y1="238" x2="1890" y2="238" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="255">[FK,UQ]</text>
+    <text class="field-name" x="1385" y="255">bedId</text>
+    <text class="field-type" x="1874" y="255" text-anchor="end">varchar</text>
+    <line x1="1310" y1="262" x2="1890" y2="262" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="279"></text>
+    <text class="field-name" x="1385" y="279">fullName*</text>
+    <text class="field-type" x="1874" y="279" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="1311" y="286" width="578" height="24" />
+    <line x1="1310" y1="286" x2="1890" y2="286" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="303"></text>
+    <text class="field-name" x="1385" y="303">email*</text>
+    <text class="field-type" x="1874" y="303" text-anchor="end">varchar</text>
+    <line x1="1310" y1="310" x2="1890" y2="310" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="327"></text>
+    <text class="field-name" x="1385" y="327">mobile*</text>
+    <text class="field-type" x="1874" y="327" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="1311" y="334" width="578" height="24" />
+    <line x1="1310" y1="334" x2="1890" y2="334" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="351"></text>
+    <text class="field-name" x="1385" y="351">alternateMobile</text>
+    <text class="field-type" x="1874" y="351" text-anchor="end">varchar</text>
+    <line x1="1310" y1="358" x2="1890" y2="358" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="375"></text>
+    <text class="field-name" x="1385" y="375">gender</text>
+    <text class="field-type" x="1874" y="375" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="1311" y="382" width="578" height="24" />
+    <line x1="1310" y1="382" x2="1890" y2="382" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="399"></text>
+    <text class="field-name" x="1385" y="399">emergencyContactName*</text>
+    <text class="field-type" x="1874" y="399" text-anchor="end">varchar</text>
+    <line x1="1310" y1="406" x2="1890" y2="406" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="423"></text>
+    <text class="field-name" x="1385" y="423">emergencyContactRelation*</text>
+    <text class="field-type" x="1874" y="423" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="1311" y="430" width="578" height="24" />
+    <line x1="1310" y1="430" x2="1890" y2="430" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="447"></text>
+    <text class="field-name" x="1385" y="447">emergencyContactPhone*</text>
+    <text class="field-type" x="1874" y="447" text-anchor="end">varchar</text>
+    <line x1="1310" y1="454" x2="1890" y2="454" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="471"></text>
+    <text class="field-name" x="1385" y="471">kycStatus*</text>
+    <text class="field-type" x="1874" y="471" text-anchor="end">KycStatus</text>
+    <rect class="row-alt" x="1311" y="478" width="578" height="24" />
+    <line x1="1310" y1="478" x2="1890" y2="478" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="495"></text>
+    <text class="field-name" x="1385" y="495">kycDocumentType*</text>
+    <text class="field-type" x="1874" y="495" text-anchor="end">KycDocumentType</text>
+    <line x1="1310" y1="502" x2="1890" y2="502" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="519"></text>
+    <text class="field-name" x="1385" y="519">kycDocumentNumber</text>
+    <text class="field-type" x="1874" y="519" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="1311" y="526" width="578" height="24" />
+    <line x1="1310" y1="526" x2="1890" y2="526" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="543"></text>
+    <text class="field-name" x="1385" y="543">joiningDate*</text>
+    <text class="field-type" x="1874" y="543" text-anchor="end">timestamp</text>
+    <line x1="1310" y1="550" x2="1890" y2="550" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="567"></text>
+    <text class="field-name" x="1385" y="567">expectedMoveOutDate</text>
+    <text class="field-type" x="1874" y="567" text-anchor="end">timestamp</text>
+    <rect class="row-alt" x="1311" y="574" width="578" height="24" />
+    <line x1="1310" y1="574" x2="1890" y2="574" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="591"></text>
+    <text class="field-name" x="1385" y="591">status*</text>
+    <text class="field-type" x="1874" y="591" text-anchor="end">ResidentStatus</text>
+    <line x1="1310" y1="598" x2="1890" y2="598" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="615"></text>
+    <text class="field-name" x="1385" y="615">permanentAddress</text>
+    <text class="field-type" x="1874" y="615" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="1311" y="622" width="578" height="24" />
+    <line x1="1310" y1="622" x2="1890" y2="622" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="639"></text>
+    <text class="field-name" x="1385" y="639">workCompany</text>
+    <text class="field-type" x="1874" y="639" text-anchor="end">varchar</text>
+    <line x1="1310" y1="646" x2="1890" y2="646" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="663"></text>
+    <text class="field-name" x="1385" y="663">createdAt*</text>
+    <text class="field-type" x="1874" y="663" text-anchor="end">timestamp</text>
+    <rect class="row-alt" x="1311" y="670" width="578" height="24" />
+    <line x1="1310" y1="670" x2="1890" y2="670" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="687"></text>
+    <text class="field-name" x="1385" y="687">updatedAt*</text>
+    <text class="field-type" x="1874" y="687" text-anchor="end">timestamp</text>
+  </g>
+
+  <!-- Table: Agreement -->
+  <g id="table-Agreement">
+    <rect class="table-box" x="1310" y="714" width="580" height="276" rx="4" />
+    <rect class="header-box" x="1310" y="714" width="580" height="36" rx="4" />
+    <text class="table-title" x="1326" y="738">Agreement</text>
+    <text class="sub-text" x="1874" y="738" text-anchor="end">10 attributes</text>
+    <line x1="1310" y1="750" x2="1890" y2="750" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="767">[PK]</text>
+    <text class="field-name" x="1385" y="767">id*</text>
+    <text class="field-type" x="1874" y="767" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="1311" y="774" width="578" height="24" />
+    <line x1="1310" y1="774" x2="1890" y2="774" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="791">[FK]</text>
+    <text class="field-name" x="1385" y="791">residentId*</text>
+    <text class="field-type" x="1874" y="791" text-anchor="end">varchar</text>
+    <line x1="1310" y1="798" x2="1890" y2="798" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="815">[FK]</text>
+    <text class="field-name" x="1385" y="815">propertyId*</text>
+    <text class="field-type" x="1874" y="815" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="1311" y="822" width="578" height="24" />
+    <line x1="1310" y1="822" x2="1890" y2="822" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="839">[UQ]</text>
+    <text class="field-name" x="1385" y="839">agreementNumber*</text>
+    <text class="field-type" x="1874" y="839" text-anchor="end">varchar</text>
+    <line x1="1310" y1="846" x2="1890" y2="846" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="863"></text>
+    <text class="field-name" x="1385" y="863">validFrom*</text>
+    <text class="field-type" x="1874" y="863" text-anchor="end">timestamp</text>
+    <rect class="row-alt" x="1311" y="870" width="578" height="24" />
+    <line x1="1310" y1="870" x2="1890" y2="870" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="887"></text>
+    <text class="field-name" x="1385" y="887">validTill*</text>
+    <text class="field-type" x="1874" y="887" text-anchor="end">timestamp</text>
+    <line x1="1310" y1="894" x2="1890" y2="894" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="911"></text>
+    <text class="field-name" x="1385" y="911">signedUrl</text>
+    <text class="field-type" x="1874" y="911" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="1311" y="918" width="578" height="24" />
+    <line x1="1310" y1="918" x2="1890" y2="918" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="935"></text>
+    <text class="field-name" x="1385" y="935">status*</text>
+    <text class="field-type" x="1874" y="935" text-anchor="end">AgreementStatus</text>
+    <line x1="1310" y1="942" x2="1890" y2="942" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="959"></text>
+    <text class="field-name" x="1385" y="959">createdAt*</text>
+    <text class="field-type" x="1874" y="959" text-anchor="end">timestamp</text>
+    <rect class="row-alt" x="1311" y="966" width="578" height="24" />
+    <line x1="1310" y1="966" x2="1890" y2="966" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="983"></text>
+    <text class="field-name" x="1385" y="983">updatedAt*</text>
+    <text class="field-type" x="1874" y="983" text-anchor="end">timestamp</text>
+  </g>
+
+  <!-- Table: SecurityDeposit -->
+  <g id="table-SecurityDeposit">
+    <rect class="table-box" x="1310" y="1010" width="580" height="300" rx="4" />
+    <rect class="header-box" x="1310" y="1010" width="580" height="36" rx="4" />
+    <text class="table-title" x="1326" y="1034">SecurityDeposit</text>
+    <text class="sub-text" x="1874" y="1034" text-anchor="end">11 attributes</text>
+    <line x1="1310" y1="1046" x2="1890" y2="1046" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="1063">[PK]</text>
+    <text class="field-name" x="1385" y="1063">id*</text>
+    <text class="field-type" x="1874" y="1063" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="1311" y="1070" width="578" height="24" />
+    <line x1="1310" y1="1070" x2="1890" y2="1070" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="1087">[FK]</text>
+    <text class="field-name" x="1385" y="1087">residentId*</text>
+    <text class="field-type" x="1874" y="1087" text-anchor="end">varchar</text>
+    <line x1="1310" y1="1094" x2="1890" y2="1094" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="1111">[FK]</text>
+    <text class="field-name" x="1385" y="1111">propertyId*</text>
+    <text class="field-type" x="1874" y="1111" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="1311" y="1118" width="578" height="24" />
+    <line x1="1310" y1="1118" x2="1890" y2="1118" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="1135"></text>
+    <text class="field-name" x="1385" y="1135">amount*</text>
+    <text class="field-type" x="1874" y="1135" text-anchor="end">decimal</text>
+    <line x1="1310" y1="1142" x2="1890" y2="1142" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="1159"></text>
+    <text class="field-name" x="1385" y="1159">status*</text>
+    <text class="field-type" x="1874" y="1159" text-anchor="end">DepositStatus</text>
+    <rect class="row-alt" x="1311" y="1166" width="578" height="24" />
+    <line x1="1310" y1="1166" x2="1890" y2="1166" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="1183"></text>
+    <text class="field-name" x="1385" y="1183">paidAt</text>
+    <text class="field-type" x="1874" y="1183" text-anchor="end">timestamp</text>
+    <line x1="1310" y1="1190" x2="1890" y2="1190" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="1207"></text>
+    <text class="field-name" x="1385" y="1207">refundAmount</text>
+    <text class="field-type" x="1874" y="1207" text-anchor="end">decimal</text>
+    <rect class="row-alt" x="1311" y="1214" width="578" height="24" />
+    <line x1="1310" y1="1214" x2="1890" y2="1214" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="1231"></text>
+    <text class="field-name" x="1385" y="1231">deductions</text>
+    <text class="field-type" x="1874" y="1231" text-anchor="end">decimal</text>
+    <line x1="1310" y1="1238" x2="1890" y2="1238" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="1255"></text>
+    <text class="field-name" x="1385" y="1255">notes</text>
+    <text class="field-type" x="1874" y="1255" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="1311" y="1262" width="578" height="24" />
+    <line x1="1310" y1="1262" x2="1890" y2="1262" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="1279"></text>
+    <text class="field-name" x="1385" y="1279">createdAt*</text>
+    <text class="field-type" x="1874" y="1279" text-anchor="end">timestamp</text>
+    <line x1="1310" y1="1286" x2="1890" y2="1286" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="1303"></text>
+    <text class="field-name" x="1385" y="1303">updatedAt*</text>
+    <text class="field-type" x="1874" y="1303" text-anchor="end">timestamp</text>
+  </g>
+
+  <!-- Table: LeaveRequest -->
+  <g id="table-LeaveRequest">
+    <rect class="table-box" x="1310" y="1330" width="580" height="276" rx="4" />
+    <rect class="header-box" x="1310" y="1330" width="580" height="36" rx="4" />
+    <text class="table-title" x="1326" y="1354">LeaveRequest</text>
+    <text class="sub-text" x="1874" y="1354" text-anchor="end">10 attributes</text>
+    <line x1="1310" y1="1366" x2="1890" y2="1366" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="1383">[PK]</text>
+    <text class="field-name" x="1385" y="1383">id*</text>
+    <text class="field-type" x="1874" y="1383" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="1311" y="1390" width="578" height="24" />
+    <line x1="1310" y1="1390" x2="1890" y2="1390" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="1407">[FK]</text>
+    <text class="field-name" x="1385" y="1407">residentId*</text>
+    <text class="field-type" x="1874" y="1407" text-anchor="end">varchar</text>
+    <line x1="1310" y1="1414" x2="1890" y2="1414" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="1431">[FK]</text>
+    <text class="field-name" x="1385" y="1431">propertyId*</text>
+    <text class="field-type" x="1874" y="1431" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="1311" y="1438" width="578" height="24" />
+    <line x1="1310" y1="1438" x2="1890" y2="1438" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="1455"></text>
+    <text class="field-name" x="1385" y="1455">fromDate*</text>
+    <text class="field-type" x="1874" y="1455" text-anchor="end">timestamp</text>
+    <line x1="1310" y1="1462" x2="1890" y2="1462" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="1479"></text>
+    <text class="field-name" x="1385" y="1479">toDate*</text>
+    <text class="field-type" x="1874" y="1479" text-anchor="end">timestamp</text>
+    <rect class="row-alt" x="1311" y="1486" width="578" height="24" />
+    <line x1="1310" y1="1486" x2="1890" y2="1486" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="1503"></text>
+    <text class="field-name" x="1385" y="1503">reason*</text>
+    <text class="field-type" x="1874" y="1503" text-anchor="end">varchar</text>
+    <line x1="1310" y1="1510" x2="1890" y2="1510" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="1527"></text>
+    <text class="field-name" x="1385" y="1527">status*</text>
+    <text class="field-type" x="1874" y="1527" text-anchor="end">LeaveStatus</text>
+    <rect class="row-alt" x="1311" y="1534" width="578" height="24" />
+    <line x1="1310" y1="1534" x2="1890" y2="1534" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="1551"></text>
+    <text class="field-name" x="1385" y="1551">approvedBy</text>
+    <text class="field-type" x="1874" y="1551" text-anchor="end">varchar</text>
+    <line x1="1310" y1="1558" x2="1890" y2="1558" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="1575"></text>
+    <text class="field-name" x="1385" y="1575">appliedAt*</text>
+    <text class="field-type" x="1874" y="1575" text-anchor="end">timestamp</text>
+    <rect class="row-alt" x="1311" y="1582" width="578" height="24" />
+    <line x1="1310" y1="1582" x2="1890" y2="1582" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1322" y="1599"></text>
+    <text class="field-name" x="1385" y="1599">updatedAt*</text>
+    <text class="field-type" x="1874" y="1599" text-anchor="end">timestamp</text>
+  </g>
+
+  <!-- Table: Payment -->
+  <g id="table-Payment">
+    <rect class="table-box" x="1940" y="130" width="580" height="396" rx="4" />
+    <rect class="header-box" x="1940" y="130" width="580" height="36" rx="4" />
+    <text class="table-title" x="1956" y="154">Payment</text>
+    <text class="sub-text" x="2504" y="154" text-anchor="end">15 attributes</text>
+    <line x1="1940" y1="166" x2="2520" y2="166" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="183">[PK]</text>
+    <text class="field-name" x="2015" y="183">id*</text>
+    <text class="field-type" x="2504" y="183" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="1941" y="190" width="578" height="24" />
+    <line x1="1940" y1="190" x2="2520" y2="190" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="207">[FK]</text>
+    <text class="field-name" x="2015" y="207">residentId*</text>
+    <text class="field-type" x="2504" y="207" text-anchor="end">varchar</text>
+    <line x1="1940" y1="214" x2="2520" y2="214" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="231">[FK]</text>
+    <text class="field-name" x="2015" y="231">propertyId*</text>
+    <text class="field-type" x="2504" y="231" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="1941" y="238" width="578" height="24" />
+    <line x1="1940" y1="238" x2="2520" y2="238" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="255"></text>
+    <text class="field-name" x="2015" y="255">amount*</text>
+    <text class="field-type" x="2504" y="255" text-anchor="end">decimal</text>
+    <line x1="1940" y1="262" x2="2520" y2="262" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="279"></text>
+    <text class="field-name" x="2015" y="279">category*</text>
+    <text class="field-type" x="2504" y="279" text-anchor="end">ChargeCategory</text>
+    <rect class="row-alt" x="1941" y="286" width="578" height="24" />
+    <line x1="1940" y1="286" x2="2520" y2="286" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="303"></text>
+    <text class="field-name" x="2015" y="303">period*</text>
+    <text class="field-type" x="2504" y="303" text-anchor="end">varchar</text>
+    <line x1="1940" y1="310" x2="2520" y2="310" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="327"></text>
+    <text class="field-name" x="2015" y="327">dueDate*</text>
+    <text class="field-type" x="2504" y="327" text-anchor="end">timestamp</text>
+    <rect class="row-alt" x="1941" y="334" width="578" height="24" />
+    <line x1="1940" y1="334" x2="2520" y2="334" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="351"></text>
+    <text class="field-name" x="2015" y="351">paidDate</text>
+    <text class="field-type" x="2504" y="351" text-anchor="end">timestamp</text>
+    <line x1="1940" y1="358" x2="2520" y2="358" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="375"></text>
+    <text class="field-name" x="2015" y="375">status*</text>
+    <text class="field-type" x="2504" y="375" text-anchor="end">PaymentStatus</text>
+    <rect class="row-alt" x="1941" y="382" width="578" height="24" />
+    <line x1="1940" y1="382" x2="2520" y2="382" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="399"></text>
+    <text class="field-name" x="2015" y="399">method</text>
+    <text class="field-type" x="2504" y="399" text-anchor="end">PaymentMethod</text>
+    <line x1="1940" y1="406" x2="2520" y2="406" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="423">[FK]</text>
+    <text class="field-name" x="2015" y="423">transactionId</text>
+    <text class="field-type" x="2504" y="423" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="1941" y="430" width="578" height="24" />
+    <line x1="1940" y1="430" x2="2520" y2="430" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="447">[FK]</text>
+    <text class="field-name" x="2015" y="447">orderId</text>
+    <text class="field-type" x="2504" y="447" text-anchor="end">varchar</text>
+    <line x1="1940" y1="454" x2="2520" y2="454" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="471"></text>
+    <text class="field-name" x="2015" y="471">notes</text>
+    <text class="field-type" x="2504" y="471" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="1941" y="478" width="578" height="24" />
+    <line x1="1940" y1="478" x2="2520" y2="478" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="495"></text>
+    <text class="field-name" x="2015" y="495">createdAt*</text>
+    <text class="field-type" x="2504" y="495" text-anchor="end">timestamp</text>
+    <line x1="1940" y1="502" x2="2520" y2="502" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="519"></text>
+    <text class="field-name" x="2015" y="519">updatedAt*</text>
+    <text class="field-type" x="2504" y="519" text-anchor="end">timestamp</text>
+  </g>
+
+  <!-- Table: PaymentReceipt -->
+  <g id="table-PaymentReceipt">
+    <rect class="table-box" x="1940" y="546" width="580" height="180" rx="4" />
+    <rect class="header-box" x="1940" y="546" width="580" height="36" rx="4" />
+    <text class="table-title" x="1956" y="570">PaymentReceipt</text>
+    <text class="sub-text" x="2504" y="570" text-anchor="end">6 attributes</text>
+    <line x1="1940" y1="582" x2="2520" y2="582" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="599">[PK]</text>
+    <text class="field-name" x="2015" y="599">id*</text>
+    <text class="field-type" x="2504" y="599" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="1941" y="606" width="578" height="24" />
+    <line x1="1940" y1="606" x2="2520" y2="606" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="623">[FK,UQ]</text>
+    <text class="field-name" x="2015" y="623">paymentId*</text>
+    <text class="field-type" x="2504" y="623" text-anchor="end">varchar</text>
+    <line x1="1940" y1="630" x2="2520" y2="630" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="647">[UQ]</text>
+    <text class="field-name" x="2015" y="647">receiptNumber*</text>
+    <text class="field-type" x="2504" y="647" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="1941" y="654" width="578" height="24" />
+    <line x1="1940" y1="654" x2="2520" y2="654" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="671"></text>
+    <text class="field-name" x="2015" y="671">generatedAt*</text>
+    <text class="field-type" x="2504" y="671" text-anchor="end">timestamp</text>
+    <line x1="1940" y1="678" x2="2520" y2="678" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="695"></text>
+    <text class="field-name" x="2015" y="695">pdfUrl</text>
+    <text class="field-type" x="2504" y="695" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="1941" y="702" width="578" height="24" />
+    <line x1="1940" y1="702" x2="2520" y2="702" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="719"></text>
+    <text class="field-name" x="2015" y="719">createdAt*</text>
+    <text class="field-type" x="2504" y="719" text-anchor="end">timestamp</text>
+  </g>
+
+  <!-- Table: Expense -->
+  <g id="table-Expense">
+    <rect class="table-box" x="1940" y="746" width="580" height="300" rx="4" />
+    <rect class="header-box" x="1940" y="746" width="580" height="36" rx="4" />
+    <text class="table-title" x="1956" y="770">Expense</text>
+    <text class="sub-text" x="2504" y="770" text-anchor="end">11 attributes</text>
+    <line x1="1940" y1="782" x2="2520" y2="782" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="799">[PK]</text>
+    <text class="field-name" x="2015" y="799">id*</text>
+    <text class="field-type" x="2504" y="799" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="1941" y="806" width="578" height="24" />
+    <line x1="1940" y1="806" x2="2520" y2="806" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="823">[FK]</text>
+    <text class="field-name" x="2015" y="823">propertyId*</text>
+    <text class="field-type" x="2504" y="823" text-anchor="end">varchar</text>
+    <line x1="1940" y1="830" x2="2520" y2="830" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="847"></text>
+    <text class="field-name" x="2015" y="847">title*</text>
+    <text class="field-type" x="2504" y="847" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="1941" y="854" width="578" height="24" />
+    <line x1="1940" y1="854" x2="2520" y2="854" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="871"></text>
+    <text class="field-name" x="2015" y="871">category*</text>
+    <text class="field-type" x="2504" y="871" text-anchor="end">ExpenseCategory</text>
+    <line x1="1940" y1="878" x2="2520" y2="878" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="895"></text>
+    <text class="field-name" x="2015" y="895">amount*</text>
+    <text class="field-type" x="2504" y="895" text-anchor="end">decimal</text>
+    <rect class="row-alt" x="1941" y="902" width="578" height="24" />
+    <line x1="1940" y1="902" x2="2520" y2="902" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="919"></text>
+    <text class="field-name" x="2015" y="919">vendor</text>
+    <text class="field-type" x="2504" y="919" text-anchor="end">varchar</text>
+    <line x1="1940" y1="926" x2="2520" y2="926" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="943"></text>
+    <text class="field-name" x="2015" y="943">date*</text>
+    <text class="field-type" x="2504" y="943" text-anchor="end">timestamp</text>
+    <rect class="row-alt" x="1941" y="950" width="578" height="24" />
+    <line x1="1940" y1="950" x2="2520" y2="950" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="967"></text>
+    <text class="field-name" x="2015" y="967">receiptUrl</text>
+    <text class="field-type" x="2504" y="967" text-anchor="end">varchar</text>
+    <line x1="1940" y1="974" x2="2520" y2="974" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="991"></text>
+    <text class="field-name" x="2015" y="991">notes</text>
+    <text class="field-type" x="2504" y="991" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="1941" y="998" width="578" height="24" />
+    <line x1="1940" y1="998" x2="2520" y2="998" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="1015"></text>
+    <text class="field-name" x="2015" y="1015">createdAt*</text>
+    <text class="field-type" x="2504" y="1015" text-anchor="end">timestamp</text>
+    <line x1="1940" y1="1022" x2="2520" y2="1022" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="1039"></text>
+    <text class="field-name" x="2015" y="1039">updatedAt*</text>
+    <text class="field-type" x="2504" y="1039" text-anchor="end">timestamp</text>
+  </g>
+
+  <!-- Table: VisitorRequest -->
+  <g id="table-VisitorRequest">
+    <rect class="table-box" x="1940" y="1066" width="580" height="444" rx="4" />
+    <rect class="header-box" x="1940" y="1066" width="580" height="36" rx="4" />
+    <text class="table-title" x="1956" y="1090">VisitorRequest</text>
+    <text class="sub-text" x="2504" y="1090" text-anchor="end">17 attributes</text>
+    <line x1="1940" y1="1102" x2="2520" y2="1102" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="1119">[PK]</text>
+    <text class="field-name" x="2015" y="1119">id*</text>
+    <text class="field-type" x="2504" y="1119" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="1941" y="1126" width="578" height="24" />
+    <line x1="1940" y1="1126" x2="2520" y2="1126" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="1143">[FK]</text>
+    <text class="field-name" x="2015" y="1143">residentId</text>
+    <text class="field-type" x="2504" y="1143" text-anchor="end">varchar</text>
+    <line x1="1940" y1="1150" x2="2520" y2="1150" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="1167">[FK]</text>
+    <text class="field-name" x="2015" y="1167">propertyId*</text>
+    <text class="field-type" x="2504" y="1167" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="1941" y="1174" width="578" height="24" />
+    <line x1="1940" y1="1174" x2="2520" y2="1174" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="1191"></text>
+    <text class="field-name" x="2015" y="1191">visitorName*</text>
+    <text class="field-type" x="2504" y="1191" text-anchor="end">varchar</text>
+    <line x1="1940" y1="1198" x2="2520" y2="1198" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="1215"></text>
+    <text class="field-name" x="2015" y="1215">visitorMobile*</text>
+    <text class="field-type" x="2504" y="1215" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="1941" y="1222" width="578" height="24" />
+    <line x1="1940" y1="1222" x2="2520" y2="1222" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="1239"></text>
+    <text class="field-name" x="2015" y="1239">relation*</text>
+    <text class="field-type" x="2504" y="1239" text-anchor="end">varchar</text>
+    <line x1="1940" y1="1246" x2="2520" y2="1246" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="1263"></text>
+    <text class="field-name" x="2015" y="1263">purpose*</text>
+    <text class="field-type" x="2504" y="1263" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="1941" y="1270" width="578" height="24" />
+    <line x1="1940" y1="1270" x2="2520" y2="1270" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="1287"></text>
+    <text class="field-name" x="2015" y="1287">visitDate*</text>
+    <text class="field-type" x="2504" y="1287" text-anchor="end">timestamp</text>
+    <line x1="1940" y1="1294" x2="2520" y2="1294" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="1311"></text>
+    <text class="field-name" x="2015" y="1311">expectedEntryTime*</text>
+    <text class="field-type" x="2504" y="1311" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="1941" y="1318" width="578" height="24" />
+    <line x1="1940" y1="1318" x2="2520" y2="1318" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="1335"></text>
+    <text class="field-name" x="2015" y="1335">expectedExitTime</text>
+    <text class="field-type" x="2504" y="1335" text-anchor="end">varchar</text>
+    <line x1="1940" y1="1342" x2="2520" y2="1342" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="1359"></text>
+    <text class="field-name" x="2015" y="1359">status*</text>
+    <text class="field-type" x="2504" y="1359" text-anchor="end">VisitorStatus</text>
+    <rect class="row-alt" x="1941" y="1366" width="578" height="24" />
+    <line x1="1940" y1="1366" x2="2520" y2="1366" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="1383"></text>
+    <text class="field-name" x="2015" y="1383">approvedBy</text>
+    <text class="field-type" x="2504" y="1383" text-anchor="end">varchar</text>
+    <line x1="1940" y1="1390" x2="2520" y2="1390" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="1407">[UQ]</text>
+    <text class="field-name" x="2015" y="1407">qrPassToken*</text>
+    <text class="field-type" x="2504" y="1407" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="1941" y="1414" width="578" height="24" />
+    <line x1="1940" y1="1414" x2="2520" y2="1414" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="1431"></text>
+    <text class="field-name" x="2015" y="1431">checkInTime</text>
+    <text class="field-type" x="2504" y="1431" text-anchor="end">timestamp</text>
+    <line x1="1940" y1="1438" x2="2520" y2="1438" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="1455"></text>
+    <text class="field-name" x="2015" y="1455">checkOutTime</text>
+    <text class="field-type" x="2504" y="1455" text-anchor="end">timestamp</text>
+    <rect class="row-alt" x="1941" y="1462" width="578" height="24" />
+    <line x1="1940" y1="1462" x2="2520" y2="1462" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="1479"></text>
+    <text class="field-name" x="2015" y="1479">createdAt*</text>
+    <text class="field-type" x="2504" y="1479" text-anchor="end">timestamp</text>
+    <line x1="1940" y1="1486" x2="2520" y2="1486" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="1503"></text>
+    <text class="field-name" x="2015" y="1503">updatedAt*</text>
+    <text class="field-type" x="2504" y="1503" text-anchor="end">timestamp</text>
+  </g>
+
+  <!-- Table: Document -->
+  <g id="table-Document">
+    <rect class="table-box" x="1940" y="1530" width="580" height="324" rx="4" />
+    <rect class="header-box" x="1940" y="1530" width="580" height="36" rx="4" />
+    <text class="table-title" x="1956" y="1554">Document</text>
+    <text class="sub-text" x="2504" y="1554" text-anchor="end">12 attributes</text>
+    <line x1="1940" y1="1566" x2="2520" y2="1566" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="1583">[PK]</text>
+    <text class="field-name" x="2015" y="1583">id*</text>
+    <text class="field-type" x="2504" y="1583" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="1941" y="1590" width="578" height="24" />
+    <line x1="1940" y1="1590" x2="2520" y2="1590" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="1607">[FK]</text>
+    <text class="field-name" x="2015" y="1607">residentId*</text>
+    <text class="field-type" x="2504" y="1607" text-anchor="end">varchar</text>
+    <line x1="1940" y1="1614" x2="2520" y2="1614" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="1631">[FK]</text>
+    <text class="field-name" x="2015" y="1631">propertyId*</text>
+    <text class="field-type" x="2504" y="1631" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="1941" y="1638" width="578" height="24" />
+    <line x1="1940" y1="1638" x2="2520" y2="1638" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="1655"></text>
+    <text class="field-name" x="2015" y="1655">title*</text>
+    <text class="field-type" x="2504" y="1655" text-anchor="end">varchar</text>
+    <line x1="1940" y1="1662" x2="2520" y2="1662" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="1679"></text>
+    <text class="field-name" x="2015" y="1679">type*</text>
+    <text class="field-type" x="2504" y="1679" text-anchor="end">DocumentType</text>
+    <rect class="row-alt" x="1941" y="1686" width="578" height="24" />
+    <line x1="1940" y1="1686" x2="2520" y2="1686" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="1703"></text>
+    <text class="field-name" x="2015" y="1703">fileUrl*</text>
+    <text class="field-type" x="2504" y="1703" text-anchor="end">varchar</text>
+    <line x1="1940" y1="1710" x2="2520" y2="1710" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="1727"></text>
+    <text class="field-name" x="2015" y="1727">fileSize</text>
+    <text class="field-type" x="2504" y="1727" text-anchor="end">integer</text>
+    <rect class="row-alt" x="1941" y="1734" width="578" height="24" />
+    <line x1="1940" y1="1734" x2="2520" y2="1734" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="1751"></text>
+    <text class="field-name" x="2015" y="1751">mimeType</text>
+    <text class="field-type" x="2504" y="1751" text-anchor="end">varchar</text>
+    <line x1="1940" y1="1758" x2="2520" y2="1758" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="1775"></text>
+    <text class="field-name" x="2015" y="1775">status*</text>
+    <text class="field-type" x="2504" y="1775" text-anchor="end">DocumentStatus</text>
+    <rect class="row-alt" x="1941" y="1782" width="578" height="24" />
+    <line x1="1940" y1="1782" x2="2520" y2="1782" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="1799"></text>
+    <text class="field-name" x="2015" y="1799">rejectionReason</text>
+    <text class="field-type" x="2504" y="1799" text-anchor="end">varchar</text>
+    <line x1="1940" y1="1806" x2="2520" y2="1806" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="1823"></text>
+    <text class="field-name" x="2015" y="1823">uploadedAt*</text>
+    <text class="field-type" x="2504" y="1823" text-anchor="end">timestamp</text>
+    <rect class="row-alt" x="1941" y="1830" width="578" height="24" />
+    <line x1="1940" y1="1830" x2="2520" y2="1830" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="1952" y="1847"></text>
+    <text class="field-name" x="2015" y="1847">updatedAt*</text>
+    <text class="field-type" x="2504" y="1847" text-anchor="end">timestamp</text>
+  </g>
+
+  <!-- Table: Complaint -->
+  <g id="table-Complaint">
+    <rect class="table-box" x="2570" y="130" width="580" height="420" rx="4" />
+    <rect class="header-box" x="2570" y="130" width="580" height="36" rx="4" />
+    <text class="table-title" x="2586" y="154">Complaint</text>
+    <text class="sub-text" x="3134" y="154" text-anchor="end">16 attributes</text>
+    <line x1="2570" y1="166" x2="3150" y2="166" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="183">[PK]</text>
+    <text class="field-name" x="2645" y="183">id*</text>
+    <text class="field-type" x="3134" y="183" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="2571" y="190" width="578" height="24" />
+    <line x1="2570" y1="190" x2="3150" y2="190" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="207">[UQ]</text>
+    <text class="field-name" x="2645" y="207">ticketNumber*</text>
+    <text class="field-type" x="3134" y="207" text-anchor="end">varchar</text>
+    <line x1="2570" y1="214" x2="3150" y2="214" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="231">[FK]</text>
+    <text class="field-name" x="2645" y="231">residentId*</text>
+    <text class="field-type" x="3134" y="231" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="2571" y="238" width="578" height="24" />
+    <line x1="2570" y1="238" x2="3150" y2="238" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="255">[FK]</text>
+    <text class="field-name" x="2645" y="255">propertyId*</text>
+    <text class="field-type" x="3134" y="255" text-anchor="end">varchar</text>
+    <line x1="2570" y1="262" x2="3150" y2="262" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="279">[FK]</text>
+    <text class="field-name" x="2645" y="279">roomId</text>
+    <text class="field-type" x="3134" y="279" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="2571" y="286" width="578" height="24" />
+    <line x1="2570" y1="286" x2="3150" y2="286" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="303"></text>
+    <text class="field-name" x="2645" y="303">title*</text>
+    <text class="field-type" x="3134" y="303" text-anchor="end">varchar</text>
+    <line x1="2570" y1="310" x2="3150" y2="310" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="327"></text>
+    <text class="field-name" x="2645" y="327">description*</text>
+    <text class="field-type" x="3134" y="327" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="2571" y="334" width="578" height="24" />
+    <line x1="2570" y1="334" x2="3150" y2="334" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="351"></text>
+    <text class="field-name" x="2645" y="351">category*</text>
+    <text class="field-type" x="3134" y="351" text-anchor="end">ComplaintCategory</text>
+    <line x1="2570" y1="358" x2="3150" y2="358" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="375"></text>
+    <text class="field-name" x="2645" y="375">priority*</text>
+    <text class="field-type" x="3134" y="375" text-anchor="end">ComplaintPriority</text>
+    <rect class="row-alt" x="2571" y="382" width="578" height="24" />
+    <line x1="2570" y1="382" x2="3150" y2="382" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="399"></text>
+    <text class="field-name" x="2645" y="399">status*</text>
+    <text class="field-type" x="3134" y="399" text-anchor="end">ComplaintStatus</text>
+    <line x1="2570" y1="406" x2="3150" y2="406" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="423"></text>
+    <text class="field-name" x="2645" y="423">assignedStaff</text>
+    <text class="field-type" x="3134" y="423" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="2571" y="430" width="578" height="24" />
+    <line x1="2570" y1="430" x2="3150" y2="430" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="447"></text>
+    <text class="field-name" x="2645" y="447">resolvedAt</text>
+    <text class="field-type" x="3134" y="447" text-anchor="end">timestamp</text>
+    <line x1="2570" y1="454" x2="3150" y2="454" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="471"></text>
+    <text class="field-name" x="2645" y="471">rating</text>
+    <text class="field-type" x="3134" y="471" text-anchor="end">integer</text>
+    <rect class="row-alt" x="2571" y="478" width="578" height="24" />
+    <line x1="2570" y1="478" x2="3150" y2="478" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="495"></text>
+    <text class="field-name" x="2645" y="495">feedback</text>
+    <text class="field-type" x="3134" y="495" text-anchor="end">varchar</text>
+    <line x1="2570" y1="502" x2="3150" y2="502" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="519"></text>
+    <text class="field-name" x="2645" y="519">createdAt*</text>
+    <text class="field-type" x="3134" y="519" text-anchor="end">timestamp</text>
+    <rect class="row-alt" x="2571" y="526" width="578" height="24" />
+    <line x1="2570" y1="526" x2="3150" y2="526" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="543"></text>
+    <text class="field-name" x="2645" y="543">updatedAt*</text>
+    <text class="field-type" x="3134" y="543" text-anchor="end">timestamp</text>
+  </g>
+
+  <!-- Table: MaintenanceActivity -->
+  <g id="table-MaintenanceActivity">
+    <rect class="table-box" x="2570" y="570" width="580" height="180" rx="4" />
+    <rect class="header-box" x="2570" y="570" width="580" height="36" rx="4" />
+    <text class="table-title" x="2586" y="594">MaintenanceActivity</text>
+    <text class="sub-text" x="3134" y="594" text-anchor="end">6 attributes</text>
+    <line x1="2570" y1="606" x2="3150" y2="606" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="623">[PK]</text>
+    <text class="field-name" x="2645" y="623">id*</text>
+    <text class="field-type" x="3134" y="623" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="2571" y="630" width="578" height="24" />
+    <line x1="2570" y1="630" x2="3150" y2="630" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="647">[FK]</text>
+    <text class="field-name" x="2645" y="647">complaintId*</text>
+    <text class="field-type" x="3134" y="647" text-anchor="end">varchar</text>
+    <line x1="2570" y1="654" x2="3150" y2="654" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="671"></text>
+    <text class="field-name" x="2645" y="671">status*</text>
+    <text class="field-type" x="3134" y="671" text-anchor="end">ComplaintStatus</text>
+    <rect class="row-alt" x="2571" y="678" width="578" height="24" />
+    <line x1="2570" y1="678" x2="3150" y2="678" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="695"></text>
+    <text class="field-name" x="2645" y="695">updatedBy*</text>
+    <text class="field-type" x="3134" y="695" text-anchor="end">varchar</text>
+    <line x1="2570" y1="702" x2="3150" y2="702" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="719"></text>
+    <text class="field-name" x="2645" y="719">comment*</text>
+    <text class="field-type" x="3134" y="719" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="2571" y="726" width="578" height="24" />
+    <line x1="2570" y1="726" x2="3150" y2="726" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="743"></text>
+    <text class="field-name" x="2645" y="743">timestamp*</text>
+    <text class="field-type" x="3134" y="743" text-anchor="end">timestamp</text>
+  </g>
+
+  <!-- Table: Notice -->
+  <g id="table-Notice">
+    <rect class="table-box" x="2570" y="770" width="580" height="300" rx="4" />
+    <rect class="header-box" x="2570" y="770" width="580" height="36" rx="4" />
+    <text class="table-title" x="2586" y="794">Notice</text>
+    <text class="sub-text" x="3134" y="794" text-anchor="end">11 attributes</text>
+    <line x1="2570" y1="806" x2="3150" y2="806" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="823">[PK]</text>
+    <text class="field-name" x="2645" y="823">id*</text>
+    <text class="field-type" x="3134" y="823" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="2571" y="830" width="578" height="24" />
+    <line x1="2570" y1="830" x2="3150" y2="830" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="847">[FK]</text>
+    <text class="field-name" x="2645" y="847">propertyId*</text>
+    <text class="field-type" x="3134" y="847" text-anchor="end">varchar</text>
+    <line x1="2570" y1="854" x2="3150" y2="854" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="871"></text>
+    <text class="field-name" x="2645" y="871">title*</text>
+    <text class="field-type" x="3134" y="871" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="2571" y="878" width="578" height="24" />
+    <line x1="2570" y1="878" x2="3150" y2="878" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="895"></text>
+    <text class="field-name" x="2645" y="895">content*</text>
+    <text class="field-type" x="3134" y="895" text-anchor="end">varchar</text>
+    <line x1="2570" y1="902" x2="3150" y2="902" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="919"></text>
+    <text class="field-name" x="2645" y="919">category*</text>
+    <text class="field-type" x="3134" y="919" text-anchor="end">NoticeCategory</text>
+    <rect class="row-alt" x="2571" y="926" width="578" height="24" />
+    <line x1="2570" y1="926" x2="3150" y2="926" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="943"></text>
+    <text class="field-name" x="2645" y="943">isImportant*</text>
+    <text class="field-type" x="3134" y="943" text-anchor="end">boolean</text>
+    <line x1="2570" y1="950" x2="3150" y2="950" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="967"></text>
+    <text class="field-name" x="2645" y="967">publishedAt*</text>
+    <text class="field-type" x="3134" y="967" text-anchor="end">timestamp</text>
+    <rect class="row-alt" x="2571" y="974" width="578" height="24" />
+    <line x1="2570" y1="974" x2="3150" y2="974" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="991"></text>
+    <text class="field-name" x="2645" y="991">expiresAt</text>
+    <text class="field-type" x="3134" y="991" text-anchor="end">timestamp</text>
+    <line x1="2570" y1="998" x2="3150" y2="998" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="1015"></text>
+    <text class="field-name" x="2645" y="1015">publisherName*</text>
+    <text class="field-type" x="3134" y="1015" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="2571" y="1022" width="578" height="24" />
+    <line x1="2570" y1="1022" x2="3150" y2="1022" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="1039"></text>
+    <text class="field-name" x="2645" y="1039">createdAt*</text>
+    <text class="field-type" x="3134" y="1039" text-anchor="end">timestamp</text>
+    <line x1="2570" y1="1046" x2="3150" y2="1046" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="1063"></text>
+    <text class="field-name" x="2645" y="1063">updatedAt*</text>
+    <text class="field-type" x="3134" y="1063" text-anchor="end">timestamp</text>
+  </g>
+
+  <!-- Table: Notification -->
+  <g id="table-Notification">
+    <rect class="table-box" x="2570" y="1090" width="580" height="252" rx="4" />
+    <rect class="header-box" x="2570" y="1090" width="580" height="36" rx="4" />
+    <text class="table-title" x="2586" y="1114">Notification</text>
+    <text class="sub-text" x="3134" y="1114" text-anchor="end">9 attributes</text>
+    <line x1="2570" y1="1126" x2="3150" y2="1126" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="1143">[PK]</text>
+    <text class="field-name" x="2645" y="1143">id*</text>
+    <text class="field-type" x="3134" y="1143" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="2571" y="1150" width="578" height="24" />
+    <line x1="2570" y1="1150" x2="3150" y2="1150" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="1167">[FK]</text>
+    <text class="field-name" x="2645" y="1167">userId*</text>
+    <text class="field-type" x="3134" y="1167" text-anchor="end">varchar</text>
+    <line x1="2570" y1="1174" x2="3150" y2="1174" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="1191">[FK]</text>
+    <text class="field-name" x="2645" y="1191">residentId</text>
+    <text class="field-type" x="3134" y="1191" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="2571" y="1198" width="578" height="24" />
+    <line x1="2570" y1="1198" x2="3150" y2="1198" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="1215"></text>
+    <text class="field-name" x="2645" y="1215">title*</text>
+    <text class="field-type" x="3134" y="1215" text-anchor="end">varchar</text>
+    <line x1="2570" y1="1222" x2="3150" y2="1222" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="1239"></text>
+    <text class="field-name" x="2645" y="1239">message*</text>
+    <text class="field-type" x="3134" y="1239" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="2571" y="1246" width="578" height="24" />
+    <line x1="2570" y1="1246" x2="3150" y2="1246" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="1263"></text>
+    <text class="field-name" x="2645" y="1263">type*</text>
+    <text class="field-type" x="3134" y="1263" text-anchor="end">varchar</text>
+    <line x1="2570" y1="1270" x2="3150" y2="1270" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="1287"></text>
+    <text class="field-name" x="2645" y="1287">isRead*</text>
+    <text class="field-type" x="3134" y="1287" text-anchor="end">boolean</text>
+    <rect class="row-alt" x="2571" y="1294" width="578" height="24" />
+    <line x1="2570" y1="1294" x2="3150" y2="1294" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="1311"></text>
+    <text class="field-name" x="2645" y="1311">linkUrl</text>
+    <text class="field-type" x="3134" y="1311" text-anchor="end">varchar</text>
+    <line x1="2570" y1="1318" x2="3150" y2="1318" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="1335"></text>
+    <text class="field-name" x="2645" y="1335">createdAt*</text>
+    <text class="field-type" x="3134" y="1335" text-anchor="end">timestamp</text>
+  </g>
+
+  <!-- Table: SOSEvent -->
+  <g id="table-SOSEvent">
+    <rect class="table-box" x="2570" y="1362" width="580" height="228" rx="4" />
+    <rect class="header-box" x="2570" y="1362" width="580" height="36" rx="4" />
+    <text class="table-title" x="2586" y="1386">SOSEvent</text>
+    <text class="sub-text" x="3134" y="1386" text-anchor="end">8 attributes</text>
+    <line x1="2570" y1="1398" x2="3150" y2="1398" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="1415">[PK]</text>
+    <text class="field-name" x="2645" y="1415">id*</text>
+    <text class="field-type" x="3134" y="1415" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="2571" y="1422" width="578" height="24" />
+    <line x1="2570" y1="1422" x2="3150" y2="1422" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="1439">[FK]</text>
+    <text class="field-name" x="2645" y="1439">residentId*</text>
+    <text class="field-type" x="3134" y="1439" text-anchor="end">varchar</text>
+    <line x1="2570" y1="1446" x2="3150" y2="1446" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="1463">[FK]</text>
+    <text class="field-name" x="2645" y="1463">propertyId*</text>
+    <text class="field-type" x="3134" y="1463" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="2571" y="1470" width="578" height="24" />
+    <line x1="2570" y1="1470" x2="3150" y2="1470" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="1487"></text>
+    <text class="field-name" x="2645" y="1487">status*</text>
+    <text class="field-type" x="3134" y="1487" text-anchor="end">SOSStatus</text>
+    <line x1="2570" y1="1494" x2="3150" y2="1494" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="1511"></text>
+    <text class="field-name" x="2645" y="1511">triggeredAt*</text>
+    <text class="field-type" x="3134" y="1511" text-anchor="end">timestamp</text>
+    <rect class="row-alt" x="2571" y="1518" width="578" height="24" />
+    <line x1="2570" y1="1518" x2="3150" y2="1518" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="1535"></text>
+    <text class="field-name" x="2645" y="1535">acknowledgedBy</text>
+    <text class="field-type" x="3134" y="1535" text-anchor="end">varchar</text>
+    <line x1="2570" y1="1542" x2="3150" y2="1542" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="1559"></text>
+    <text class="field-name" x="2645" y="1559">resolvedAt</text>
+    <text class="field-type" x="3134" y="1559" text-anchor="end">timestamp</text>
+    <rect class="row-alt" x="2571" y="1566" width="578" height="24" />
+    <line x1="2570" y1="1566" x2="3150" y2="1566" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="1583"></text>
+    <text class="field-name" x="2645" y="1583">notes</text>
+    <text class="field-type" x="3134" y="1583" text-anchor="end">varchar</text>
+  </g>
+
+  <!-- Table: InventoryItem -->
+  <g id="table-InventoryItem">
+    <rect class="table-box" x="2570" y="1610" width="580" height="372" rx="4" />
+    <rect class="header-box" x="2570" y="1610" width="580" height="36" rx="4" />
+    <text class="table-title" x="2586" y="1634">InventoryItem</text>
+    <text class="sub-text" x="3134" y="1634" text-anchor="end">14 attributes</text>
+    <line x1="2570" y1="1646" x2="3150" y2="1646" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="1663">[PK]</text>
+    <text class="field-name" x="2645" y="1663">id*</text>
+    <text class="field-type" x="3134" y="1663" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="2571" y="1670" width="578" height="24" />
+    <line x1="2570" y1="1670" x2="3150" y2="1670" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="1687">[FK]</text>
+    <text class="field-name" x="2645" y="1687">propertyId*</text>
+    <text class="field-type" x="3134" y="1687" text-anchor="end">varchar</text>
+    <line x1="2570" y1="1694" x2="3150" y2="1694" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="1711"></text>
+    <text class="field-name" x="2645" y="1711">name*</text>
+    <text class="field-type" x="3134" y="1711" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="2571" y="1718" width="578" height="24" />
+    <line x1="2570" y1="1718" x2="3150" y2="1718" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="1735"></text>
+    <text class="field-name" x="2645" y="1735">category*</text>
+    <text class="field-type" x="3134" y="1735" text-anchor="end">varchar</text>
+    <line x1="2570" y1="1742" x2="3150" y2="1742" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="1759"></text>
+    <text class="field-name" x="2645" y="1759">quantity*</text>
+    <text class="field-type" x="3134" y="1759" text-anchor="end">integer</text>
+    <rect class="row-alt" x="2571" y="1766" width="578" height="24" />
+    <line x1="2570" y1="1766" x2="3150" y2="1766" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="1783"></text>
+    <text class="field-name" x="2645" y="1783">minQuantity*</text>
+    <text class="field-type" x="3134" y="1783" text-anchor="end">integer</text>
+    <line x1="2570" y1="1790" x2="3150" y2="1790" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="1807"></text>
+    <text class="field-name" x="2645" y="1807">status*</text>
+    <text class="field-type" x="3134" y="1807" text-anchor="end">AssetCondition</text>
+    <rect class="row-alt" x="2571" y="1814" width="578" height="24" />
+    <line x1="2570" y1="1814" x2="3150" y2="1814" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="1831"></text>
+    <text class="field-name" x="2645" y="1831">location</text>
+    <text class="field-type" x="3134" y="1831" text-anchor="end">varchar</text>
+    <line x1="2570" y1="1838" x2="3150" y2="1838" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="1855"></text>
+    <text class="field-name" x="2645" y="1855">purchaseDate</text>
+    <text class="field-type" x="3134" y="1855" text-anchor="end">timestamp</text>
+    <rect class="row-alt" x="2571" y="1862" width="578" height="24" />
+    <line x1="2570" y1="1862" x2="3150" y2="1862" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="1879"></text>
+    <text class="field-name" x="2645" y="1879">vendor</text>
+    <text class="field-type" x="3134" y="1879" text-anchor="end">varchar</text>
+    <line x1="2570" y1="1886" x2="3150" y2="1886" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="1903"></text>
+    <text class="field-name" x="2645" y="1903">cost</text>
+    <text class="field-type" x="3134" y="1903" text-anchor="end">decimal</text>
+    <rect class="row-alt" x="2571" y="1910" width="578" height="24" />
+    <line x1="2570" y1="1910" x2="3150" y2="1910" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="1927"></text>
+    <text class="field-name" x="2645" y="1927">warrantyExpiry</text>
+    <text class="field-type" x="3134" y="1927" text-anchor="end">timestamp</text>
+    <line x1="2570" y1="1934" x2="3150" y2="1934" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="1951"></text>
+    <text class="field-name" x="2645" y="1951">createdAt*</text>
+    <text class="field-type" x="3134" y="1951" text-anchor="end">timestamp</text>
+    <rect class="row-alt" x="2571" y="1958" width="578" height="24" />
+    <line x1="2570" y1="1958" x2="3150" y2="1958" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="1975"></text>
+    <text class="field-name" x="2645" y="1975">updatedAt*</text>
+    <text class="field-type" x="3134" y="1975" text-anchor="end">timestamp</text>
+  </g>
+
+  <!-- Table: OperationalTask -->
+  <g id="table-OperationalTask">
+    <rect class="table-box" x="2570" y="2002" width="580" height="300" rx="4" />
+    <rect class="header-box" x="2570" y="2002" width="580" height="36" rx="4" />
+    <text class="table-title" x="2586" y="2026">OperationalTask</text>
+    <text class="sub-text" x="3134" y="2026" text-anchor="end">11 attributes</text>
+    <line x1="2570" y1="2038" x2="3150" y2="2038" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="2055">[PK]</text>
+    <text class="field-name" x="2645" y="2055">id*</text>
+    <text class="field-type" x="3134" y="2055" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="2571" y="2062" width="578" height="24" />
+    <line x1="2570" y1="2062" x2="3150" y2="2062" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="2079">[FK]</text>
+    <text class="field-name" x="2645" y="2079">propertyId*</text>
+    <text class="field-type" x="3134" y="2079" text-anchor="end">varchar</text>
+    <line x1="2570" y1="2086" x2="3150" y2="2086" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="2103"></text>
+    <text class="field-name" x="2645" y="2103">title*</text>
+    <text class="field-type" x="3134" y="2103" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="2571" y="2110" width="578" height="24" />
+    <line x1="2570" y1="2110" x2="3150" y2="2110" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="2127"></text>
+    <text class="field-name" x="2645" y="2127">category*</text>
+    <text class="field-type" x="3134" y="2127" text-anchor="end">varchar</text>
+    <line x1="2570" y1="2134" x2="3150" y2="2134" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="2151"></text>
+    <text class="field-name" x="2645" y="2151">priority*</text>
+    <text class="field-type" x="3134" y="2151" text-anchor="end">TaskPriority</text>
+    <rect class="row-alt" x="2571" y="2158" width="578" height="24" />
+    <line x1="2570" y1="2158" x2="3150" y2="2158" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="2175"></text>
+    <text class="field-name" x="2645" y="2175">assignedTo</text>
+    <text class="field-type" x="3134" y="2175" text-anchor="end">varchar</text>
+    <line x1="2570" y1="2182" x2="3150" y2="2182" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="2199"></text>
+    <text class="field-name" x="2645" y="2199">dueDate</text>
+    <text class="field-type" x="3134" y="2199" text-anchor="end">timestamp</text>
+    <rect class="row-alt" x="2571" y="2206" width="578" height="24" />
+    <line x1="2570" y1="2206" x2="3150" y2="2206" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="2223"></text>
+    <text class="field-name" x="2645" y="2223">status*</text>
+    <text class="field-type" x="3134" y="2223" text-anchor="end">TaskStatus</text>
+    <line x1="2570" y1="2230" x2="3150" y2="2230" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="2247"></text>
+    <text class="field-name" x="2645" y="2247">notes</text>
+    <text class="field-type" x="3134" y="2247" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="2571" y="2254" width="578" height="24" />
+    <line x1="2570" y1="2254" x2="3150" y2="2254" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="2271"></text>
+    <text class="field-name" x="2645" y="2271">createdAt*</text>
+    <text class="field-type" x="3134" y="2271" text-anchor="end">timestamp</text>
+    <line x1="2570" y1="2278" x2="3150" y2="2278" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="2295"></text>
+    <text class="field-name" x="2645" y="2295">updatedAt*</text>
+    <text class="field-type" x="3134" y="2295" text-anchor="end">timestamp</text>
+  </g>
+
+  <!-- Table: SupportTicket -->
+  <g id="table-SupportTicket">
+    <rect class="table-box" x="2570" y="2322" width="580" height="324" rx="4" />
+    <rect class="header-box" x="2570" y="2322" width="580" height="36" rx="4" />
+    <text class="table-title" x="2586" y="2346">SupportTicket</text>
+    <text class="sub-text" x="3134" y="2346" text-anchor="end">12 attributes</text>
+    <line x1="2570" y1="2358" x2="3150" y2="2358" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="2375">[PK]</text>
+    <text class="field-name" x="2645" y="2375">id*</text>
+    <text class="field-type" x="3134" y="2375" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="2571" y="2382" width="578" height="24" />
+    <line x1="2570" y1="2382" x2="3150" y2="2382" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="2399">[FK]</text>
+    <text class="field-name" x="2645" y="2399">tenantId</text>
+    <text class="field-type" x="3134" y="2399" text-anchor="end">varchar</text>
+    <line x1="2570" y1="2406" x2="3150" y2="2406" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="2423"></text>
+    <text class="field-name" x="2645" y="2423">creatorEmail*</text>
+    <text class="field-type" x="3134" y="2423" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="2571" y="2430" width="578" height="24" />
+    <line x1="2570" y1="2430" x2="3150" y2="2430" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="2447"></text>
+    <text class="field-name" x="2645" y="2447">creatorName</text>
+    <text class="field-type" x="3134" y="2447" text-anchor="end">varchar</text>
+    <line x1="2570" y1="2454" x2="3150" y2="2454" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="2471"></text>
+    <text class="field-name" x="2645" y="2471">subject*</text>
+    <text class="field-type" x="3134" y="2471" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="2571" y="2478" width="578" height="24" />
+    <line x1="2570" y1="2478" x2="3150" y2="2478" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="2495"></text>
+    <text class="field-name" x="2645" y="2495">description*</text>
+    <text class="field-type" x="3134" y="2495" text-anchor="end">varchar</text>
+    <line x1="2570" y1="2502" x2="3150" y2="2502" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="2519"></text>
+    <text class="field-name" x="2645" y="2519">priority*</text>
+    <text class="field-type" x="3134" y="2519" text-anchor="end">TicketPriority</text>
+    <rect class="row-alt" x="2571" y="2526" width="578" height="24" />
+    <line x1="2570" y1="2526" x2="3150" y2="2526" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="2543"></text>
+    <text class="field-name" x="2645" y="2543">status*</text>
+    <text class="field-type" x="3134" y="2543" text-anchor="end">TicketStatus</text>
+    <line x1="2570" y1="2550" x2="3150" y2="2550" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="2567"></text>
+    <text class="field-name" x="2645" y="2567">assignedAdmin</text>
+    <text class="field-type" x="3134" y="2567" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="2571" y="2574" width="578" height="24" />
+    <line x1="2570" y1="2574" x2="3150" y2="2574" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="2591"></text>
+    <text class="field-name" x="2645" y="2591">internalNotes</text>
+    <text class="field-type" x="3134" y="2591" text-anchor="end">varchar</text>
+    <line x1="2570" y1="2598" x2="3150" y2="2598" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="2615"></text>
+    <text class="field-name" x="2645" y="2615">createdAt*</text>
+    <text class="field-type" x="3134" y="2615" text-anchor="end">timestamp</text>
+    <rect class="row-alt" x="2571" y="2622" width="578" height="24" />
+    <line x1="2570" y1="2622" x2="3150" y2="2622" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="2639"></text>
+    <text class="field-name" x="2645" y="2639">updatedAt*</text>
+    <text class="field-type" x="3134" y="2639" text-anchor="end">timestamp</text>
+  </g>
+
+  <!-- Table: AuditLog -->
+  <g id="table-AuditLog">
+    <rect class="table-box" x="2570" y="2666" width="580" height="324" rx="4" />
+    <rect class="header-box" x="2570" y="2666" width="580" height="36" rx="4" />
+    <text class="table-title" x="2586" y="2690">AuditLog</text>
+    <text class="sub-text" x="3134" y="2690" text-anchor="end">12 attributes</text>
+    <line x1="2570" y1="2702" x2="3150" y2="2702" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="2719">[PK]</text>
+    <text class="field-name" x="2645" y="2719">id*</text>
+    <text class="field-type" x="3134" y="2719" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="2571" y="2726" width="578" height="24" />
+    <line x1="2570" y1="2726" x2="3150" y2="2726" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="2743">[FK]</text>
+    <text class="field-name" x="2645" y="2743">tenantId</text>
+    <text class="field-type" x="3134" y="2743" text-anchor="end">varchar</text>
+    <line x1="2570" y1="2750" x2="3150" y2="2750" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="2767">[FK]</text>
+    <text class="field-name" x="2645" y="2767">propertyId</text>
+    <text class="field-type" x="3134" y="2767" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="2571" y="2774" width="578" height="24" />
+    <line x1="2570" y1="2774" x2="3150" y2="2774" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="2791">[FK]</text>
+    <text class="field-name" x="2645" y="2791">actorId</text>
+    <text class="field-type" x="3134" y="2791" text-anchor="end">varchar</text>
+    <line x1="2570" y1="2798" x2="3150" y2="2798" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="2815"></text>
+    <text class="field-name" x="2645" y="2815">actorName*</text>
+    <text class="field-type" x="3134" y="2815" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="2571" y="2822" width="578" height="24" />
+    <line x1="2570" y1="2822" x2="3150" y2="2822" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="2839"></text>
+    <text class="field-name" x="2645" y="2839">actorRole*</text>
+    <text class="field-type" x="3134" y="2839" text-anchor="end">varchar</text>
+    <line x1="2570" y1="2846" x2="3150" y2="2846" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="2863"></text>
+    <text class="field-name" x="2645" y="2863">action*</text>
+    <text class="field-type" x="3134" y="2863" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="2571" y="2870" width="578" height="24" />
+    <line x1="2570" y1="2870" x2="3150" y2="2870" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="2887"></text>
+    <text class="field-name" x="2645" y="2887">entity*</text>
+    <text class="field-type" x="3134" y="2887" text-anchor="end">varchar</text>
+    <line x1="2570" y1="2894" x2="3150" y2="2894" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="2911">[FK]</text>
+    <text class="field-name" x="2645" y="2911">entityId</text>
+    <text class="field-type" x="3134" y="2911" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="2571" y="2918" width="578" height="24" />
+    <line x1="2570" y1="2918" x2="3150" y2="2918" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="2935"></text>
+    <text class="field-name" x="2645" y="2935">timestamp*</text>
+    <text class="field-type" x="3134" y="2935" text-anchor="end">timestamp</text>
+    <line x1="2570" y1="2942" x2="3150" y2="2942" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="2959"></text>
+    <text class="field-name" x="2645" y="2959">ipAddress</text>
+    <text class="field-type" x="3134" y="2959" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="2571" y="2966" width="578" height="24" />
+    <line x1="2570" y1="2966" x2="3150" y2="2966" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="2983"></text>
+    <text class="field-name" x="2645" y="2983">details*</text>
+    <text class="field-type" x="3134" y="2983" text-anchor="end">varchar</text>
+  </g>
+
+  <!-- Table: Setting -->
+  <g id="table-Setting">
+    <rect class="table-box" x="2570" y="3010" width="580" height="84" rx="4" />
+    <rect class="header-box" x="2570" y="3010" width="580" height="36" rx="4" />
+    <text class="table-title" x="2586" y="3034">Setting</text>
+    <text class="sub-text" x="3134" y="3034" text-anchor="end">2 attributes</text>
+    <line x1="2570" y1="3046" x2="3150" y2="3046" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="3063">[PK]</text>
+    <text class="field-name" x="2645" y="3063">key*</text>
+    <text class="field-type" x="3134" y="3063" text-anchor="end">varchar</text>
+    <rect class="row-alt" x="2571" y="3070" width="578" height="24" />
+    <line x1="2570" y1="3070" x2="3150" y2="3070" stroke="#E0E0E0" stroke-width="1" />
+    <text class="field-pk" x="2582" y="3087"></text>
+    <text class="field-name" x="2645" y="3087">value*</text>
+    <text class="field-type" x="3134" y="3087" text-anchor="end">varchar</text>
+  </g>
+
+  <!-- Footer Legend -->
+  <rect x="20" y="2140" width="3160" height="40" fill="#F4F4F4" stroke="#000000" stroke-width="1.5" />
+  <text class="sub-text" x="40" y="2165">LEGEND: [PK] Primary Key  |  [FK] Foreign Key  |  [UQ] Unique Constraint  |  * Required (NOT NULL)  |  Standard PostgreSQL Data Types</text>
+  <text class="sub-text" x="3160" y="2165" text-anchor="end">Academic Report Quality  |  Compatible with DBdiagram.io  |  Generated from server/prisma/schema.prisma</text>
+</svg>
