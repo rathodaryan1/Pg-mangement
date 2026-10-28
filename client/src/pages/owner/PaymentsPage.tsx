@@ -64,20 +64,25 @@ export const PaymentsPage: React.FC = () => {
   });
 
   // Invoice form
-  const [invoiceForm, setInvoiceForm] = useState({
-    residentId: '',
-    category: 'RENT',
-    amount: '14000',
-    period: 'October 2026',
-    dueDate: '2026-10-05',
-    description: 'Monthly Room Rent'
+  const [invoiceForm, setInvoiceForm] = useState(() => {
+    const now = new Date();
+    const monthName = now.toLocaleString('default', { month: 'long', year: 'numeric' });
+    const dueDate = new Date(now.getFullYear(), now.getMonth(), 5).toISOString().split('T')[0];
+    return {
+      residentId: '',
+      category: 'RENT',
+      amount: '',
+      period: monthName,
+      dueDate: dueDate,
+      description: 'Monthly Room Rent'
+    };
   });
 
   // Deposit form
   const [depositForm, setDepositForm] = useState({
     residentId: '',
-    amount: '28000',
-    notes: '2-Month Move-in Security Deposit'
+    amount: '',
+    notes: 'Move-in Security Deposit'
   });
 
   // Expense form
@@ -919,12 +924,12 @@ export const PaymentsPage: React.FC = () => {
             <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-3 bg-slate-50/50 dark:bg-slate-900/50">
               <div className="flex items-center justify-between border-b pb-2 border-slate-200 dark:border-slate-800">
                 <span className="font-bold text-sm text-slate-900 dark:text-white">URBAN NEST RECEIPT</span>
-                <span className="font-mono text-[#0B4036] dark:text-[#C8A45D] font-bold">{selectedPayment.receiptNumber || 'UN-REC-2026-0901'}</span>
+                <span className="font-mono text-[#0B4036] dark:text-[#C8A45D] font-bold">{selectedPayment.receiptNumber || (selectedPayment.id ? `REC-${selectedPayment.id.slice(-8).toUpperCase()}` : 'N/A')}</span>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <span className="text-slate-400 block text-[10px] uppercase">Resident</span>
-                  <strong className="text-slate-900 dark:text-white">{selectedPayment.residentName || 'Aakash Verma'}</strong>
+                  <strong className="text-slate-900 dark:text-white">{selectedPayment.residentName || 'Resident'}</strong>
                 </div>
                 <div>
                   <span className="text-slate-400 block text-[10px] uppercase">Billing Period</span>
@@ -948,7 +953,7 @@ export const PaymentsPage: React.FC = () => {
                 variant="primary"
                 size="sm"
                 onClick={() => {
-                  toast.error(`Receipt ${selectedPayment.receiptNumber || 'UN-REC'} downloaded as PDF.`);
+                  toast.success(`Receipt ${selectedPayment.receiptNumber || selectedPayment.id?.slice(-8) || 'REC'} downloaded.`);
                   setReceiptModalOpen(false);
                 }}
                 leftIcon={<Download className="w-3.5 h-3.5" />}

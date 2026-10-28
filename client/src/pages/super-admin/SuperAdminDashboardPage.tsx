@@ -219,20 +219,40 @@ export const SuperAdminDashboardPage: React.FC = () => {
           </div>
 
           <div className="space-y-3">
-            {tenantsByPlan.length === 0 ? (
+            {(!tenantsByPlan || tenantsByPlan.length === 0) ? (
               <p className="text-xs text-[#68736D] text-center py-4">No tenant subscription data</p>
             ) : (
-              tenantsByPlan.map((tp, idx) => (
-                <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-[#F8F7F3] border border-[#DDE2DD] text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#0B4036]" />
-                    <span className="font-bold text-[#18231F]">{tp.plan}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-[#0B4036]">{tp._count.id} PG Tenants</span>
-                  </div>
-                </div>
-              ))
+              [...tenantsByPlan]
+                .sort((a, b) => {
+                  const order: Record<string, number> = { STARTER: 1, PROFESSIONAL: 2, ENTERPRISE: 3, TRIAL: 4 };
+                  return (order[a.plan] || 99) - (order[b.plan] || 99);
+                })
+                .map((tp, idx) => {
+                  const count = tp._count?.id || (tp as any).count || 0;
+                  const dotColors: Record<string, string> = {
+                    STARTER: 'bg-emerald-600',
+                    PROFESSIONAL: 'bg-[#C8A45D]',
+                    ENTERPRISE: 'bg-purple-600',
+                    TRIAL: 'bg-blue-600',
+                  };
+                  return (
+                    <div
+                      key={idx}
+                      onClick={() => navigate(`/super-admin/tenants?plan=${tp.plan}`)}
+                      className="flex items-center justify-between p-3 rounded-xl bg-[#F8F7F3] border border-[#DDE2DD] hover:border-[#0B4036]/40 transition-colors cursor-pointer text-xs group"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className={`w-2.5 h-2.5 rounded-full ${dotColors[tp.plan] || 'bg-[#0B4036]'}`} />
+                        <span className="font-bold text-[#18231F] group-hover:text-[#0B4036] transition-colors">{tp.plan}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-[#0B4036] bg-white px-2 py-0.5 rounded-md border border-[#DDE2DD] shadow-2xs">
+                          {count} PG Tenant{count === 1 ? '' : 's'}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })
             )}
           </div>
 
@@ -260,10 +280,10 @@ export const SuperAdminDashboardPage: React.FC = () => {
           </div>
 
           <div className="space-y-2.5">
-            {recentActivity.length === 0 ? (
+            {(!recentActivity || recentActivity.length === 0) ? (
               <p className="text-xs text-[#68736D] text-center py-6">No recent platform activity logged</p>
             ) : (
-              recentActivity.map((log: any) => (
+              (recentActivity || []).map((log: any) => (
                 <div key={log.id} className="p-3 rounded-xl bg-[#F8F7F3] border border-[#DDE2DD] text-xs flex items-start justify-between gap-3">
                   <div className="space-y-0.5">
                     <div className="flex items-center gap-2">

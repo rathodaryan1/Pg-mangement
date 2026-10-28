@@ -132,6 +132,19 @@ export const ownerApi = {
     const res = await api.patch<any>(`/owner/beds/${bedId}`, payload);
     return { data: res.data };
   },
+  deallocateBed: async (
+    bedId: string,
+    data?: {
+      moveOut?: boolean;
+      deductions?: number;
+      deductionNotes?: string;
+      refundAmount?: number;
+      remarks?: string;
+    }
+  ): Promise<{ data: any }> => {
+    const res = await api.post<any>(`/owner/beds/${bedId}/deallocate`, data || {});
+    return { data: res.data };
+  },
 
   // 5. Residents & Dossier (CRUD)
   getResidents: async (params?: string | { propertyId?: string; status?: string; search?: string }): Promise<{ data: any[] }> => {

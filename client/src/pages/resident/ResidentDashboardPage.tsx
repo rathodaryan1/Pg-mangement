@@ -22,10 +22,13 @@ import { Modal } from '../../components/ui/Modal';
 import { QRPassCard } from '../../components/ui/QRPassCard';
 import { residentApi } from '../../services/residentApi';
 import type { ResidentDashboardData } from '../../services/residentApi';
+import { useToast } from '../../context/ToastContext';
 
 export const ResidentDashboardPage: React.FC = () => {
+  const { toast } = useToast();
   const [data, setData] = useState<ResidentDashboardData | null>(null);
-  const [activeVisitorPass, setActiveVisitorPass] = useState<any | null>(null);
+  const [residentPass, setResidentPass] = useState<any | null>(null);
+  const [isLoadingPass, setIsLoadingPass] = useState(false);
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -36,16 +39,26 @@ export const ResidentDashboardPage: React.FC = () => {
     try {
       const res = await residentApi.getDashboard();
       setData(res);
-      if (res.activeVisitors && res.activeVisitors.length > 0) {
-        setActiveVisitorPass(res.activeVisitors[0]);
-      } else {
-        setActiveVisitorPass(null);
-      }
     } catch (err: any) {
       console.error('Failed to load dashboard:', err.message);
       setError(err.message || 'Unable to load dashboard data. Please check connection.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleOpenResidentQR = async () => {
+    setIsLoadingPass(true);
+    try {
+      const passData = await residentApi.getResidentQRPass();
+      setResidentPass(passData);
+      setQrModalOpen(true);
+    } catch (err: any) {
+      console.error('Failed to fetch resident QR pass:', err);
+      toast.error(err.message || 'Unable to retrieve active resident gate pass.');
+      setResidentPass(null);
+    } finally {
+      setIsLoadingPass(false);
     }
   };
 
@@ -114,17 +127,16 @@ export const ResidentDashboardPage: React.FC = () => {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            {activeVisitorPass && (
-              <Button
-                variant="gold"
-                size="sm"
-                className="font-bold border-none shadow-md px-4 py-2.5"
-                onClick={() => setQrModalOpen(true)}
-                leftIcon={<QrCode className="w-4 h-4" />}
-              >
-                View Active QR Pass
-              </Button>
-            )}
+            <Button
+              variant="gold"
+              size="sm"
+              className="font-bold border-none shadow-md px-4 py-2.5"
+              onClick={handleOpenResidentQR}
+              isLoading={isLoadingPass}
+              leftIcon={<QrCode className="w-4 h-4" />}
+            >
+              My Resident QR
+            </Button>
             <Link to="/resident/emergency">
               <Button
                 variant="danger"
@@ -321,12 +333,29 @@ export const ResidentDashboardPage: React.FC = () => {
         </Card>
       )}
 
-      {/* Active QR Gate Pass Modal */}
-      {activeVisitorPass && (
-        <Modal isOpen={qrModalOpen} onClose={() => setQrModalOpen(false)} maxWidth="sm">
-          <QRPassCard visitor={activeVisitorPass} />
-        </Modal>
-      )}
+      {/* Resident Personal QR Modal */}
+      <Modal
+        isOpen={qrModalOpen}
+        onClose={() => setQrModalOpen(false)}
+        title="My Resident QR Pass"
+        description="Gate access pass for authorized turnstile and security desk verification"
+        maxWidth="sm"
+        showBackButton={true}
+        onBack={() => setQrModalOpen(false)}
+      >
+        {residentPass ? (
+          <QRPassCard
+            type="RESIDENT"
+            residentPass={residentPass}
+            onClose={() => setQrModalOpen(false)}
+            onBack={() => setQrModalOpen(false)}
+          />
+        ) : (
+          <div className="py-8 text-center text-xs text-slate-500">
+            Loading your resident pass...
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

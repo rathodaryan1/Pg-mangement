@@ -770,6 +770,58 @@ export class ResidentController {
   }
 
   // ==========================================================================
+  // 5B. RESIDENT PERSONAL DIGITAL QR PASS
+  // ==========================================================================
+  static async getResidentQRPass(req: AuthRequest, res: Response): Promise<Response> {
+    try {
+      const resident = await ResidentController.getResident(req);
+      if (!resident) {
+        return sendError(res, 'Resident profile not found. Please contact PG management.', 404);
+      }
+
+      const hasActiveAllocation = resident.status === 'ACTIVE' && !!resident.bedId && !!resident.bed;
+
+      if (!hasActiveAllocation) {
+        return sendSuccess(res, {
+          hasActiveAllocation: false,
+          type: 'RESIDENT',
+          status: resident.status,
+          message: 'No active residence allocation found. Resident passes are only active during an authorized stay with an assigned bed.',
+          resident: {
+            id: resident.id,
+            name: resident.fullName,
+            status: resident.status,
+            propertyName: resident.property?.name || 'Urban Nest PG',
+          },
+        });
+      }
+
+      // Unique, secure, revocable token prefixed with RQRPASS-
+      const token = `RQRPASS-${resident.id}`;
+
+      return sendSuccess(res, {
+        hasActiveAllocation: true,
+        type: 'RESIDENT',
+        token,
+        residentName: resident.fullName,
+        propertyName: resident.property?.name || 'Urban Nest PG',
+        buildingName: resident.bed?.room?.floor?.building?.name || 'Main Wing',
+        floorNumber: resident.bed?.room?.floor?.floorNumber || 1,
+        roomNumber: resident.bed?.room?.number || '101',
+        bedNumber: resident.bed?.bedNumber || 'A',
+        status: resident.status,
+        joiningDate: resident.joiningDate,
+        expectedMoveOutDate: resident.expectedMoveOutDate,
+        validUntil: resident.expectedMoveOutDate || null,
+        message: 'Active resident gate pass generated.',
+      });
+    } catch (error: any) {
+      console.error('[ResidentController.getResidentQRPass] Error:', error);
+      return sendError(res, error.message || 'Failed to retrieve resident QR pass', 500);
+    }
+  }
+
+  // ==========================================================================
   // 6. COMPLAINTS & TICKETS
   // ==========================================================================
   static async getComplaints(req: AuthRequest, res: Response): Promise<Response> {

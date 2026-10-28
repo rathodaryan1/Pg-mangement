@@ -36,6 +36,9 @@ router.post('/rooms', checkPlanLimit('rooms') as any, OwnerController.createRoom
 router.patch('/rooms/:id', OwnerController.updateRoom as any);
 router.delete('/rooms/:id', OwnerController.archiveRoom as any);
 router.patch('/beds/:bedId', OwnerController.updateBedStatus as any);
+router.patch('/beds/:id', OwnerController.updateBedStatus as any);
+router.post('/beds/:bedId/deallocate', OwnerController.deallocateBed as any);
+router.post('/beds/:id/deallocate', OwnerController.deallocateBed as any);
 
 // 5. Residents & Dossier (CRUD)
 router.get('/residents', OwnerController.getResidents as any);

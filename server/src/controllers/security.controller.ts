@@ -92,6 +92,7 @@ export class SecurityController {
   }
 
   // -------------------------------------------------------------
+  // -------------------------------------------------------------
   // 2. PASS VERIFICATION & PREVIEW
   // -------------------------------------------------------------
   static async verifyPass(req: AuthRequest, res: Response): Promise<Response> {
@@ -106,6 +107,115 @@ export class SecurityController {
         cleanToken = cleanToken.split('/gate/verify/').pop() || cleanToken;
       }
 
+      const isSuperAdmin = req.user?.role === 'SUPER_ADMIN';
+
+      // =========================================================
+      // A. RESIDENT'S PERSONAL QR PASS VERIFICATION (RQRPASS-)
+      // =========================================================
+      if (cleanToken.startsWith('RQRPASS-')) {
+        const residentId = cleanToken.replace('RQRPASS-', '').trim();
+
+        const resident = await withDbRetry(() =>
+          prisma.resident.findFirst({
+            where: {
+              OR: [
+                { id: residentId },
+                { id: { startsWith: residentId.split('-')[0] } },
+              ],
+            },
+            include: {
+              property: { select: { id: true, name: true, tenantId: true } },
+              bed: {
+                select: {
+                  bedNumber: true,
+                  room: {
+                    select: {
+                      number: true,
+                      floor: { select: { floorNumber: true, building: { select: { name: true } } } },
+                    },
+                  },
+                },
+              },
+            },
+          })
+        );
+
+        if (!resident) {
+          return sendSuccess(res, {
+            valid: false,
+            type: 'RESIDENT',
+            status: 'INVALID',
+            message: 'Invalid or revoked Resident QR pass.',
+          });
+        }
+
+        // Cross-tenant & property scoping check
+        if (!isSuperAdmin) {
+          if (req.user?.tenantId && resident.property?.tenantId && resident.property.tenantId !== req.user.tenantId) {
+            return sendError(res, 'Access denied: Resident belongs to a different tenant organization.', 403, 'FORBIDDEN_TENANT');
+          }
+          if (req.user?.propertyId && req.user.propertyId !== resident.propertyId) {
+            return sendError(res, 'Access denied: Resident belongs to a different property.', 403, 'FORBIDDEN_PROPERTY');
+          }
+        }
+
+        const hasActiveAllocation = resident.status === 'ACTIVE' && !!resident.bed;
+
+        if (!hasActiveAllocation) {
+          return sendSuccess(res, {
+            valid: false,
+            type: 'RESIDENT',
+            status: resident.status,
+            canCheckIn: false,
+            canCheckOut: false,
+            resident: {
+              id: resident.id,
+              fullName: resident.fullName,
+              mobile: resident.mobile,
+              propertyName: resident.property?.name,
+              status: resident.status,
+            },
+            message: 'Resident pass is INACTIVE or revoked. No active bed allocation found.',
+          });
+        }
+
+        // Audit resident gate scan
+        await AuditService.log({
+          propertyId: resident.propertyId,
+          actorId: req.user?.id || null,
+          actorName: req.user?.name || 'Security Guard',
+          actorRole: req.user?.role || 'SECURITY_GUARD',
+          action: 'RESIDENT_GATE_SCAN',
+          entity: 'Resident',
+          entityId: resident.id,
+          ipAddress: req.ip,
+          details: `Active Resident ${resident.fullName} scanned pass at security gate. Verified room allocation.`,
+        }).catch(() => {});
+
+        return sendSuccess(res, {
+          valid: true,
+          type: 'RESIDENT',
+          status: 'ACTIVE',
+          canCheckIn: false,
+          canCheckOut: false,
+          resident: {
+            id: resident.id,
+            fullName: resident.fullName,
+            mobile: resident.mobile,
+            roomNumber: resident.bed?.room?.number || 'N/A',
+            bedNumber: resident.bed?.bedNumber || 'N/A',
+            buildingName: resident.bed?.room?.floor?.building?.name || 'Main Wing',
+            floorNumber: resident.bed?.room?.floor?.floorNumber || 1,
+            propertyName: resident.property?.name || 'Urban Nest',
+            status: resident.status,
+          },
+          message: 'Verified Active Resident. Gate access granted.',
+        });
+      }
+
+      // =========================================================
+      // B. VISITOR QR PASS VERIFICATION (VPASS- or UUID)
+      // =========================================================
       const visitor = await withDbRetry(() =>
         prisma.visitorRequest.findFirst({
           where: {
@@ -136,13 +246,13 @@ export class SecurityController {
       if (!visitor) {
         return sendSuccess(res, {
           valid: false,
+          type: 'VISITOR',
           status: 'INVALID',
           message: 'Invalid or forged QR pass token.',
         });
       }
 
       // Tenant / Property isolation check
-      const isSuperAdmin = req.user?.role === 'SUPER_ADMIN';
       if (!isSuperAdmin) {
         if (req.user?.tenantId && visitor.property?.tenantId && visitor.property.tenantId !== req.user.tenantId) {
           return sendError(res, 'Access denied: Visitor pass belongs to a different tenant.', 403, 'FORBIDDEN_TENANT');
@@ -152,37 +262,106 @@ export class SecurityController {
         }
       }
 
-      const canCheckIn = visitor.status === 'APPROVED';
-      const canCheckOut = visitor.status === 'CHECKED_IN';
+      const passPayload = {
+        id: visitor.id,
+        qrPassToken: visitor.qrPassToken,
+        visitorName: visitor.visitorName,
+        visitorMobile: visitor.visitorMobile,
+        relation: visitor.relation,
+        purpose: visitor.purpose,
+        visitDate: visitor.visitDate,
+        expectedEntryTime: visitor.expectedEntryTime,
+        expectedExitTime: visitor.expectedExitTime,
+        status: visitor.status,
+        checkInTime: visitor.checkInTime,
+        checkOutTime: visitor.checkOutTime,
+        residentName: visitor.resident?.fullName || 'Direct Walk-in',
+        residentRoom: visitor.resident?.bed?.room?.number || 'N/A',
+        residentBed: visitor.resident?.bed?.bedNumber || 'N/A',
+        propertyName: visitor.property?.name,
+      };
+
+      // Handle PENDING pass scans: Record arrival and forward request without granting entry
+      if (visitor.status === 'PENDING') {
+        await AuditService.log({
+          propertyId: visitor.propertyId,
+          actorId: req.user?.id || null,
+          actorName: req.user?.name || 'Security Guard',
+          actorRole: req.user?.role || 'SECURITY_GUARD',
+          action: 'VISITOR_ARRIVAL_SCANNED',
+          entity: 'VisitorRequest',
+          entityId: visitor.id,
+          ipAddress: req.ip,
+          details: `Visitor ${visitor.visitorName} arrived at gate and scanned pass. Forwarded to management for approval.`,
+        }).catch(() => {});
+
+        return sendSuccess(res, {
+          valid: false,
+          type: 'VISITOR',
+          status: 'PENDING',
+          canCheckIn: false,
+          canCheckOut: false,
+          pass: passPayload,
+          message: 'Visitor pass is PENDING owner/manager approval. Gate check-in cannot be authorized until approved.',
+        });
+      }
+
+      if (visitor.status === 'APPROVED') {
+        return sendSuccess(res, {
+          valid: true,
+          type: 'VISITOR',
+          status: 'APPROVED',
+          canCheckIn: true,
+          canCheckOut: false,
+          pass: passPayload,
+          message: 'Approved pass verified. Ready for security gate check-in.',
+        });
+      }
+
+      if (visitor.status === 'CHECKED_IN') {
+        return sendSuccess(res, {
+          valid: true,
+          type: 'VISITOR',
+          status: 'CHECKED_IN',
+          canCheckIn: false,
+          canCheckOut: true,
+          pass: passPayload,
+          message: 'Visitor is currently inside premises. Ready for check-out.',
+        });
+      }
+
+      if (visitor.status === 'CHECKED_OUT') {
+        return sendSuccess(res, {
+          valid: false,
+          type: 'VISITOR',
+          status: 'CHECKED_OUT',
+          canCheckIn: false,
+          canCheckOut: false,
+          pass: passPayload,
+          message: 'Visit completed. This pass has already been used and cannot be reused.',
+        });
+      }
+
+      if (visitor.status === 'REJECTED') {
+        return sendSuccess(res, {
+          valid: false,
+          type: 'VISITOR',
+          status: 'REJECTED',
+          canCheckIn: false,
+          canCheckOut: false,
+          pass: passPayload,
+          message: 'Entry request was rejected by property administration. Entry strictly forbidden.',
+        });
+      }
 
       return sendSuccess(res, {
-        valid: canCheckIn || canCheckOut,
+        valid: false,
+        type: 'VISITOR',
         status: visitor.status,
-        canCheckIn,
-        canCheckOut,
-        pass: {
-          id: visitor.id,
-          qrPassToken: visitor.qrPassToken,
-          visitorName: visitor.visitorName,
-          visitorMobile: visitor.visitorMobile,
-          relation: visitor.relation,
-          purpose: visitor.purpose,
-          visitDate: visitor.visitDate,
-          expectedEntryTime: visitor.expectedEntryTime,
-          expectedExitTime: visitor.expectedExitTime,
-          status: visitor.status,
-          checkInTime: visitor.checkInTime,
-          checkOutTime: visitor.checkOutTime,
-          residentName: visitor.resident?.fullName || 'Direct Walk-in',
-          residentRoom: visitor.resident?.bed?.room?.number || 'N/A',
-          residentBed: visitor.resident?.bed?.bedNumber || 'N/A',
-          propertyName: visitor.property?.name,
-        },
-        message: canCheckIn
-          ? 'Approved pass ready for gate entry.'
-          : canCheckOut
-          ? 'Visitor is currently inside premises. Ready for check-out.'
-          : `Visitor pass is currently in ${visitor.status} status.`,
+        canCheckIn: false,
+        canCheckOut: false,
+        pass: passPayload,
+        message: `Visitor pass is currently in ${visitor.status} status and cannot be used for entry.`,
       });
     } catch (error: any) {
       console.error('[SecurityController.verifyPass] Error:', error);
@@ -204,6 +383,15 @@ export class SecurityController {
       let cleanToken = token ? decodeURIComponent(token).trim() : '';
       if (cleanToken.includes('/gate/verify/')) {
         cleanToken = cleanToken.split('/gate/verify/').pop() || cleanToken;
+      }
+
+      if (cleanToken.startsWith('RQRPASS-')) {
+        return sendError(
+          res,
+          'Resident passes do not require visitor gate check-in. Resident identity is verified directly upon scan.',
+          400,
+          'RESIDENT_PASS_CANNOT_CHECKIN_AS_VISITOR'
+        );
       }
 
       const visitor = await withDbRetry(() =>

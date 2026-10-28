@@ -99,13 +99,12 @@ export class SuperAdminController {
 
       const occupancyRate = totalBeds > 0 ? Math.round((occupiedBeds / totalBeds) * 100) : 0;
 
-      // Calculate estimated monthly recurring SaaS revenue based on plan pricing
-      const planPricing: Record<string, number> = {
-        TRIAL: 0,
-        STARTER: 2999,
-        PROFESSIONAL: 7999,
-        ENTERPRISE: 19999,
-      };
+      // Calculate estimated monthly recurring SaaS revenue based on persisted database plan pricing
+      const dbPlans = await prisma.plan.findMany();
+      const planPricing: Record<string, number> = { TRIAL: 0, STARTER: 2999, PROFESSIONAL: 7999, ENTERPRISE: 19999 };
+      for (const p of dbPlans) {
+        planPricing[p.tier] = p.priceMonthly;
+      }
 
       let monthlySaaSRevenue = 0;
       for (const curr of tenantsByPlan as any[]) {
@@ -131,6 +130,7 @@ export class SuperAdminController {
             monthlySaaSRevenue,
           },
           tenantsByPlan,
+          planPricing,
           recentActivity: recentAuditLogs,
           systemHealth: {
             database: 'HEALTHY',
@@ -824,12 +824,14 @@ export class SuperAdminController {
   // -------------------------------------------------------------
   static async getPlans(req: AuthRequest, res: Response): Promise<Response | void> {
     try {
-      const plans = await prisma.plan.findMany({
-        orderBy: { priceMonthly: 'asc' },
-      });
+      const plans = await withDbRetry(() =>
+        prisma.plan.findMany({
+          orderBy: { priceMonthly: 'asc' },
+        })
+      ).catch(() => []);
 
-      // Default plans if none seeded
-      if (plans.length === 0) {
+      // Default plans if none seeded or db transient error
+      if (!plans || plans.length === 0) {
         const defaultPlans = [
           {
             id: 'plan-starter',
@@ -1392,4 +1394,5 @@ export class SuperAdminController {
     });
   }
 }
+
 

@@ -34,6 +34,7 @@ router.post('/payments/verify', ResidentController.verifyPayment as any);
 router.get('/payments/:id/receipt', ResidentController.getReceipt as any);
 
 // 5. Visitors & QR Pass
+router.get('/qr-pass', ResidentController.getResidentQRPass as any);
 router.get('/visitors', ResidentController.getVisitors as any);
 router.post('/visitors', ResidentController.createVisitorRequest as any);
 router.get('/visitors/:id', ResidentController.getVisitorById as any);

@@ -182,7 +182,11 @@ export const residentApi = {
     return res.data!;
   },
 
-  // 5. Visitors
+  // 5. Resident Digital QR Pass & Visitors
+  getResidentQRPass: async () => {
+    const res = await api.get<any>('/resident/qr-pass');
+    return res.data!;
+  },
   getVisitors: async () => {
     const res = await api.get<any[]>('/resident/visitors');
     return res.data || [];

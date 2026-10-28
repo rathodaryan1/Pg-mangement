@@ -83,14 +83,14 @@ export const OwnerDashboardPage: React.FC = () => {
     baseRent: '12000'
   });
 
-  const [chargeForm, setChargeForm] = useState({
+  const [chargeForm, setChargeForm] = useState(() => ({
     residentId: '',
     category: 'RENT',
     amount: '',
-    period: 'October 2026',
+    period: new Date().toLocaleString('default', { month: 'long', year: 'numeric' }),
     dueDate: new Date().toISOString().split('T')[0],
     description: ''
-  });
+  }));
 
   const [expenseForm, setExpenseForm] = useState({
     title: '',
@@ -203,7 +203,7 @@ export const OwnerDashboardPage: React.FC = () => {
       });
       setCreateChargeModal(false);
       showToast('Charge invoice generated successfully!');
-      setChargeForm({ residentId: '', category: 'RENT', amount: '', period: 'October 2026', dueDate: new Date().toISOString().split('T')[0], description: '' });
+      setChargeForm({ residentId: '', category: 'RENT', amount: '', period: new Date().toLocaleString('default', { month: 'long', year: 'numeric' }), dueDate: new Date().toISOString().split('T')[0], description: '' });
       fetchDashboard();
     } catch (err: any) {
       toast.error(err.message || 'Failed to create charge');

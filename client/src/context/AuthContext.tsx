@@ -20,16 +20,16 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const DEFAULT_PROPERTY: Property = {
-  id: 'prop-1',
-  name: 'Urban Nest PG Living',
-  address: 'Plot 12, Opp. Gujarat University, Navrangpura, Ahmedabad',
-  city: 'Ahmedabad',
-  phone: '+91 79 2685 4321',
-  email: 'contact@urbannestpg.com',
-  totalRooms: 12,
-  occupiedRooms: 10,
-  totalBeds: 24,
-  occupiedBeds: 20,
+  id: '',
+  name: '',
+  address: '',
+  city: '',
+  phone: '',
+  email: '',
+  totalRooms: 0,
+  occupiedRooms: 0,
+  totalBeds: 0,
+  occupiedBeds: 0,
   type: 'CO_LIVING',
 };
 
@@ -83,7 +83,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             mobile: res.data.mobile || '',
             tenantId: res.data.tenantId,
             tenant: res.data.tenant,
-            propertyId: res.data.propertyId || 'prop-1',
+            propertyId: res.data.propertyId || '',
             residentId: res.data.residentId,
           };
           setUser(authUser);
@@ -166,7 +166,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           mobile: res.data.user.mobile || '',
           tenantId: res.data.user.tenantId,
           tenant: res.data.user.tenant,
-          propertyId: res.data.user.propertyId || 'prop-1',
+          propertyId: res.data.user.propertyId || '',
           residentId: res.data.user.residentId,
         };
         setUser(loggedInUser);

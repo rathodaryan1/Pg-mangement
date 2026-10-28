@@ -73,6 +73,11 @@ export const VisitorsPage: React.FC = () => {
 
   useEffect(() => {
     fetchData();
+    // Live update polling for arrival requests and status changes
+    const pollInterval = setInterval(() => {
+      fetchData();
+    }, 8000);
+    return () => clearInterval(pollInterval);
   }, [activeProperty]);
 
   const showToast = (msg: string) => {
@@ -484,14 +489,22 @@ export const VisitorsPage: React.FC = () => {
 
       {/* QR Pass Modal */}
       {selectedVisitor && (
-        <Modal isOpen={qrModalOpen} onClose={() => setQrModalOpen(false)} maxWidth="sm">
+        <Modal
+          isOpen={qrModalOpen}
+          onClose={() => setQrModalOpen(false)}
+          title="Visitor Gate Pass"
+          description="Machine-scannable gate security pass"
+          maxWidth="sm"
+          showBackButton={true}
+          onBack={() => setQrModalOpen(false)}
+        >
           <div className="py-2">
-            <QRPassCard visitor={selectedVisitor} />
-            <div className="mt-4 flex justify-center">
-              <Button variant="outline" size="sm" onClick={() => setQrModalOpen(false)}>
-                Close Pass Modal
-              </Button>
-            </div>
+            <QRPassCard
+              type="VISITOR"
+              visitor={selectedVisitor}
+              onClose={() => setQrModalOpen(false)}
+              onBack={() => setQrModalOpen(false)}
+            />
           </div>
         </Modal>
       )}

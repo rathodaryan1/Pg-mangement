@@ -9,6 +9,9 @@ export interface ModalProps {
   description?: string;
   children: React.ReactNode;
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+  showCloseButton?: boolean;
+  showBackButton?: boolean;
+  onBack?: () => void;
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -17,7 +20,10 @@ export const Modal: React.FC<ModalProps> = ({
   title,
   description,
   children,
-  maxWidth = 'lg'
+  maxWidth = 'lg',
+  showCloseButton = true,
+  showBackButton = false,
+  onBack
 }) => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -43,28 +49,56 @@ export const Modal: React.FC<ModalProps> = ({
     '2xl': 'max-w-2xl'
   };
 
+  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-fade-in overflow-y-auto">
+    <div
+      role="dialog"
+      aria-modal="true"
+      onClick={handleBackdropClick}
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in overflow-y-auto"
+    >
       <div
-        className={`w-full ${widthClasses[maxWidth]} max-h-[90vh] flex flex-col bg-white border border-[#DDE2DD] rounded-2xl shadow-xl overflow-hidden transform transition-all animate-slide-up my-auto`}
+        className={`w-full ${widthClasses[maxWidth]} max-h-[92vh] flex flex-col bg-white border border-[#DDE2DD] rounded-2xl shadow-2xl overflow-hidden transform transition-all animate-slide-up my-auto relative`}
         onClick={(e) => e.stopPropagation()}
       >
-        {(title || description) && (
-          <div className="flex items-start justify-between p-6 border-b border-[#DDE2DD] shrink-0 bg-white">
-            <div>
-              {title && <h3 className="text-lg font-bold text-[#18231F]">{title}</h3>}
-              {description && <p className="mt-1 text-xs text-[#68736D]">{description}</p>}
+        {/* Header Bar */}
+        {(title || description || showBackButton || showCloseButton) && (
+          <div className="flex items-center justify-between p-4 sm:p-5 border-b border-[#DDE2DD] shrink-0 bg-white">
+            <div className="flex items-center gap-2.5 min-w-0">
+              {showBackButton && (
+                <button
+                  type="button"
+                  onClick={onBack || onClose}
+                  className="p-1.5 -ml-1 text-[#68736D] hover:text-[#18231F] rounded-lg hover:bg-[#F8F7F3] transition-colors flex items-center gap-1 text-xs font-semibold"
+                  aria-label="Go back"
+                >
+                  <span className="font-bold">←</span> Back
+                </button>
+              )}
+              <div className="min-w-0">
+                {title && <h3 className="text-base sm:text-lg font-bold text-[#18231F] truncate">{title}</h3>}
+                {description && <p className="mt-0.5 text-xs text-[#68736D] line-clamp-1">{description}</p>}
+              </div>
             </div>
-            <button
-              onClick={onClose}
-              className="p-1.5 text-[#68736D] hover:text-[#18231F] rounded-lg hover:bg-[#F8F7F3] transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            {showCloseButton && (
+              <button
+                type="button"
+                onClick={onClose}
+                className="p-1.5 text-[#68736D] hover:text-[#18231F] rounded-lg hover:bg-[#F8F7F3] transition-colors shrink-0 ml-2"
+                aria-label="Close modal"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            )}
           </div>
         )}
 
-        <div className="p-6 overflow-y-auto flex-1">{children}</div>
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1">{children}</div>
       </div>
     </div>
   );

@@ -783,19 +783,24 @@ export class OwnerController {
   static async updateBedStatus(req: AuthRequest, res: Response): Promise<Response> {
     try {
       const { status, monthlyRent } = req.body;
+      const bedId = req.params.bedId || req.params.id;
+
+      if (!bedId) {
+        return sendError(res, 'Bed ID is required', 400);
+      }
 
       if (status === 'AVAILABLE') {
         const bed = await prisma.bed.findUnique({
-          where: { id: req.params.id },
+          where: { id: bedId },
           include: { resident: true },
         });
         if (bed?.resident && (bed.resident.status === 'ACTIVE' || bed.resident.status === 'NOTICE_PERIOD')) {
-          return sendError(res, 'Cannot mark bed as AVAILABLE while an active resident is allocated. Please process a move-out or transfer first.', 400);
+          return sendError(res, 'Cannot mark bed as AVAILABLE while an active resident is allocated. Please process a move-out or deallocate first.', 400);
         }
       }
 
       const updated = await prisma.bed.update({
-        where: { id: req.params.id },
+        where: { id: bedId },
         data: {
           ...(status && { status }),
           ...(monthlyRent !== undefined && { monthlyRent: parseFloat(monthlyRent) }),
@@ -805,6 +810,108 @@ export class OwnerController {
       return sendSuccess(res, updated, 'Bed updated successfully');
     } catch (error: any) {
       return sendError(res, error.message || 'Failed to update bed status', 500);
+    }
+  }
+
+  static async deallocateBed(req: AuthRequest, res: Response): Promise<Response> {
+    try {
+      const bedId = req.params.bedId || req.params.id;
+      const { moveOut = true, deductions, deductionNotes, refundAmount, remarks } = req.body;
+
+      if (!bedId) {
+        return sendError(res, 'Bed ID is required', 400);
+      }
+
+      const bed = await prisma.bed.findUnique({
+        where: { id: bedId },
+        include: {
+          resident: true,
+          room: { include: { floor: { include: { building: true } } } },
+        },
+      });
+
+      if (!bed) {
+        return sendError(res, 'Bed not found', 404);
+      }
+
+      const resident = bed.resident || (await prisma.resident.findFirst({ where: { bedId } }));
+
+      const result = await prisma.$transaction(async (tx) => {
+        // 1. Release Bed back to AVAILABLE
+        const updatedBed = await tx.bed.update({
+          where: { id: bedId },
+          data: { status: 'AVAILABLE' },
+          include: { room: true },
+        });
+
+        // 2. Unassign or Move-Out the Resident
+        let updatedResident = null;
+        if (resident) {
+          if (moveOut) {
+            // Full move-out
+            updatedResident = await tx.resident.update({
+              where: { id: resident.id },
+              data: {
+                status: 'MOVED_OUT',
+                bedId: null,
+                expectedMoveOutDate: new Date(),
+              },
+            });
+
+            // Settle security deposit if existing and not refunded
+            const existingDeposit = await tx.securityDeposit.findFirst({
+              where: { residentId: resident.id },
+            });
+            if (existingDeposit && existingDeposit.status !== 'REFUNDED') {
+              const ded = deductions !== undefined ? parseFloat(deductions) : 0;
+              const ref = refundAmount !== undefined ? parseFloat(refundAmount) : Math.max(0, existingDeposit.amount - ded);
+              await tx.securityDeposit.update({
+                where: { id: existingDeposit.id },
+                data: {
+                  status: 'REFUNDED',
+                  deductions: ded,
+                  refundAmount: ref,
+                  notes: deductionNotes || remarks || 'Vacated from room bed allocation',
+                },
+              });
+            }
+          } else {
+            // Unassign bed only, keep resident active
+            updatedResident = await tx.resident.update({
+              where: { id: resident.id },
+              data: {
+                bedId: null,
+              },
+            });
+          }
+        }
+
+        return { bed: updatedBed, resident: updatedResident };
+      }, { maxWait: 15000, timeout: 30000 });
+
+      // Audit log
+      const propId = bed.room?.propertyId || (await OwnerController.resolvePropertyScope(req)).propertyId;
+      await AuditService.log({
+        propertyId: propId,
+        actorId: req.user?.id,
+        actorName: req.user?.name || 'Owner',
+        actorRole: req.user?.role || 'OWNER',
+        action: moveOut ? 'RESIDENT_MOVE_OUT' : 'BED_DEALLOCATED',
+        entity: 'Bed',
+        entityId: bedId,
+        ipAddress: req.ip,
+        details: `${moveOut ? 'Vacated' : 'Unassigned'} bed ${bed.bedNumber} (Resident: ${resident?.fullName || 'N/A'})${remarks ? ` - ${remarks}` : ''}`,
+      }).catch(() => {});
+
+      return sendSuccess(
+        res,
+        result,
+        moveOut
+          ? `Resident ${resident?.fullName || ''} moved out and bed freed successfully`
+          : `Bed ${bed.bedNumber} unassigned successfully`
+      );
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to deallocate bed', 500);
     }
   }
 
@@ -1619,19 +1726,34 @@ export class OwnerController {
       });
       if (!visitor) return sendError(res, 'Visitor request not found', 404);
 
-      // Resolve effective tenant
+      // Resolve effective tenant safely
       let userTenantId = req.user.tenantId;
-      if (!userTenantId && req.user.propertyId) {
-        const userProp = await prisma.property.findUnique({
-          where: { id: req.user.propertyId },
-          select: { tenantId: true },
-        });
-        userTenantId = userProp?.tenantId || null;
+      if (!userTenantId) {
+        if (req.user.propertyId) {
+          const userProp = await prisma.property.findUnique({
+            where: { id: req.user.propertyId },
+            select: { tenantId: true },
+          });
+          userTenantId = userProp?.tenantId || null;
+        } else if (req.user.id) {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: req.user.id },
+            select: { tenantId: true, propertyId: true },
+          });
+          userTenantId = dbUser?.tenantId || null;
+        }
       }
 
       // Cross-tenant protection
       if (req.user.role !== 'SUPER_ADMIN') {
-        if (!userTenantId || visitor.property?.tenantId !== userTenantId) {
+        const isAuthorizedTenant = visitor.property?.tenantId && (
+          visitor.property.tenantId === userTenantId ||
+          (await prisma.tenant.count({
+            where: { id: visitor.property.tenantId, users: { some: { id: req.user.id } } }
+          })) > 0
+        );
+
+        if (!isAuthorizedTenant) {
           return sendError(res, 'Access denied: foreign tenant visitor request', 403);
         }
 
@@ -1642,7 +1764,6 @@ export class OwnerController {
             const authorizedProp = await prisma.property.findFirst({
               where: {
                 id: visitor.propertyId,
-                tenantId: userTenantId,
                 staff: { some: { id: req.user.id } },
               },
             });
@@ -1740,19 +1861,34 @@ export class OwnerController {
       });
       if (!visitor) return sendError(res, 'Visitor request not found', 404);
 
-      // Resolve effective tenant
+      // Resolve effective tenant safely
       let userTenantId = req.user.tenantId;
-      if (!userTenantId && req.user.propertyId) {
-        const userProp = await prisma.property.findUnique({
-          where: { id: req.user.propertyId },
-          select: { tenantId: true },
-        });
-        userTenantId = userProp?.tenantId || null;
+      if (!userTenantId) {
+        if (req.user.propertyId) {
+          const userProp = await prisma.property.findUnique({
+            where: { id: req.user.propertyId },
+            select: { tenantId: true },
+          });
+          userTenantId = userProp?.tenantId || null;
+        } else if (req.user.id) {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: req.user.id },
+            select: { tenantId: true, propertyId: true },
+          });
+          userTenantId = dbUser?.tenantId || null;
+        }
       }
 
       // Cross-tenant protection
       if (req.user.role !== 'SUPER_ADMIN') {
-        if (!userTenantId || visitor.property?.tenantId !== userTenantId) {
+        const isAuthorizedTenant = visitor.property?.tenantId && (
+          visitor.property.tenantId === userTenantId ||
+          (await prisma.tenant.count({
+            where: { id: visitor.property.tenantId, users: { some: { id: req.user.id } } }
+          })) > 0
+        );
+
+        if (!isAuthorizedTenant) {
           return sendError(res, 'Access denied: foreign tenant visitor request', 403);
         }
 
@@ -1763,7 +1899,6 @@ export class OwnerController {
             const authorizedProp = await prisma.property.findFirst({
               where: {
                 id: visitor.propertyId,
-                tenantId: userTenantId,
                 staff: { some: { id: req.user.id } },
               },
             });

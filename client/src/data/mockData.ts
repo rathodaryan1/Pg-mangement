@@ -1,3 +1,10 @@
+/**
+ * @deprecated DISCONNECTED LEGACY FIXTURE DATA
+ * This file is retained exclusively as an offline schema reference and development fixture.
+ * All application pages, dashboards, tables, and workflows consume live dynamic data
+ * from the authenticated backend API and PostgreSQL database.
+ * DO NOT IMPORT OR USE IN PRODUCTION COMPONENTS.
+ */
 import type {
   Property,
   Room,

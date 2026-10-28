@@ -86,19 +86,20 @@ export const SuperAdminRevenuePage: React.FC = () => {
 
         <div className="space-y-3">
           {data?.tenantsByPlan?.map((item: any, idx: number) => {
-            const pricing: Record<string, number> = {
+            const pricing: Record<string, number> = data?.planPricing || {
               TRIAL: 0,
               STARTER: 2999,
               PROFESSIONAL: 7999,
               ENTERPRISE: 19999,
             };
-            const planRevenue = (pricing[item.plan] || 0) * item._count.id;
+            const count = item._count?.id ?? (item as any).count ?? 0;
+            const planRevenue = (pricing[item.plan] || 0) * count;
             const pct = totalRevenue > 0 ? Math.round((planRevenue / totalRevenue) * 100) : 0;
 
             return (
               <div key={idx} className="p-4 rounded-xl bg-[#F8F7F3] border border-[#DDE2DD] space-y-2">
                 <div className="flex items-center justify-between text-xs font-bold text-[#18231F]">
-                  <span>{item.plan} Tier ({item._count.id} Subscriptions)</span>
+                  <span>{item.plan} Tier ({count} Subscription{count === 1 ? '' : 's'})</span>
                   <span className="text-[#0B4036]">₹{planRevenue.toLocaleString('en-IN')} / mo ({pct}%)</span>
                 </div>
                 <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">

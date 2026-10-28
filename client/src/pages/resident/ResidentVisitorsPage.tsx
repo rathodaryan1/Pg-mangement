@@ -200,8 +200,8 @@ export const ResidentVisitorsPage: React.FC = () => {
                   )}
                 </div>
 
-                <div className="pt-2 border-t border-[#DDE2DD] flex items-center justify-between gap-2">
-                  {isApproved && (
+                <div className="pt-2 border-t border-[#DDE2DD] space-y-2">
+                  <div className="flex items-center gap-2">
                     <Button
                       variant="outline"
                       size="sm"
@@ -212,31 +212,30 @@ export const ResidentVisitorsPage: React.FC = () => {
                       }}
                       leftIcon={<QrCode className="w-4 h-4 text-[#0B4036]" />}
                     >
-                      View Digital QR Gate Pass
+                      {vis.status === 'PENDING' ? 'View Pending Pass QR' : 'View Digital QR Gate Pass'}
                     </Button>
-                  )}
-
-                  {isPending && (
-                    <div className="w-full flex items-center justify-between">
-                      <span className="text-[11px] text-amber-700 font-medium flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5" /> Awaiting Warden Approval
-                      </span>
+                    {isPending && (
                       <Button
                         variant="outline"
-                        size="xs"
-                        className="border-rose-300 text-rose-700 bg-rose-50 hover:bg-rose-100 hover:border-rose-400 font-semibold shadow-xs"
+                        size="sm"
+                        className="border-rose-300 text-rose-700 bg-rose-50 hover:bg-rose-100 hover:border-rose-400 font-semibold shadow-xs shrink-0"
                         onClick={() => handleCancelRequest(vis.id)}
                       >
                         Cancel
                       </Button>
-                    </div>
-                  )}
+                    )}
+                  </div>
 
+                  {isPending && (
+                    <span className="text-[11px] text-amber-700 font-medium flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5" /> Awaiting Owner/Manager Approval
+                    </span>
+                  )}
                   {vis.status === 'CANCELLED' && (
-                    <span className="text-[11px] text-[#8A928D]">Pass cancelled</span>
+                    <span className="text-[11px] text-[#8A928D] block">Pass cancelled</span>
                   )}
                   {vis.status === 'CHECKED_OUT' && (
-                    <span className="text-[11px] text-[#8A928D]">Visit completed & checked out</span>
+                    <span className="text-[11px] text-[#8A928D] block">Visit completed & checked out</span>
                   )}
                 </div>
               </Card>
@@ -323,8 +322,21 @@ export const ResidentVisitorsPage: React.FC = () => {
 
       {/* QR Pass Card Modal */}
       {selectedVisitor && (
-        <Modal isOpen={qrModalOpen} onClose={() => setQrModalOpen(false)} maxWidth="sm">
-          <QRPassCard visitor={selectedVisitor} />
+        <Modal
+          isOpen={qrModalOpen}
+          onClose={() => setQrModalOpen(false)}
+          title="Visitor Gate Entry Pass"
+          description="Present or share this digital pass with your guest for security gate verification"
+          maxWidth="sm"
+          showBackButton={true}
+          onBack={() => setQrModalOpen(false)}
+        >
+          <QRPassCard
+            type="VISITOR"
+            visitor={selectedVisitor}
+            onClose={() => setQrModalOpen(false)}
+            onBack={() => setQrModalOpen(false)}
+          />
         </Modal>
       )}
     </div>

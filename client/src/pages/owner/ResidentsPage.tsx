@@ -387,13 +387,13 @@ export const ResidentsPage: React.FC = () => {
                   </div>
                   <div className="p-3 rounded-lg bg-[#F8F7F3] border border-[#DDE2DD] space-y-0.5">
                     <span className="text-[10px] text-[#8A928D] uppercase">Workplace</span>
-                    <p className="font-bold text-[#18231F]">{selectedResident.workCompany || 'Software Engineer'}</p>
+                    <p className="font-bold text-[#18231F]">{selectedResident.workCompany || 'Not specified'}</p>
                   </div>
                 </div>
 
                 <div className="p-3 rounded-lg bg-[#FAF5EB] border border-[#C8A45D]/30 space-y-1">
                   <span className="font-bold text-[#18231F]">Permanent Address:</span>
-                  <p className="text-[#68736D]">{selectedResident.permanentAddress || '24, MG Road, Pune, Maharashtra 411001'}</p>
+                  <p className="text-[#68736D]">{selectedResident.permanentAddress || 'Not provided'}</p>
                 </div>
               </div>
             )}
@@ -401,50 +401,87 @@ export const ResidentsPage: React.FC = () => {
             {/* TAB 2: ROOM & BED */}
             {activeTab === 'room' && (
               <div className="p-4 rounded-xl bg-[#F8F7F3] border border-[#DDE2DD] space-y-2 text-xs">
-                <p>Room: <strong className="text-[#18231F]">Room {selectedResident.roomNumber || '204'}</strong></p>
-                <p>Bed Allocation: <strong className="text-[#0B4036]">Bed {selectedResident.bedNumber || 'A'}</strong></p>
-                <p>Move-In Date: <strong className="text-[#18231F]">{selectedResident.joiningDate?.split('T')[0] || '2026-01-15'}</strong></p>
+                <p>Room: <strong className="text-[#18231F]">{selectedResident.bed?.room?.number || selectedResident.roomNumber ? `Room ${selectedResident.bed?.room?.number || selectedResident.roomNumber}` : 'Unassigned'}</strong></p>
+                <p>Bed Allocation: <strong className="text-[#0B4036]">{selectedResident.bed?.bedNumber || selectedResident.bedNumber ? `Bed ${selectedResident.bed?.bedNumber || selectedResident.bedNumber}` : 'Unallocated'}</strong></p>
+                <p>Move-In Date: <strong className="text-[#18231F]">{selectedResident.joiningDate ? selectedResident.joiningDate.split('T')[0] : 'Not specified'}</strong></p>
               </div>
             )}
 
             {/* TAB 3: KYC & DOCUMENTS */}
             {activeTab === 'kyc' && (
               <div className="space-y-3 text-xs">
-                <div className="p-3 rounded-lg bg-white border border-[#DDE2DD] flex justify-between items-center">
-                  <div>
-                    <span className="font-bold text-[#18231F]">Aadhaar Card (National ID)</span>
-                    <p className="text-[11px] text-[#8A928D]">Uploaded on move-in</p>
+                {selectedResident.documents && selectedResident.documents.length > 0 ? (
+                  selectedResident.documents.map((doc: any) => (
+                    <div key={doc.id} className="p-3 rounded-lg bg-white border border-[#DDE2DD] flex justify-between items-center">
+                      <div>
+                        <span className="font-bold text-[#18231F]">{doc.type || doc.name || 'Identity Document'}</span>
+                        <p className="text-[11px] text-[#8A928D]">{doc.documentNumber ? `No: ${doc.documentNumber}` : `Status: ${doc.status}`}</p>
+                      </div>
+                      <div className="flex gap-2 items-center">
+                        <StatusBadge status={doc.status} />
+                        {doc.status !== 'VERIFIED' && (
+                          <Button variant="outline" size="xs" onClick={() => handleVerifyDoc(doc.id, 'VERIFIED')}>
+                            Verify
+                          </Button>
+                        )}
+                        {doc.status !== 'REJECTED' && (
+                          <Button variant="danger" size="xs" onClick={() => handleVerifyDoc(doc.id, 'REJECTED')}>
+                            Reject
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                ) : selectedResident.kycDocumentType || selectedResident.kycStatus ? (
+                  <div className="p-3 rounded-lg bg-white border border-[#DDE2DD] flex justify-between items-center">
+                    <div>
+                      <span className="font-bold text-[#18231F]">{selectedResident.kycDocumentType || 'National ID / Aadhaar'}</span>
+                      <p className="text-[11px] text-[#8A928D]">{selectedResident.kycDocumentNumber ? `Number: ${selectedResident.kycDocumentNumber}` : 'KYC on file'}</p>
+                    </div>
+                    <div className="flex gap-2 items-center">
+                      <StatusBadge status={selectedResident.kycStatus || 'PENDING'} />
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="xs" onClick={() => handleVerifyDoc('doc-1', 'VERIFIED')}>
-                      Mark Verified
-                    </Button>
-                    <Button variant="danger" size="xs" onClick={() => handleVerifyDoc('doc-1', 'REJECTED')}>
-                      Reject
-                    </Button>
+                ) : (
+                  <div className="p-4 rounded-lg bg-[#F8F7F3] border border-[#DDE2DD] text-center text-[#8A928D]">
+                    No KYC documents uploaded for this resident.
                   </div>
-                </div>
+                )}
               </div>
             )}
 
             {/* TAB 4: PAYMENTS */}
             {activeTab === 'payments' && (
-              <div className="p-3 rounded-lg bg-[#F8F7F3] border border-[#DDE2DD] text-xs text-center text-[#8A928D]">
-                Recent rent records: All dues cleared. Next invoice due 5th Nov.
+              <div className="space-y-2 text-xs">
+                {selectedResident.payments && selectedResident.payments.length > 0 ? (
+                  selectedResident.payments.map((p: any) => (
+                    <div key={p.id} className="p-2.5 rounded-lg bg-white border border-[#DDE2DD] flex justify-between items-center">
+                      <div>
+                        <span className="font-bold text-[#18231F]">{p.type || 'RENT'} - ₹{(p.amount || 0).toLocaleString('en-IN')}</span>
+                        <p className="text-[10px] text-[#8A928D]">{p.period || (p.dueDate ? new Date(p.dueDate).toLocaleDateString() : 'N/A')}</p>
+                      </div>
+                      <StatusBadge status={p.status} />
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-4 rounded-lg bg-[#F8F7F3] border border-[#DDE2DD] text-center text-[#8A928D]">
+                    No payment transactions recorded for this resident.
+                  </div>
+                )}
               </div>
             )}
 
             {/* TAB 5: VISITORS */}
             {activeTab === 'visitors' && (
-              <div className="p-3 rounded-lg bg-[#F8F7F3] border border-[#DDE2DD] text-xs text-center text-[#8A928D]">
-                No recent unverified visitor requests logged for this resident.
+              <div className="p-4 rounded-lg bg-[#F8F7F3] border border-[#DDE2DD] text-xs text-center text-[#8A928D]">
+                No visitor history logged for this resident.
               </div>
             )}
 
             {/* TAB 6: COMPLAINTS */}
             {activeTab === 'complaints' && (
-              <div className="p-3 rounded-lg bg-[#F8F7F3] border border-[#DDE2DD] text-xs text-center text-[#8A928D]">
-                Zero active open complaints reported by resident.
+              <div className="p-4 rounded-lg bg-[#F8F7F3] border border-[#DDE2DD] text-xs text-center text-[#8A928D]">
+                No maintenance complaints on file for this resident.
               </div>
             )}
 

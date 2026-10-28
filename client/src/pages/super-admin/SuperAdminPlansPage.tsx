@@ -23,6 +23,31 @@ import { api } from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import type { Plan } from '../../types';
 
+export const parsePlanFeatures = (features: any): string[] => {
+  if (Array.isArray(features)) return features.map((s) => String(s).trim()).filter(Boolean);
+  if (!features) return [];
+  if (typeof features === 'string') {
+    const trimmed = features.trim();
+    if (!trimmed) return [];
+    if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) return parsed.map((s) => String(s).trim()).filter(Boolean);
+      } catch {
+        // Fallback to comma/line split below
+      }
+    }
+    if (trimmed.includes('\n')) {
+      return trimmed.split('\n').map((s) => s.trim()).filter(Boolean);
+    }
+    if (trimmed.includes(',')) {
+      return trimmed.split(',').map((s) => s.trim()).filter(Boolean);
+    }
+    return [trimmed];
+  }
+  return [];
+};
+
 export const SuperAdminPlansPage: React.FC = () => {
   const { toast } = useToast();
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -48,8 +73,11 @@ export const SuperAdminPlansPage: React.FC = () => {
     setIsLoading(true);
     try {
       const res = await api.get<Plan[]>('/super-admin/plans');
-      if (res.success && res.data) {
-        setPlans(res.data || []);
+      const planList = Array.isArray(res) ? res : res?.data;
+      if (Array.isArray(planList)) {
+        setPlans(planList);
+      } else if (res?.success && res.data) {
+        setPlans(res.data);
       }
     } catch (err: any) {
       console.error('Failed to load plans:', err);
@@ -80,11 +108,7 @@ export const SuperAdminPlansPage: React.FC = () => {
 
   const openEditModal = (plan: Plan) => {
     setEditingPlan(plan);
-    const featuresList = Array.isArray(plan.features)
-      ? plan.features
-      : typeof plan.features === 'string'
-      ? JSON.parse(plan.features || '[]')
-      : [];
+    const featuresList = parsePlanFeatures(plan.features);
 
     setFormState({
       name: plan.name,
@@ -94,7 +118,7 @@ export const SuperAdminPlansPage: React.FC = () => {
       maxProperties: plan.maxProperties,
       maxRooms: plan.maxRooms,
       maxResidents: plan.maxResidents,
-      featuresText: Array.isArray(featuresList) ? featuresList.join('\n') : '',
+      featuresText: featuresList.join('\n'),
     });
     setIsModalOpen(true);
   };
@@ -197,15 +221,27 @@ export const SuperAdminPlansPage: React.FC = () => {
             <div key={i} className="h-80 bg-slate-200 rounded-3xl" />
           ))}
         </div>
+      ) : plans.length === 0 ? (
+        <div className="p-10 text-center border border-[#DDE2DD] rounded-3xl bg-white space-y-4">
+          <Sliders className="w-12 h-12 text-[#0B4036] mx-auto opacity-50" />
+          <h3 className="text-base font-bold text-[#18231F]">No SaaS Subscription Plans Found</h3>
+          <p className="text-xs text-[#68736D] max-w-md mx-auto">
+            You can create custom plan tiers or reload to fetch standard platform configurations.
+          </p>
+          <div className="flex items-center justify-center gap-3 pt-2">
+            <Button variant="secondary" size="sm" onClick={fetchPlans} leftIcon={<RefreshCw className="w-3.5 h-3.5" />}>
+              Refresh Plans
+            </Button>
+            <Button variant="primary" size="sm" onClick={openCreateModal} leftIcon={<Plus className="w-3.5 h-3.5" />}>
+              Create New Plan
+            </Button>
+          </div>
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {plans.map((plan) => {
             const isPro = plan.tier === 'PROFESSIONAL';
-            const features = Array.isArray(plan.features)
-              ? plan.features
-              : typeof plan.features === 'string'
-              ? JSON.parse(plan.features || '[]')
-              : [];
+            const features = parsePlanFeatures(plan.features);
 
             return (
               <Card

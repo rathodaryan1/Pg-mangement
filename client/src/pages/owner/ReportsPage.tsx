@@ -130,9 +130,9 @@ export const ReportsPage: React.FC = () => {
             onChange={(e) => setDateRange(e.target.value)}
             className="px-3 py-2 rounded-xl text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200"
           >
-            <option value="THIS_MONTH">Current Month (September 2026)</option>
-            <option value="LAST_QUARTER">Last Quarter (Q3 2026)</option>
-            <option value="YEAR_TO_DATE">Year to Date (2026)</option>
+            <option value="THIS_MONTH">Current Month ({new Date().toLocaleString('default', { month: 'long', year: 'numeric' })})</option>
+            <option value="LAST_QUARTER">Last Quarter</option>
+            <option value="YEAR_TO_DATE">Year to Date ({new Date().getFullYear()})</option>
           </select>
 
           <Button

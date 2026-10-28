@@ -66,6 +66,19 @@ export const RoomsPage: React.FC = () => {
     leaseEndDate: '2027-09-30'
   });
 
+  // Deallocate / Vacate Bed Modal State
+  const [deallocateModal, setDeallocateModal] = useState<{
+    bed: Bed;
+    roomNumber: string;
+    residentName: string;
+    residentId?: string;
+  } | null>(null);
+  const [deallocateMoveOut, setDeallocateMoveOut] = useState<boolean>(true);
+  const [deallocateDeductions, setDeallocateDeductions] = useState<string>('0');
+  const [deallocateDeductionNotes, setDeallocateDeductionNotes] = useState<string>('');
+  const [deallocateRemarks, setDeallocateRemarks] = useState<string>('');
+  const [isDeallocating, setIsDeallocating] = useState<boolean>(false);
+
   const fetchRooms = async () => {
     try {
       setIsLoading(true);
@@ -181,6 +194,35 @@ export const RoomsPage: React.FC = () => {
       fetchRooms();
     } catch (err: any) {
       toast.error(err.message || 'Failed to update bed status');
+    }
+  };
+
+  const handleDeallocateBed = async () => {
+    if (!deallocateModal) return;
+    try {
+      setIsDeallocating(true);
+      await ownerApi.deallocateBed(deallocateModal.bed.id, {
+        moveOut: deallocateMoveOut,
+        deductions: deallocateDeductions ? parseFloat(deallocateDeductions) : 0,
+        deductionNotes: deallocateDeductionNotes,
+        remarks: deallocateRemarks || (deallocateMoveOut ? 'Resident vacated' : 'Bed unassigned')
+      });
+
+      setToastMessage(
+        deallocateMoveOut
+          ? `Resident ${deallocateModal.residentName} vacated and Bed ${deallocateModal.bed.bedNumber} is now available!`
+          : `Bed ${deallocateModal.bed.bedNumber} unassigned and is now available!`
+      );
+      setTimeout(() => setToastMessage(null), 4000);
+      setDeallocateModal(null);
+      setDeallocateDeductions('0');
+      setDeallocateDeductionNotes('');
+      setDeallocateRemarks('');
+      await fetchRooms();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to remove resident from bed');
+    } finally {
+      setIsDeallocating(false);
     }
   };
 
@@ -385,11 +427,35 @@ export const RoomsPage: React.FC = () => {
                             </span>
                           </div>
 
-                          <div className="mt-2 flex items-center justify-between">
-                            <span className="text-[11px] truncate max-w-[85px] font-medium">
+                          <div className="mt-2 flex items-center justify-between gap-1">
+                            <span
+                              className="text-[11px] truncate flex-1 font-medium"
+                              title={isOccupied ? (bed.residentName || 'Occupied') : undefined}
+                            >
                               {isOccupied ? (bed.residentName || 'Occupied') : isMaintenance ? 'Repair' : isBlocked ? 'Blocked' : 'Available'}
                             </span>
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-1 shrink-0">
+                              {isOccupied && (
+                                <button
+                                  onClick={() => {
+                                    setDeallocateModal({
+                                      bed,
+                                      roomNumber: room.number,
+                                      residentName: bed.residentName || 'Resident',
+                                      residentId: bed.residentId
+                                    });
+                                    setDeallocateMoveOut(true);
+                                    setDeallocateDeductions('0');
+                                    setDeallocateDeductionNotes('');
+                                    setDeallocateRemarks('');
+                                  }}
+                                  className="px-1.5 py-0.5 rounded bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-bold flex items-center gap-0.5 shadow-xs transition-colors"
+                                  title="Remove / Vacate Resident"
+                                >
+                                  <UserMinus className="w-3 h-3" />
+                                  <span>Vacate</span>
+                                </button>
+                              )}
                               {!isOccupied && !isMaintenance && !isBlocked && (
                                 <>
                                   <button
@@ -626,6 +692,115 @@ export const RoomsPage: React.FC = () => {
             </Button>
             <Button variant="danger" size="sm" onClick={handleArchiveRoom}>
               Archive Room
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Deallocate / Vacate Bed Modal */}
+      <Modal
+        isOpen={!!deallocateModal}
+        onClose={() => !isDeallocating && setDeallocateModal(null)}
+        title={`Vacate / Remove Resident from Bed ${deallocateModal?.bed.bedNumber}`}
+        maxWidth="md"
+      >
+        <div className="space-y-4 text-left">
+          {/* Summary Banner */}
+          <div className="p-3 bg-[#FAF5EB] border border-[#C8A45D]/30 rounded-lg flex items-start gap-3">
+            <div className="p-2 rounded-full bg-rose-50 text-rose-600 border border-rose-200">
+              <UserMinus className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-[#18231F]">
+                Resident: {deallocateModal?.residentName}
+              </h4>
+              <p className="text-[11px] text-[#68736D]">
+                Room {deallocateModal?.roomNumber} • Bed {deallocateModal?.bed.bedNumber} (Rent: ₹{(deallocateModal?.bed.monthlyRent || 0).toLocaleString('en-IN')}/mo)
+              </p>
+            </div>
+          </div>
+
+          {/* Action Choice */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-[#18231F]">Select Deallocation Action</label>
+            <div className="space-y-2">
+              <label className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${deallocateMoveOut ? 'border-rose-300 bg-rose-50/50' : 'border-[#DDE2DD] bg-white'}`}>
+                <input
+                  type="radio"
+                  name="deallocateAction"
+                  checked={deallocateMoveOut}
+                  onChange={() => setDeallocateMoveOut(true)}
+                  className="mt-0.5 text-rose-600 focus:ring-rose-500"
+                />
+                <div className="text-xs">
+                  <span className="font-bold text-[#18231F] block">Vacate & Move Out (Full Checkout)</span>
+                  <span className="text-[#68736D] text-[11px] block mt-0.5">
+                    Marks resident status as <strong>MOVED_OUT</strong>, unlinks bed, and frees bed status back to <strong>AVAILABLE</strong> for new residents.
+                  </span>
+                </div>
+              </label>
+
+              <label className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${!deallocateMoveOut ? 'border-amber-300 bg-amber-50/50' : 'border-[#DDE2DD] bg-white'}`}>
+                <input
+                  type="radio"
+                  name="deallocateAction"
+                  checked={!deallocateMoveOut}
+                  onChange={() => setDeallocateMoveOut(false)}
+                  className="mt-0.5 text-amber-600 focus:ring-amber-500"
+                />
+                <div className="text-xs">
+                  <span className="font-bold text-[#18231F] block">Unassign Bed Only (Keep Resident Active)</span>
+                  <span className="text-[#68736D] text-[11px] block mt-0.5">
+                    Frees bed back to <strong>AVAILABLE</strong> while keeping the resident record <strong>ACTIVE</strong> (useful for room transfers or reassignment).
+                  </span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          {/* Optional Settlement fields if Move Out */}
+          {deallocateMoveOut && (
+            <div className="grid grid-cols-2 gap-2 p-3 bg-[#F8F7F3] rounded-lg border border-[#DDE2DD]">
+              <Input
+                label="Deductions from Deposit (₹)"
+                type="number"
+                placeholder="0"
+                value={deallocateDeductions}
+                onChange={(e) => setDeallocateDeductions(e.target.value)}
+              />
+              <Input
+                label="Deduction Reason (Optional)"
+                placeholder="e.g. Electricity, Maintenance"
+                value={deallocateDeductionNotes}
+                onChange={(e) => setDeallocateDeductionNotes(e.target.value)}
+              />
+            </div>
+          )}
+
+          {/* Remarks */}
+          <Input
+            label="Remarks / Reason"
+            placeholder="e.g. Vacating after tenure end / Personal relocation"
+            value={deallocateRemarks}
+            onChange={(e) => setDeallocateRemarks(e.target.value)}
+          />
+
+          <div className="flex justify-end gap-2 pt-3 border-t border-[#DDE2DD]">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setDeallocateModal(null)}
+              disabled={isDeallocating}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={handleDeallocateBed}
+              disabled={isDeallocating}
+            >
+              {isDeallocating ? 'Processing...' : deallocateMoveOut ? 'Vacate Resident' : 'Unassign Bed'}
             </Button>
           </div>
         </div>

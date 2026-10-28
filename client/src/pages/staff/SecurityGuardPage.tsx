@@ -716,7 +716,7 @@ export const SecurityGuardPage: React.FC = () => {
       )}
 
       {/* ========================================================
-          MODAL: PASS VERIFICATION PREVIEW MODAL
+          MODAL: GATE PASS PREVIEW (RESIDENT OR VISITOR)
          ======================================================== */}
       {verifyModalOpen && verifiedPass && (
         <Modal
@@ -725,81 +725,232 @@ export const SecurityGuardPage: React.FC = () => {
             setVerifyModalOpen(false);
             setVerifiedPass(null);
           }}
-          title="Verified Gate Pass Preview"
+          title={verifiedPass.type === 'RESIDENT' ? 'Resident Digital Pass Verification' : 'Visitor Gate Pass Verification'}
+          description="Security gate token verification and identity confirmation"
           maxWidth="md"
+          showBackButton={true}
+          onBack={() => {
+            setVerifyModalOpen(false);
+            setVerifiedPass(null);
+          }}
         >
-          <div className="space-y-4">
-            <div className={`p-4 rounded-xl border flex items-start justify-between ${
-              verifiedPass.isValid ? 'bg-[#EAF2EE]/60 border-[#0B4036]/20' : 'bg-rose-50 border-rose-200'
-            }`}>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono font-bold text-[#0B4036] bg-white px-2 py-0.5 rounded border border-[#DDE2DD]">
-                    {verifiedPass.qrPassToken || verifiedPass.id}
-                  </span>
-                  <StatusBadge status={verifiedPass.status} />
+          {verifiedPass.type === 'RESIDENT' ? (
+            /* RESIDENT PASS PREVIEW */
+            <div className="space-y-4">
+              <div className={`p-4 rounded-xl border flex items-start justify-between ${
+                verifiedPass.valid ? 'bg-[#EAF2EE]/70 border-[#0B4036]/20' : 'bg-rose-50 border-rose-200'
+              }`}>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-mono font-bold text-[#0B4036] bg-white px-2 py-0.5 rounded border border-[#DDE2DD]">
+                      RESIDENT PASS
+                    </span>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                      verifiedPass.valid ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                    }`}>
+                      {verifiedPass.status || (verifiedPass.valid ? 'ACTIVE' : 'INACTIVE')}
+                    </span>
+                  </div>
+                  <h3 className="mt-2 text-base font-extrabold text-[#18231F]">
+                    {verifiedPass.resident?.fullName || 'Active Resident'}
+                  </h3>
+                  <p className="text-xs text-[#68736D] font-mono">
+                    {verifiedPass.resident?.mobile || ''}
+                  </p>
                 </div>
-                <h3 className="mt-2 text-base font-extrabold text-[#18231F]">{verifiedPass.visitorName}</h3>
-                <p className="text-xs text-[#68736D] font-mono">{verifiedPass.visitorMobile}</p>
+
+                <div className="text-right">
+                  <span className="text-[11px] font-semibold text-[#8A928D] block">Allocated Room & Bed</span>
+                  <span className="text-xs font-black text-[#0B4036] block">
+                    Room {verifiedPass.resident?.roomNumber || 'N/A'} • Bed {verifiedPass.resident?.bedNumber || 'N/A'}
+                  </span>
+                  <span className="text-[11px] text-[#68736D] block">
+                    {verifiedPass.resident?.propertyName || 'Urban Nest'}
+                  </span>
+                </div>
               </div>
 
-              <div className="text-right">
-                <span className="text-[11px] font-semibold text-[#8A928D] block">Host Resident</span>
-                <span className="text-xs font-bold text-[#18231F] block">{verifiedPass.residentName}</span>
-                <span className="text-xs font-black text-[#0B4036]">Room {verifiedPass.residentRoom || 'N/A'}</span>
+              <div className={`p-3 rounded-lg border text-xs flex items-center gap-2 ${
+                verifiedPass.valid
+                  ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900 font-medium'
+                  : 'bg-rose-50 border-rose-200 text-rose-800 font-medium'
+              }`}>
+                {verifiedPass.valid ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Active resident identity confirmed. Authorized for turnstile & gate passage.</span>
+                  </>
+                ) : (
+                  <>
+                    <XCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                    <span>{verifiedPass.message || 'Resident pass is inactive or has no valid bed allocation.'}</span>
+                  </>
+                )}
               </div>
-            </div>
 
-            <div className="grid grid-cols-2 gap-3 text-xs">
-              <div className="p-3 bg-[#F8F7F3] rounded-lg border border-[#DDE2DD]">
-                <span className="text-[10px] font-bold text-[#8A928D] uppercase block">Relation / Purpose</span>
-                <span className="font-semibold text-[#18231F] mt-0.5 block">
-                  {verifiedPass.relation || 'Guest'} • {verifiedPass.purpose || 'Visit'}
-                </span>
-              </div>
-              <div className="p-3 bg-[#F8F7F3] rounded-lg border border-[#DDE2DD]">
-                <span className="text-[10px] font-bold text-[#8A928D] uppercase block">Visit Window</span>
-                <span className="font-semibold text-[#18231F] mt-0.5 block">
-                  {verifiedPass.expectedEntryTime || '10:00 AM'} - {verifiedPass.expectedExitTime || '08:00 PM'}
-                </span>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#DDE2DD]">
-              <SecondaryButton
-                size="sm"
-                onClick={() => {
-                  setVerifyModalOpen(false);
-                  setVerifiedPass(null);
-                }}
-              >
-                Close
-              </SecondaryButton>
-
-              {verifiedPass.canCheckIn && (
-                <PrimaryButton
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#DDE2DD]">
+                <SecondaryButton
                   size="sm"
-                  onClick={() => handleConfirmCheckIn(verifiedPass.qrPassToken || verifiedPass.id)}
-                  isLoading={isProcessingAction}
-                  leftIcon={<LogIn className="w-3.5 h-3.5" />}
+                  onClick={() => {
+                    setVerifyModalOpen(false);
+                    setVerifiedPass(null);
+                  }}
                 >
-                  Confirm Gate Check-In
-                </PrimaryButton>
-              )}
-
-              {verifiedPass.canCheckOut && (
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => handleConfirmCheckOut(verifiedPass.id)}
-                  isLoading={isProcessingAction}
-                  leftIcon={<LogOut className="w-3.5 h-3.5 text-[#C8A45D]" />}
-                >
-                  Confirm Gate Check-Out
-                </Button>
-              )}
+                  Close
+                </SecondaryButton>
+                {verifiedPass.valid && (
+                  <PrimaryButton
+                    size="sm"
+                    onClick={() => {
+                      toast.success(`Resident ${verifiedPass.resident?.fullName || ''} access verified`);
+                      setVerifyModalOpen(false);
+                      setVerifiedPass(null);
+                      setQrToken('');
+                    }}
+                    leftIcon={<CheckCircle className="w-3.5 h-3.5" />}
+                  >
+                    Confirm Resident Entry
+                  </PrimaryButton>
+                )}
+              </div>
             </div>
-          </div>
+          ) : (
+            /* VISITOR PASS PREVIEW */
+            (() => {
+              const pass = verifiedPass.pass || verifiedPass;
+              const isPending = pass.status === 'PENDING';
+              const isApproved = pass.status === 'APPROVED';
+              const isCheckedIn = pass.status === 'CHECKED_IN';
+              const isCheckedOut = pass.status === 'CHECKED_OUT';
+              const isRejected = pass.status === 'REJECTED';
+
+              return (
+                <div className="space-y-4">
+                  <div className={`p-4 rounded-xl border flex items-start justify-between ${
+                    isApproved ? 'bg-[#EAF2EE]/70 border-[#0B4036]/20' : isPending ? 'bg-amber-50/70 border-amber-200' : isCheckedIn ? 'bg-blue-50/70 border-blue-200' : 'bg-rose-50 border-rose-200'
+                  }`}>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono font-bold text-[#0B4036] bg-white px-2 py-0.5 rounded border border-[#DDE2DD]">
+                          {pass.qrPassToken || pass.id}
+                        </span>
+                        <StatusBadge status={pass.status} />
+                      </div>
+                      <h3 className="mt-2 text-base font-extrabold text-[#18231F]">{pass.visitorName}</h3>
+                      <p className="text-xs text-[#68736D] font-mono">{pass.visitorMobile}</p>
+                    </div>
+
+                    <div className="text-right">
+                      <span className="text-[11px] font-semibold text-[#8A928D] block">Host Resident</span>
+                      <span className="text-xs font-bold text-[#18231F] block">{pass.residentName}</span>
+                      <span className="text-xs font-black text-[#0B4036]">Room {pass.residentRoom || 'N/A'}</span>
+                    </div>
+                  </div>
+
+                  {/* Status-specific Gate Directive Banner */}
+                  {isPending && (
+                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-900 flex items-start gap-2">
+                      <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                      <div>
+                        <strong className="block font-bold">Awaiting Manager / Owner Approval</strong>
+                        <span>Arrival request has been forwarded to property management. The guard cannot check in this visitor until approval is granted.</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {isApproved && (
+                    <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-900 flex items-start gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                      <div>
+                        <strong className="block font-bold">Approved for Gate Entry</strong>
+                        <span>Management has approved this visit. Verify visitor ID and confirm check-in.</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {isCheckedIn && (
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-900 flex items-start gap-2">
+                      <Clock className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                      <div>
+                        <strong className="block font-bold">Visitor Currently Inside</strong>
+                        <span>Checked in at {pass.checkInTime ? new Date(pass.checkInTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'earlier'}. Ready for departure check-out.</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {isCheckedOut && (
+                    <div className="p-3 bg-slate-100 border border-slate-200 rounded-lg text-xs text-slate-700 flex items-start gap-2">
+                      <XCircle className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
+                      <div>
+                        <strong className="block font-bold">Visit Completed</strong>
+                        <span>This pass has already been used and checked out. It cannot be reused.</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {isRejected && (
+                    <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg text-xs text-rose-900 flex items-start gap-2">
+                      <XCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                      <div>
+                        <strong className="block font-bold">Entry Request Rejected</strong>
+                        <span>Management has rejected this visitor request. Gate entry is strictly forbidden.</span>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div className="p-3 bg-[#F8F7F3] rounded-lg border border-[#DDE2DD]">
+                      <span className="text-[10px] font-bold text-[#8A928D] uppercase block">Relation / Purpose</span>
+                      <span className="font-semibold text-[#18231F] mt-0.5 block">
+                        {pass.relation || 'Guest'} • {pass.purpose || 'Visit'}
+                      </span>
+                    </div>
+                    <div className="p-3 bg-[#F8F7F3] rounded-lg border border-[#DDE2DD]">
+                      <span className="text-[10px] font-bold text-[#8A928D] uppercase block">Visit Window</span>
+                      <span className="font-semibold text-[#18231F] mt-0.5 block">
+                        {pass.expectedEntryTime || '10:00 AM'} - {pass.expectedExitTime || '08:00 PM'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#DDE2DD]">
+                    <SecondaryButton
+                      size="sm"
+                      onClick={() => {
+                        setVerifyModalOpen(false);
+                        setVerifiedPass(null);
+                      }}
+                    >
+                      Close
+                    </SecondaryButton>
+
+                    {verifiedPass.canCheckIn && (
+                      <PrimaryButton
+                        size="sm"
+                        onClick={() => handleConfirmCheckIn(pass.qrPassToken || pass.id)}
+                        isLoading={isProcessingAction}
+                        leftIcon={<LogIn className="w-3.5 h-3.5" />}
+                      >
+                        Confirm Gate Check-In
+                      </PrimaryButton>
+                    )}
+
+                    {verifiedPass.canCheckOut && (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => handleConfirmCheckOut(pass.id)}
+                        isLoading={isProcessingAction}
+                        leftIcon={<LogOut className="w-3.5 h-3.5 text-[#C8A45D]" />}
+                      >
+                        Confirm Gate Check-Out
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              );
+            })()
+          )}
         </Modal>
       )}
 

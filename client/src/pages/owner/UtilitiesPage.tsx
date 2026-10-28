@@ -27,7 +27,7 @@ export const UtilitiesPage: React.FC = () => {
   const [previousReading, setPreviousReading] = useState('');
   const [currentReading, setCurrentReading] = useState('');
   const [unitRate, setUnitRate] = useState('11.5');
-  const [billingPeriod, setBillingPeriod] = useState('October 2026');
+  const [billingPeriod, setBillingPeriod] = useState(() => new Date().toLocaleString('default', { month: 'long', year: 'numeric' }));
   const [notes, setNotes] = useState('');
 
   const fetchReadings = async () => {
