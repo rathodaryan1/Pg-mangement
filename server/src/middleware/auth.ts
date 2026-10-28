@@ -164,7 +164,18 @@ export const requireOwnerOrStaff = (req: AuthRequest, res: Response, next: NextF
     return sendError(res, 'Authentication required.', 401, 'UNAUTHORIZED');
   }
 
-  const allowedRoles = ['OWNER', 'SUPER_ADMIN', 'MANAGER', 'RECEPTIONIST', 'ACCOUNTANT', 'MAINTENANCE'];
+  const allowedRoles = [
+    'OWNER',
+    'SUPER_ADMIN',
+    'MANAGER',
+    'RECEPTIONIST',
+    'ACCOUNTANT',
+    'MAINTENANCE',
+    'COOK',
+    'SECURITY_GUARD',
+    'HOUSEKEEPING',
+    'STAFF',
+  ];
   if (!allowedRoles.includes(req.user.role)) {
     return sendError(res, 'Access forbidden: Owner/Staff access only.', 403, 'FORBIDDEN');
   }
@@ -174,6 +185,42 @@ export const requireOwnerOrStaff = (req: AuthRequest, res: Response, next: NextF
     return sendError(res, 'This PG Tenant account has been suspended by the platform administrator. Please contact support.', 403, 'TENANT_SUSPENDED');
   }
 
+  next();
+};
+
+export const requireCook = (req: AuthRequest, res: Response, next: NextFunction): Response | void => {
+  if (!req.user) return sendError(res, 'Authentication required.', 401, 'UNAUTHORIZED');
+  const allowed = ['OWNER', 'MANAGER', 'COOK', 'SUPER_ADMIN'];
+  if (!allowed.includes(req.user.role)) {
+    return sendError(res, 'Access forbidden: Kitchen staff access only.', 403, 'COOK_ACCESS_REQUIRED');
+  }
+  next();
+};
+
+export const requireSecurityGuard = (req: AuthRequest, res: Response, next: NextFunction): Response | void => {
+  if (!req.user) return sendError(res, 'Authentication required.', 401, 'UNAUTHORIZED');
+  const allowed = ['OWNER', 'MANAGER', 'SECURITY_GUARD', 'SUPER_ADMIN'];
+  if (!allowed.includes(req.user.role)) {
+    return sendError(res, 'Access forbidden: Security guard access only.', 403, 'SECURITY_ACCESS_REQUIRED');
+  }
+  next();
+};
+
+export const requireHousekeeping = (req: AuthRequest, res: Response, next: NextFunction): Response | void => {
+  if (!req.user) return sendError(res, 'Authentication required.', 401, 'UNAUTHORIZED');
+  const allowed = ['OWNER', 'MANAGER', 'HOUSEKEEPING', 'SUPER_ADMIN'];
+  if (!allowed.includes(req.user.role)) {
+    return sendError(res, 'Access forbidden: Housekeeping staff access only.', 403, 'HOUSEKEEPING_ACCESS_REQUIRED');
+  }
+  next();
+};
+
+export const requireMaintenance = (req: AuthRequest, res: Response, next: NextFunction): Response | void => {
+  if (!req.user) return sendError(res, 'Authentication required.', 401, 'UNAUTHORIZED');
+  const allowed = ['OWNER', 'MANAGER', 'MAINTENANCE', 'SUPER_ADMIN'];
+  if (!allowed.includes(req.user.role)) {
+    return sendError(res, 'Access forbidden: Maintenance staff access only.', 403, 'MAINTENANCE_ACCESS_REQUIRED');
+  }
   next();
 };
 

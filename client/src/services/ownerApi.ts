@@ -491,6 +491,49 @@ export const ownerApi = {
     const res = await api.patch<any>('/owner/settings', data);
     return { data: res.data || {} };
   },
+
+  // 21. Workforce Management (Attendance, Advances, Payroll)
+  getStaffAttendance: async (propertyId?: string): Promise<{ data: any[] }> => {
+    const res = await api.get<any[]>('/owner/staff/attendance', propertyId ? { propertyId } : undefined);
+    return { data: (res.data as any[]) || [] };
+  },
+  recordStaffAttendance: async (data: any): Promise<{ data: any }> => {
+    const res = await api.post<any>('/owner/staff/attendance', data);
+    return { data: res.data };
+  },
+  getStaffAdvances: async (propertyId?: string): Promise<{ data: any[] }> => {
+    const res = await api.get<any[]>('/owner/staff/advances', propertyId ? { propertyId } : undefined);
+    return { data: (res.data as any[]) || [] };
+  },
+  recordStaffAdvance: async (data: any): Promise<{ data: any }> => {
+    const res = await api.post<any>('/owner/staff/advances', data);
+    return { data: res.data };
+  },
+  getPayrollSummary: async (propertyId?: string): Promise<{ data: any }> => {
+    const res = await api.get<any>('/owner/staff/payroll', propertyId ? { propertyId } : undefined);
+    return { data: res.data };
+  },
+
+  // 22. Statutory Compliance & Agreement Templates
+  getComplianceRecords: async (propertyId?: string): Promise<{ data: any[] }> => {
+    const res = await api.get<any[]>('/owner/compliance', propertyId ? { propertyId } : undefined);
+    return { data: (res.data as any[]) || [] };
+  },
+  createComplianceRecord: async (data: any): Promise<{ data: any }> => {
+    const res = await api.post<any>('/owner/compliance', data);
+    return { data: res.data };
+  },
+  getAgreementTemplates: async (): Promise<{ data: any[] }> => {
+    const res = await api.get<any[]>('/owner/agreements/templates');
+    return { data: (res.data as any[]) || [] };
+  },
+  generateAgreementText: async (dataOrTemplateId: string | { residentId: string; templateId?: string }, residentId?: string): Promise<{ data: any }> => {
+    const payload = typeof dataOrTemplateId === 'string'
+      ? { templateId: dataOrTemplateId, residentId }
+      : dataOrTemplateId;
+    const res = await api.post<any>('/owner/agreements/generate', payload);
+    return { data: res.data };
+  },
 };
 
 export default ownerApi;

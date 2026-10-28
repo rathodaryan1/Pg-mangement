@@ -7,6 +7,18 @@ import { sendSuccess, sendError } from '../utils/response';
 import { AuditService } from '../services/audit.service';
 import { AuthRequest } from '../middleware/auth';
 
+async function withDbRetry<T>(fn: () => Promise<T>, retries = 2): Promise<T> {
+  for (let i = 0; i <= retries; i++) {
+    try {
+      return await fn();
+    } catch (err: any) {
+      if (i === retries) throw err;
+      await new Promise((r) => setTimeout(r, 300 * (i + 1)));
+    }
+  }
+  throw new Error('Database operation failed after retries');
+}
+
 export class AuthController {
   /**
    * POST /api/auth/register
@@ -137,28 +149,46 @@ export class AuthController {
         return sendError(res, 'Email and password are required.', 400, 'VALIDATION_ERROR');
       }
 
-      const user = await prisma.user.findUnique({
-        where: { email: email.toLowerCase().trim() },
-        include: {
-          tenant: {
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-              status: true,
-              plan: true,
+      const user = await withDbRetry(() =>
+        prisma.user.findUnique({
+          where: { email: email.toLowerCase().trim() },
+          include: {
+            tenant: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                status: true,
+                plan: true,
+              },
             },
-          },
-          resident: {
-            include: {
-              property: true,
-              bed: {
-                include: {
-                  room: {
-                    include: {
-                      floor: {
-                        include: {
-                          building: true,
+            resident: {
+              select: {
+                id: true,
+                fullName: true,
+                status: true,
+                kycStatus: true,
+                propertyId: true,
+                property: {
+                  select: {
+                    name: true,
+                  },
+                },
+                bed: {
+                  select: {
+                    bedNumber: true,
+                    room: {
+                      select: {
+                        number: true,
+                        floor: {
+                          select: {
+                            floorNumber: true,
+                            building: {
+                              select: {
+                                name: true,
+                              },
+                            },
+                          },
                         },
                       },
                     },
@@ -167,8 +197,8 @@ export class AuthController {
               },
             },
           },
-        },
-      });
+        })
+      );
 
       if (!user) {
         return sendError(res, 'Invalid email or password.', 401, 'INVALID_CREDENTIALS');
@@ -203,8 +233,8 @@ export class AuthController {
         { expiresIn: config.jwtExpiresIn as any }
       );
 
-      // Log login event
-      await prisma.auditLog.create({
+      // Log login event asynchronously in background so auth response is not delayed by WAN latency
+      prisma.auditLog.create({
         data: {
           tenantId: user.tenantId,
           propertyId: user.propertyId || user.resident?.propertyId || null,
@@ -284,31 +314,51 @@ export class AuthController {
         return sendError(res, 'Authentication required.', 401, 'UNAUTHORIZED');
       }
 
-      const user = await prisma.user.findUnique({
-        where: { id: req.user.id },
-        include: {
-          tenant: {
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-              status: true,
-              plan: true,
-              maxProperties: true,
-              maxRooms: true,
-              maxResidents: true,
+      const user = await withDbRetry(() =>
+        prisma.user.findUnique({
+          where: { id: req.user.id },
+          include: {
+            tenant: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                status: true,
+                plan: true,
+                maxProperties: true,
+                maxRooms: true,
+                maxResidents: true,
+              },
             },
-          },
-          resident: {
-            include: {
-              property: true,
-              bed: {
-                include: {
-                  room: {
-                    include: {
-                      floor: {
-                        include: {
-                          building: true,
+            resident: {
+              select: {
+                id: true,
+                fullName: true,
+                status: true,
+                kycStatus: true,
+                joiningDate: true,
+                propertyId: true,
+                property: {
+                  select: {
+                    name: true,
+                    address: true,
+                  },
+                },
+                bed: {
+                  select: {
+                    bedNumber: true,
+                    room: {
+                      select: {
+                        number: true,
+                        floor: {
+                          select: {
+                            floorNumber: true,
+                            building: {
+                              select: {
+                                name: true,
+                              },
+                            },
+                          },
                         },
                       },
                     },
@@ -317,8 +367,8 @@ export class AuthController {
               },
             },
           },
-        },
-      });
+        })
+      );
 
       if (!user) {
         return sendError(res, 'User profile not found.', 404, 'USER_NOT_FOUND');

@@ -91,12 +91,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setImpersonatedBy(res.data.impersonatedBy);
           localStorage.setItem('urbannest_user_session', JSON.stringify(authUser));
 
-          // Fetch properties for owner/staff
-          if (authUser.role === 'OWNER' || authUser.role === 'MANAGER' || authUser.role === 'STAFF') {
-            try {
-              const propRes = await api.get<any[]>('/owner/properties');
+          // Fetch properties asynchronously in background without blocking session restoration
+          const isStaffOrOwner = ['OWNER', 'MANAGER', 'STAFF', 'COOK', 'SECURITY_GUARD', 'HOUSEKEEPING', 'MAINTENANCE', 'RECEPTIONIST', 'ACCOUNTANT'].includes(authUser.role);
+          if (isStaffOrOwner) {
+            api.get<any[]>('/owner/properties').then((propRes) => {
               if (propRes.data && propRes.data.length > 0) {
-                const p = propRes.data[0];
+                const p = authUser.propertyId
+                  ? propRes.data.find((prop: any) => prop.id === authUser.propertyId) || propRes.data[0]
+                  : propRes.data[0];
                 setActiveProperty({
                   id: p.id,
                   name: p.name,
@@ -109,9 +111,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   type: (p.type || 'BOYS') as any,
                 });
               }
-            } catch {
-              // Ignore property fetch error
-            }
+            }).catch(() => {});
           }
         } else {
           api.setToken(null);
@@ -174,12 +174,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setImpersonatedBy(undefined);
         localStorage.setItem('urbannest_user_session', JSON.stringify(loggedInUser));
 
-        // Fetch properties if owner/staff
-        if (loggedInUser.role === 'OWNER' || loggedInUser.role === 'MANAGER') {
-          try {
-            const propRes = await api.get<any[]>('/owner/properties');
+        // Fetch properties asynchronously in background so login redirect is instantaneous
+        const isStaffOrOwner = ['OWNER', 'MANAGER', 'STAFF', 'COOK', 'SECURITY_GUARD', 'HOUSEKEEPING', 'MAINTENANCE', 'RECEPTIONIST', 'ACCOUNTANT'].includes(loggedInUser.role);
+        if (isStaffOrOwner) {
+          api.get<any[]>('/owner/properties').then((propRes) => {
             if (propRes.data && propRes.data.length > 0) {
-              const p = propRes.data[0];
+              const p = loggedInUser.propertyId
+                ? propRes.data.find((prop: any) => prop.id === loggedInUser.propertyId) || propRes.data[0]
+                : propRes.data[0];
               setActiveProperty({
                 id: p.id,
                 name: p.name,
@@ -192,9 +194,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 type: (p.type || 'BOYS') as any,
               });
             }
-          } catch {
-            // ignore
-          }
+          }).catch(() => {});
         }
         return true;
       }

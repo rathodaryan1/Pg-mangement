@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { OwnerController } from '../controllers/owner.controller';
-import { authenticateToken, requireOwnerOrStaff, checkPlanLimit } from '../middleware/auth';
+import { authenticateToken, requireOwnerOrStaff, requireRole, checkPlanLimit } from '../middleware/auth';
 
 const router = Router();
 
@@ -16,6 +16,7 @@ router.get('/properties', OwnerController.getProperties as any);
 router.get('/properties/:id', OwnerController.getPropertyById as any);
 router.post('/properties', checkPlanLimit('properties') as any, OwnerController.createProperty as any);
 router.patch('/properties/:id', OwnerController.updateProperty as any);
+router.put('/properties/:id', OwnerController.updateProperty as any);
 router.delete('/properties/:id', OwnerController.archiveProperty as any);
 
 // 3. Buildings & Floors (CRUD)
@@ -72,7 +73,9 @@ router.delete('/expenses/:id', OwnerController.archiveExpense as any);
 router.get('/visitors', OwnerController.getVisitors as any);
 router.post('/visitors', OwnerController.createVisitor as any);
 router.patch('/visitors/:id/approve', OwnerController.approveVisitor as any);
+router.post('/visitors/:id/approve', OwnerController.approveVisitor as any);
 router.patch('/visitors/:id/reject', OwnerController.rejectVisitor as any);
+router.post('/visitors/:id/reject', OwnerController.rejectVisitor as any);
 router.get('/visitors/verify/:token', OwnerController.verifyVisitorQRByToken as any);
 router.post('/visitors/verify-qr', OwnerController.verifyVisitorQR as any);
 router.post('/visitors/:id/check-in', OwnerController.checkInVisitor as any);
@@ -86,11 +89,12 @@ router.put('/complaints/:id', OwnerController.updateComplaintStatus as any);
 router.patch('/complaints/:id/status', OwnerController.updateComplaintStatus as any);
 router.post('/complaints/:id/comments', OwnerController.addComplaintComment as any);
 
-// 12. Staff Management (CRUD)
-router.get('/staff', OwnerController.getStaff as any);
-router.post('/staff', OwnerController.createStaff as any);
-router.patch('/staff/:id', OwnerController.updateStaff as any);
-router.delete('/staff/:id', OwnerController.archiveStaff as any);
+// 12. Staff Management (CRUD) - Restricted to Owner, Manager, Super Admin
+router.get('/staff', requireRole(['OWNER', 'MANAGER', 'SUPER_ADMIN']) as any, OwnerController.getStaff as any);
+router.post('/staff', requireRole(['OWNER', 'MANAGER', 'SUPER_ADMIN']) as any, OwnerController.createStaff as any);
+router.patch('/staff/:id', requireRole(['OWNER', 'MANAGER', 'SUPER_ADMIN']) as any, OwnerController.updateStaff as any);
+router.put('/staff/:id', requireRole(['OWNER', 'MANAGER', 'SUPER_ADMIN']) as any, OwnerController.updateStaff as any);
+router.delete('/staff/:id', requireRole(['OWNER', 'MANAGER', 'SUPER_ADMIN']) as any, OwnerController.archiveStaff as any);
 
 // 13. Asset Inventory & Stock (CRUD)
 router.get('/inventory', OwnerController.getInventory as any);
@@ -134,5 +138,18 @@ router.get('/reports', OwnerController.getReports as any);
 router.get('/audit-logs', OwnerController.getAuditLogs as any);
 router.get('/settings', OwnerController.getSettings as any);
 router.patch('/settings', OwnerController.updateSettings as any);
+
+// 21. Workforce Management (Attendance, Advances & Payroll)
+router.get('/staff/attendance', OwnerController.getStaffAttendance as any);
+router.post('/staff/attendance', requireRole(['OWNER', 'MANAGER', 'SUPER_ADMIN', 'RECEPTIONIST']) as any, OwnerController.recordStaffAttendance as any);
+router.get('/staff/advances', requireRole(['OWNER', 'MANAGER', 'SUPER_ADMIN', 'ACCOUNTANT']) as any, OwnerController.getStaffAdvances as any);
+router.post('/staff/advances', requireRole(['OWNER', 'MANAGER', 'SUPER_ADMIN', 'ACCOUNTANT']) as any, OwnerController.recordStaffAdvance as any);
+router.get('/staff/payroll', requireRole(['OWNER', 'MANAGER', 'SUPER_ADMIN', 'ACCOUNTANT']) as any, OwnerController.getPayrollSummary as any);
+
+// 22. Statutory Compliance & Agreement Templates
+router.get('/compliance', OwnerController.getComplianceRecords as any);
+router.post('/compliance', OwnerController.createComplianceRecord as any);
+router.get('/agreements/templates', OwnerController.getAgreementTemplates as any);
+router.post('/agreements/generate', OwnerController.generateAgreementText as any);
 
 export default router;

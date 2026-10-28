@@ -1,4 +1,15 @@
-export type UserRole = 'OWNER' | 'MANAGER' | 'RESIDENT' | 'STAFF' | 'SUPER_ADMIN' | 'RECEPTIONIST' | 'MAINTENANCE' | 'ACCOUNTANT';
+export type UserRole =
+  | 'OWNER'
+  | 'MANAGER'
+  | 'RESIDENT'
+  | 'STAFF'
+  | 'SUPER_ADMIN'
+  | 'RECEPTIONIST'
+  | 'MAINTENANCE'
+  | 'ACCOUNTANT'
+  | 'COOK'
+  | 'SECURITY_GUARD'
+  | 'HOUSEKEEPING';
 
 export type TenantStatus = 'TRIAL' | 'ACTIVE' | 'SUSPENDED' | 'CANCELLED' | 'EXPIRED' | 'ARCHIVED';
 export type SubscriptionPlan = 'TRIAL' | 'STARTER' | 'PROFESSIONAL' | 'ENTERPRISE';
@@ -315,3 +326,142 @@ export interface DashboardKPIs {
     expiringAgreementsCount: number;
   };
 }
+
+// Kitchen & Meal Types
+export type MealPeriod = 'BREAKFAST' | 'LUNCH' | 'SNACKS' | 'DINNER';
+export type DietaryType = 'VEG' | 'NON_VEG' | 'JAIN' | 'VEGAN';
+export type MenuStatus = 'DRAFT' | 'PUBLISHED' | 'CANCELLED';
+
+export interface MenuItem {
+  id: string;
+  menuId: string;
+  name: string;
+  description?: string;
+  dietaryType: DietaryType;
+  allergens?: string;
+  isAvailable: boolean;
+}
+
+export interface Menu {
+  id: string;
+  propertyId: string;
+  date: string;
+  mealPeriod: MealPeriod;
+  title: string;
+  status: MenuStatus;
+  servingTime?: string;
+  cutoffTime?: string;
+  notes?: string;
+  items?: MenuItem[];
+  participationsCount?: {
+    optedIn: number;
+    optedOut: number;
+  };
+  residentSelection?: 'OPTED_IN' | 'OPTED_OUT' | null;
+  createdAt: string;
+}
+
+export interface KitchenIngredient {
+  id: string;
+  propertyId: string;
+  name: string;
+  category: string;
+  currentStock: number;
+  minStock: number;
+  unit: string;
+  costPerUnit?: number;
+  supplier?: string;
+}
+
+export interface PurchaseRequest {
+  id: string;
+  propertyId: string;
+  itemTitle: string;
+  quantity: number;
+  unit: string;
+  estimatedCost?: number;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'PURCHASED';
+  requestedBy: string;
+  approvedBy?: string;
+  notes?: string;
+  createdAt: string;
+}
+
+// Leads & Bookings
+export type LeadStatus = 'NEW' | 'CONTACTED' | 'VISIT_SCHEDULED' | 'APPLIED' | 'CONVERTED' | 'LOST';
+
+export interface Lead {
+  id: string;
+  tenantId: string;
+  propertyId: string;
+  name: string;
+  email: string;
+  phone: string;
+  roomTypePreference?: string;
+  source: string;
+  status: LeadStatus;
+  visitDate?: string;
+  followUpDate?: string;
+  notes?: string;
+  referrerName?: string;
+  referrerPhone?: string;
+  referralCommission?: number;
+  commissionStatus?: string;
+  whatsappConsent?: boolean;
+  whatsappOptOut?: boolean;
+  assignedTo?: string;
+  createdAt: string;
+}
+
+export interface Booking {
+  id: string;
+  tenantId: string;
+  propertyId: string;
+  leadId?: string;
+  name: string;
+  email: string;
+  phone: string;
+  roomId?: string;
+  bedId?: string;
+  depositAmount: number;
+  isDepositPaid: boolean;
+  status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
+  checkInDate: string;
+  token: string;
+  notes?: string;
+  createdAt: string;
+}
+
+// Housekeeping
+export interface HousekeepingTask {
+  id: string;
+  propertyId: string;
+  area: 'ROOM' | 'BATHROOM' | 'CORRIDOR' | 'KITCHEN' | 'DINING' | 'LOBBY' | 'TERRACE';
+  targetName: string;
+  assignedTo?: string;
+  scheduledAt: string;
+  completedAt?: string;
+  verifiedBy?: string;
+  status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+  checklist?: string;
+  notes?: string;
+  createdAt: string;
+}
+
+// Utility
+export interface UtilityReading {
+  id: string;
+  propertyId: string;
+  type: 'ELECTRICITY' | 'WATER' | 'GAS' | 'INTERNET';
+  meterNumber: string;
+  previousReading: number;
+  currentReading: number;
+  unitsConsumed: number;
+  unitRate: number;
+  totalAmount: number;
+  billingPeriod: string;
+  readingDate: string;
+  recordedBy: string;
+  notes?: string;
+}
+

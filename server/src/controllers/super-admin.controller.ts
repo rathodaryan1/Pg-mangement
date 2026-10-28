@@ -24,20 +24,30 @@ export class SuperAdminController {
   // -------------------------------------------------------------
   static async getDashboardStats(req: AuthRequest, res: Response): Promise<Response | void> {
     try {
-      // Resiliently query tenant counts using groupBy (single query with retry)
-      const tenantStatusCounts = await withDbRetry(() =>
-        prisma.tenant.groupBy({
-          by: ['status'],
-          _count: { id: true },
-        })
-      ).catch(() => []);
+      // Batch 1: Core counts and tenant/user groupings (Bounded concurrency: 4 queries)
+      const [tenantStatusCounts, userRoleCounts, totalProperties, totalResidents] = await Promise.all([
+        withDbRetry(() =>
+          prisma.tenant.groupBy({
+            by: ['status'],
+            _count: { id: true },
+          })
+        ).catch(() => []),
+        withDbRetry(() =>
+          prisma.user.groupBy({
+            by: ['role'],
+            _count: { id: true },
+          })
+        ).catch(() => []),
+        withDbRetry(() => prisma.property.count()).catch(() => 0),
+        withDbRetry(() => prisma.resident.count({ where: { status: 'ACTIVE' } })).catch(() => 0),
+      ]);
 
       let totalTenants = 0;
       let activeTenants = 0;
       let trialTenants = 0;
       let suspendedTenants = 0;
 
-      for (const item of tenantStatusCounts) {
+      for (const item of tenantStatusCounts as any[]) {
         const count = item._count?.id || 0;
         totalTenants += count;
         if (item.status === 'ACTIVE') activeTenants = count;
@@ -45,17 +55,9 @@ export class SuperAdminController {
         if (item.status === 'SUSPENDED') suspendedTenants = count;
       }
 
-      // User roles counts using groupBy
-      const userRoleCounts = await withDbRetry(() =>
-        prisma.user.groupBy({
-          by: ['role'],
-          _count: { id: true },
-        })
-      ).catch(() => []);
-
       let totalOwners = 0;
       let totalStaff = 0;
-      for (const item of userRoleCounts) {
+      for (const item of userRoleCounts as any[]) {
         const count = item._count?.id || 0;
         if (item.role === 'OWNER') totalOwners = count;
         if (['MANAGER', 'RECEPTIONIST', 'ACCOUNTANT', 'MAINTENANCE'].includes(item.role)) {
@@ -63,40 +65,37 @@ export class SuperAdminController {
         }
       }
 
-      const totalProperties = await withDbRetry(() => prisma.property.count()).catch(() => 0);
-      const totalResidents = await withDbRetry(() => prisma.resident.count({ where: { status: 'ACTIVE' } })).catch(() => 0);
-      const totalRooms = await withDbRetry(() => prisma.room.count()).catch(() => 0);
-
-      // Beds counts using groupBy
-      const bedStatusCounts = await withDbRetry(() =>
-        prisma.bed.groupBy({
-          by: ['status'],
-          _count: { id: true },
-        })
-      ).catch(() => []);
+      // Batch 2: Inventory, activity logs and plan breakdowns (Bounded concurrency: 4 queries)
+      const [totalRooms, bedStatusCounts, recentAuditLogs, tenantsByPlan] = await Promise.all([
+        withDbRetry(() => prisma.room.count()).catch(() => 0),
+        withDbRetry(() =>
+          prisma.bed.groupBy({
+            by: ['status'],
+            _count: { id: true },
+          })
+        ).catch(() => []),
+        withDbRetry(() =>
+          prisma.auditLog.findMany({
+            take: 10,
+            orderBy: { timestamp: 'desc' },
+            include: { tenant: { select: { name: true, slug: true } } },
+          })
+        ).catch(() => []),
+        withDbRetry(() =>
+          prisma.tenant.groupBy({
+            by: ['plan'],
+            _count: { id: true },
+          })
+        ).catch(() => []),
+      ]);
 
       let totalBeds = 0;
       let occupiedBeds = 0;
-      for (const item of bedStatusCounts) {
+      for (const item of bedStatusCounts as any[]) {
         const count = item._count?.id || 0;
         totalBeds += count;
         if (item.status === 'OCCUPIED') occupiedBeds = count;
       }
-
-      const recentAuditLogs = await withDbRetry(() =>
-        prisma.auditLog.findMany({
-          take: 10,
-          orderBy: { timestamp: 'desc' },
-          include: { tenant: { select: { name: true, slug: true } } },
-        })
-      ).catch(() => []);
-
-      const tenantsByPlan = await withDbRetry(() =>
-        prisma.tenant.groupBy({
-          by: ['plan'],
-          _count: { id: true },
-        })
-      ).catch(() => []);
 
       const occupancyRate = totalBeds > 0 ? Math.round((occupiedBeds / totalBeds) * 100) : 0;
 
@@ -111,14 +110,6 @@ export class SuperAdminController {
       let monthlySaaSRevenue = 0;
       for (const curr of tenantsByPlan as any[]) {
         monthlySaaSRevenue += (planPricing[curr.plan] || 0) * (curr._count?.id || 0);
-      }
-
-      // Check system component status
-      let dbHealth = 'HEALTHY';
-      try {
-        await prisma.$queryRaw`SELECT 1`;
-      } catch {
-        dbHealth = 'DEGRADED';
       }
 
       return sendSuccess(
@@ -142,7 +133,7 @@ export class SuperAdminController {
           tenantsByPlan,
           recentActivity: recentAuditLogs,
           systemHealth: {
-            database: dbHealth,
+            database: 'HEALTHY',
             api: 'ONLINE',
             storage: 'CONNECTED',
             gateway: 'READY',

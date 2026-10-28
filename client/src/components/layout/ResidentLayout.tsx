@@ -15,7 +15,8 @@ import {
   LogOut,
   ShieldAlert,
   Shield,
-  CheckCircle
+  CheckCircle,
+  Utensils
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../ui/Button';
@@ -32,6 +33,7 @@ interface ResidentNavItem {
 const RESIDENT_NAV_ITEMS: ResidentNavItem[] = [
   { label: 'Dashboard', path: '/resident/dashboard', icon: Home },
   { label: 'My Room', path: '/resident/room', icon: BedDouble },
+  { label: 'Meals & Mess', path: '/resident/meals', icon: Utensils },
   { label: 'Payments', path: '/resident/payments', icon: CreditCard },
   { label: 'Visitors', path: '/resident/visitors', icon: UserCheck },
   { label: 'Complaints', path: '/resident/complaints', icon: Wrench },

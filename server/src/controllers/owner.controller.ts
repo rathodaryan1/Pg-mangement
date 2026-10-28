@@ -76,72 +76,97 @@ export class OwnerController {
     try {
       const { propertyId, propertyFilter, tenantFilter } = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
 
-      const properties = await withDbRetry(() =>
-        prisma.property.findMany({
-          where: propertyId ? { id: propertyId } : tenantFilter,
-          include: { buildings: true, rooms: { include: { beds: true } }, residents: true },
-        })
-      );
-      const totalBuildings = await withDbRetry(() =>
-        prisma.building.count({ where: propertyFilter })
-      );
-      const rooms = await withDbRetry(() =>
-        prisma.room.findMany({ where: propertyFilter, include: { beds: true } })
-      );
-      const beds = await withDbRetry(() =>
-        prisma.bed.findMany({
-          where: propertyId
-            ? { room: { propertyId } }
-            : (req.user?.tenantId ? { room: { property: { tenantId: req.user.tenantId } } } : {}),
-        })
-      );
-      const residents = await withDbRetry(() =>
-        prisma.resident.findMany({
-          where: propertyFilter,
-          include: { bed: { include: { room: true } } },
-        })
-      );
-      const payments = await withDbRetry(() =>
-        prisma.payment.findMany({
-          where: propertyFilter,
-          include: { resident: true },
-          orderBy: { createdAt: 'desc' },
-        })
-      );
-      const deposits = await withDbRetry(() =>
-        prisma.securityDeposit.findMany({ where: propertyFilter })
-      );
-      const complaints = await withDbRetry(() =>
-        prisma.complaint.findMany({
-          where: propertyFilter,
-          include: { resident: true },
-          orderBy: { createdAt: 'desc' },
-        })
-      );
-      const visitors = await withDbRetry(() =>
-        prisma.visitorRequest.findMany({
-          where: propertyFilter,
-          include: { resident: true },
-          orderBy: { createdAt: 'desc' },
-        })
-      );
-      const inventoryItems = await withDbRetry(() =>
-        prisma.inventoryItem.findMany({ where: propertyFilter })
-      );
-      const staffMembers = await withDbRetry(() =>
-        prisma.user.findMany({
-          where: {
-            role: { in: ['MANAGER', 'RECEPTIONIST', 'ACCOUNTANT', 'MAINTENANCE'] },
-            ...(req.user?.tenantId ? { tenantId: req.user.tenantId } : {}),
-          },
-        })
-      );
-      const recentNotices = await withDbRetry(() =>
-        prisma.notice.findMany({ where: propertyFilter, orderBy: { publishedAt: 'desc' }, take: 5 })
-      );
-      const tasks = await withDbRetry(() =>
-        prisma.operationalTask.findMany({ where: propertyFilter, take: 5 })
-      );
+      // Batch 1: Property structure & physical capacity (Bounded concurrency: 4 queries)
+      const [properties, totalBuildings, rooms, beds] = await Promise.all([
+        withDbRetry(() =>
+          prisma.property.findMany({
+            where: propertyId ? { id: propertyId } : tenantFilter,
+            include: { buildings: true, rooms: { include: { beds: true } }, residents: true },
+          })
+        ),
+        withDbRetry(() =>
+          prisma.building.count({ where: propertyFilter })
+        ),
+        withDbRetry(() =>
+          prisma.room.findMany({ where: propertyFilter, include: { beds: true } })
+        ),
+        withDbRetry(() =>
+          prisma.bed.findMany({
+            where: propertyId
+              ? { room: { propertyId } }
+              : (req.user?.tenantId ? { room: { property: { tenantId: req.user.tenantId } } } : {}),
+          })
+        ),
+      ]);
+
+      // Batch 2: Residents, Financials & Staff (Bounded concurrency: 4 queries, optimized field selection)
+      const [residents, payments, deposits, staffMembers] = await Promise.all([
+        withDbRetry(() =>
+          prisma.resident.findMany({
+            where: propertyFilter,
+            include: { bed: { include: { room: true } } },
+          })
+        ),
+        withDbRetry(() =>
+          prisma.payment.findMany({
+            where: propertyFilter,
+            select: {
+              id: true,
+              amount: true,
+              status: true,
+              paidDate: true,
+              dueDate: true,
+              createdAt: true,
+            },
+            orderBy: { createdAt: 'desc' },
+          })
+        ),
+        withDbRetry(() =>
+          prisma.securityDeposit.findMany({
+            where: propertyFilter,
+            select: { id: true, amount: true, status: true },
+          })
+        ),
+        withDbRetry(() =>
+          prisma.user.findMany({
+            where: {
+              role: { in: ['MANAGER', 'RECEPTIONIST', 'ACCOUNTANT', 'MAINTENANCE'] },
+              ...(req.user?.tenantId ? { tenantId: req.user.tenantId } : {}),
+            },
+            select: { id: true },
+          })
+        ),
+      ]);
+
+      // Batch 3: Operational tickets, visitors, inventory & notices (Bounded concurrency: 5 queries)
+      const [complaints, visitors, inventoryItems, recentNotices, tasks] = await Promise.all([
+        withDbRetry(() =>
+          prisma.complaint.findMany({
+            where: propertyFilter,
+            select: { id: true, status: true },
+            orderBy: { createdAt: 'desc' },
+          })
+        ),
+        withDbRetry(() =>
+          prisma.visitorRequest.findMany({
+            where: propertyFilter,
+            select: { id: true, status: true, visitDate: true },
+            orderBy: { createdAt: 'desc' },
+          })
+        ),
+        withDbRetry(() =>
+          prisma.inventoryItem.findMany({
+            where: propertyFilter,
+            select: { id: true, quantity: true, minQuantity: true },
+          })
+        ),
+        withDbRetry(() =>
+          prisma.notice.findMany({ where: propertyFilter, orderBy: { publishedAt: 'desc' }, take: 5 })
+        ),
+        withDbRetry(() =>
+          prisma.operationalTask.findMany({ where: propertyFilter, take: 5 })
+        ),
+      ]);
 
       const totalBedsCount = beds.length;
       const occupiedBedsCount = beds.filter((b) => b.status === 'OCCUPIED').length;
@@ -416,6 +441,9 @@ export class OwnerController {
       return sendError(res, error.message || 'Failed to update property', 500);
     }
   }
+
+  // Typo tolerance alias for updateProperty
+  static updatePropertTables = (req: AuthRequest, res: Response) => OwnerController.updateProperty(req, res);
 
   static async archiveProperty(req: AuthRequest, res: Response): Promise<Response> {
     try {
@@ -1560,6 +1588,15 @@ export class OwnerController {
 
   static async approveVisitor(req: AuthRequest, res: Response): Promise<Response> {
     try {
+      const visitor = await prisma.visitorRequest.findUnique({
+        where: { id: req.params.id },
+        include: { property: true },
+      });
+      if (!visitor) return sendError(res, 'Visitor request not found', 404);
+      if (req.user?.role !== 'SUPER_ADMIN' && visitor.property?.tenantId !== req.user?.tenantId) {
+        return sendError(res, 'Access denied: foreign tenant visitor request', 403);
+      }
+
       const updated = await prisma.visitorRequest.update({
         where: { id: req.params.id },
         data: {
@@ -1575,6 +1612,15 @@ export class OwnerController {
 
   static async rejectVisitor(req: AuthRequest, res: Response): Promise<Response> {
     try {
+      const visitor = await prisma.visitorRequest.findUnique({
+        where: { id: req.params.id },
+        include: { property: true },
+      });
+      if (!visitor) return sendError(res, 'Visitor request not found', 404);
+      if (req.user?.role !== 'SUPER_ADMIN' && visitor.property?.tenantId !== req.user?.tenantId) {
+        return sendError(res, 'Access denied: foreign tenant visitor request', 403);
+      }
+
       const updated = await prisma.visitorRequest.update({
         where: { id: req.params.id },
         data: { status: 'REJECTED' },
@@ -1971,10 +2017,33 @@ export class OwnerController {
   // ==========================================================================
   static async getStaff(req: AuthRequest, res: Response): Promise<Response> {
     try {
+      const { propertyFilter } = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
+      const staffRoles = [
+        'MANAGER',
+        'MAINTENANCE',
+        'SECURITY_GUARD',
+        'HOUSEKEEPING',
+        'COOK',
+        'RECEPTIONIST',
+        'ACCOUNTANT',
+      ];
+
+      const whereClause: any = {
+        role: { in: staffRoles },
+      };
+
+      if (req.user?.role !== 'SUPER_ADMIN') {
+        if (req.user?.tenantId) {
+          whereClause.tenantId = req.user.tenantId;
+        } else if (propertyFilter.propertyId) {
+          whereClause.propertyId = propertyFilter.propertyId;
+        }
+      } else if (propertyFilter.propertyId) {
+        whereClause.propertyId = propertyFilter.propertyId;
+      }
+
       const staff = await prisma.user.findMany({
-        where: {
-          role: { in: ['MANAGER', 'RECEPTIONIST', 'ACCOUNTANT', 'MAINTENANCE', 'SUPER_ADMIN'] },
-        },
+        where: whereClause,
         include: { property: true },
         orderBy: { createdAt: 'desc' },
       });
@@ -1989,22 +2058,55 @@ export class OwnerController {
       const { name, email, mobile, role, propertyId } = req.body;
       if (!name || !role) return sendError(res, 'Name and role are required', 400);
 
-      const staffEmail = email ? email.toLowerCase().trim() : `staff_${Date.now()}@pg.com`;
+      const validRoles = [
+        'MANAGER',
+        'MAINTENANCE',
+        'SECURITY_GUARD',
+        'HOUSEKEEPING',
+        'COOK',
+        'RECEPTIONIST',
+        'ACCOUNTANT',
+      ];
+
+      // Normalize legacy/alias roles
+      let normalizedRole = role;
+      if (role === 'SECURITY') normalizedRole = 'SECURITY_GUARD';
+
+      if (!validRoles.includes(normalizedRole)) {
+        return sendError(
+          res,
+          `Invalid staff role "${role}". Supported roles: ${validRoles.join(', ')}`,
+          400,
+          'INVALID_ROLE'
+        );
+      }
+
+      const { propertyId: resolvedPropertyId } = await OwnerController.resolvePropertyScope(req, propertyId);
+
+      const cleanEmail = email ? email.toLowerCase().trim() : `staff_${Date.now()}@pg.com`;
+
+      const existing = await prisma.user.findUnique({ where: { email: cleanEmail } });
+      if (existing) {
+        return sendError(res, 'A user account with this email already exists.', 409, 'DUPLICATE_EMAIL');
+      }
+
       const salt = await bcrypt.genSalt(10);
       const passwordHash = await bcrypt.hash('admin123', salt);
 
       const user = await prisma.user.create({
         data: {
+          tenantId: req.user?.tenantId || null,
+          propertyId: resolvedPropertyId || null,
           name: name.trim(),
-          email: staffEmail,
+          email: cleanEmail,
           passwordHash,
-          role: role as any,
-          mobile: mobile || null,
-          propertyId: propertyId || null,
+          role: normalizedRole as any,
+          mobile: mobile ? mobile.trim() : null,
         },
+        include: { property: true },
       });
 
-      return sendSuccess(res, user, 'Staff member created', 201);
+      return sendSuccess(res, user, 'Staff member created successfully.', 201);
     } catch (error: any) {
       return sendError(res, error.message || 'Failed to create staff', 500);
     }
@@ -2012,15 +2114,48 @@ export class OwnerController {
 
   static async updateStaff(req: AuthRequest, res: Response): Promise<Response> {
     try {
+      const staffUser = await prisma.user.findUnique({ where: { id: req.params.id } });
+      if (!staffUser) return sendError(res, 'Staff member not found', 404);
+
+      if (req.user?.role !== 'SUPER_ADMIN' && req.user?.tenantId && staffUser.tenantId !== req.user.tenantId) {
+        return sendError(res, 'Access denied: staff member belongs to another tenant', 403);
+      }
+
       const { name, mobile, role, propertyId } = req.body;
+
+      let normalizedRole = role;
+      if (role === 'SECURITY') normalizedRole = 'SECURITY_GUARD';
+
+      if (normalizedRole) {
+        const validRoles = [
+          'MANAGER',
+          'MAINTENANCE',
+          'SECURITY_GUARD',
+          'HOUSEKEEPING',
+          'COOK',
+          'RECEPTIONIST',
+          'ACCOUNTANT',
+        ];
+        if (!validRoles.includes(normalizedRole)) {
+          return sendError(res, `Invalid staff role "${role}".`, 400);
+        }
+      }
+
+      let targetPropId = propertyId;
+      if (propertyId) {
+        const { propertyId: resolvedPropertyId } = await OwnerController.resolvePropertyScope(req, propertyId);
+        targetPropId = resolvedPropertyId;
+      }
+
       const updated = await prisma.user.update({
         where: { id: req.params.id },
         data: {
           ...(name && { name: name.trim() }),
-          ...(mobile !== undefined && { mobile }),
-          ...(role && { role: role as any }),
-          ...(propertyId !== undefined && { propertyId }),
+          ...(mobile !== undefined && { mobile: mobile ? mobile.trim() : null }),
+          ...(normalizedRole && { role: normalizedRole as any }),
+          ...(targetPropId !== undefined && { propertyId: targetPropId }),
         },
+        include: { property: true },
       });
       return sendSuccess(res, updated, 'Staff updated');
     } catch (error: any) {
@@ -2030,6 +2165,13 @@ export class OwnerController {
 
   static async archiveStaff(req: AuthRequest, res: Response): Promise<Response> {
     try {
+      const staffUser = await prisma.user.findUnique({ where: { id: req.params.id } });
+      if (!staffUser) return sendError(res, 'Staff member not found', 404);
+
+      if (req.user?.role !== 'SUPER_ADMIN' && req.user?.tenantId && staffUser.tenantId !== req.user.tenantId) {
+        return sendError(res, 'Access denied: staff member belongs to another tenant', 403);
+      }
+
       await prisma.user.delete({ where: { id: req.params.id } });
       return sendSuccess(res, null, 'Staff deactivated');
     } catch (error: any) {
@@ -2536,6 +2678,87 @@ export class OwnerController {
         });
       }
 
+      // 1. Profitability & Unit Economics
+      const revPAB = totalBeds > 0 ? Math.round(totalCollected / totalBeds) : 0;
+      const avgRentPerBed = occupiedBeds > 0 ? Math.round(totalCollected / occupiedBeds) : 0;
+      const totalBilled = totalCollected + totalOutstanding;
+      const collectionRate = totalBilled > 0 ? Math.round((totalCollected / totalBilled) * 100) : 100;
+
+      // 2. Outstanding Rent Aging Analysis
+      const aging = {
+        current: { count: 0, amount: 0 },
+        days1To30: { count: 0, amount: 0 },
+        days31To60: { count: 0, amount: 0 },
+        days61To90: { count: 0, amount: 0 },
+        daysOver90: { count: 0, amount: 0 },
+      };
+
+      const todayMs = Date.now();
+      pendingPayments.forEach((p) => {
+        const dueDateMs = p.dueDate ? new Date(p.dueDate).getTime() : new Date(p.createdAt).getTime();
+        const diffDays = Math.floor((todayMs - dueDateMs) / (1000 * 60 * 60 * 24));
+
+        if (diffDays <= 0) {
+          aging.current.count++;
+          aging.current.amount += p.amount;
+        } else if (diffDays <= 30) {
+          aging.days1To30.count++;
+          aging.days1To30.amount += p.amount;
+        } else if (diffDays <= 60) {
+          aging.days31To60.count++;
+          aging.days31To60.amount += p.amount;
+        } else if (diffDays <= 90) {
+          aging.days61To90.count++;
+          aging.days61To90.amount += p.amount;
+        } else {
+          aging.daysOver90.count++;
+          aging.daysOver90.amount += p.amount;
+        }
+      });
+
+      // 3. Budget vs Actual OPEX (Target budget benchmark: 35% of total potential revenue)
+      const potentialMonthlyRev = beds.reduce((sum, b) => sum + (b.monthlyRent || 8500), 0);
+      const budgetedOPEX = Math.round(potentialMonthlyRev * 0.35);
+      const opexVariance = budgetedOPEX - totalExpenses; // Positive = Under budget, Negative = Over budget
+
+      // 4. Cash Flow Summary
+      const cashFlow = {
+        operatingInflow: totalCollected,
+        operatingOutflow: totalExpenses,
+        netCashFlow: totalCollected - totalExpenses,
+        openingBalanceEstimate: Math.max(0, totalCollected * 0.2), // [ESTIMATE]
+      };
+
+      // 5. Tenant-Scoped AI Recommendations & Intelligence Feed
+      const aiInsights = [
+        {
+          type: 'ACTUAL',
+          label: '[ACTUAL] Collection Efficiency',
+          message: `Realized collection efficiency is ${collectionRate}%. Total outstanding is ₹${totalOutstanding.toLocaleString('en-IN')}.`,
+          status: collectionRate >= 90 ? 'OPTIMAL' : 'ATTENTION',
+        },
+        {
+          type: 'ACTUAL',
+          label: '[ACTUAL] Bed Yield & Unit Economics',
+          message: `RevPAB (Revenue Per Available Bed) is ₹${revPAB.toLocaleString('en-IN')}/mo with an average realized rent of ₹${avgRentPerBed.toLocaleString('en-IN')}/mo across ${occupiedBeds} occupied beds.`,
+          status: 'INFO',
+        },
+        {
+          type: 'ESTIMATE',
+          label: '[ESTIMATE] Budget vs. Operating Expense Variance',
+          message: opexVariance >= 0
+            ? `Operating expenditure is within benchmark budget by ₹${Math.abs(opexVariance).toLocaleString('en-IN')} (Target: ₹${budgetedOPEX.toLocaleString('en-IN')}, Actual: ₹${totalExpenses.toLocaleString('en-IN')}).`
+            : `Operating expenditure exceeds benchmark budget by ₹${Math.abs(opexVariance).toLocaleString('en-IN')} (Target: ₹${budgetedOPEX.toLocaleString('en-IN')}, Actual: ₹${totalExpenses.toLocaleString('en-IN')}).`,
+          status: opexVariance >= 0 ? 'OPTIMAL' : 'WARNING',
+        },
+        {
+          type: 'FORECAST',
+          label: '[FORECAST] Projected Occupancy & Revenue Potential',
+          message: `At full 100% occupancy (${totalBeds} beds), projected monthly revenue potential is ₹${potentialMonthlyRev.toLocaleString('en-IN')}, representing an upside of ₹${Math.max(0, potentialMonthlyRev - totalCollected).toLocaleString('en-IN')}.`,
+          status: 'FORECAST',
+        },
+      ];
+
       return sendSuccess(res, {
         summary: {
           totalRevenue,
@@ -2548,11 +2771,19 @@ export class OwnerController {
           availableBeds,
           maintenanceBeds,
           occupancyRate,
+          revPAB,
+          avgRentPerBed,
+          collectionRate,
+          budgetedOPEX,
+          opexVariance,
           totalResidents: residents.filter((r) => r.status === 'ACTIVE').length,
         },
         monthlyBreakdown: revenueByMonth,
         revenueByMonth,
         expenseCategories,
+        aging,
+        cashFlow,
+        aiInsights,
         paymentsList: payments,
         expensesList: expenses,
       });
@@ -2669,6 +2900,319 @@ export class OwnerController {
       return sendSuccess(res, null, 'Settings saved successfully');
     } catch (error: any) {
       return sendError(res, error.message || 'Failed to save settings', 500);
+    }
+  }
+
+  // ==========================================================================
+  // 19. WORKFORCE MANAGEMENT (ATTENDANCE, ADVANCES, PAYROLL)
+  // ==========================================================================
+  static async getStaffAttendance(req: AuthRequest, res: Response): Promise<Response> {
+    try {
+      const { propertyId } = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
+      const targetPropertyId = propertyId || req.user?.propertyId;
+      if (!targetPropertyId) return sendError(res, 'Property ID required.', 400);
+
+      const records = await prisma.staffAttendance.findMany({
+        where: { propertyId: targetPropertyId },
+        include: { user: { select: { id: true, name: true, role: true, mobile: true } } },
+        orderBy: { date: 'desc' },
+        take: 100,
+      });
+
+      return sendSuccess(res, records);
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to fetch attendance', 500);
+    }
+  }
+
+  static async recordStaffAttendance(req: AuthRequest, res: Response): Promise<Response> {
+    try {
+      const { userId, date, status, checkInTime, checkOutTime, notes } = req.body;
+      const { propertyId } = await OwnerController.resolvePropertyScope(req, req.body.propertyId);
+      const targetPropertyId = propertyId || req.user?.propertyId;
+
+      if (!userId || !targetPropertyId) {
+        return sendError(res, 'User ID and Property ID are required.', 400);
+      }
+
+      const attendanceDate = date ? new Date(date) : new Date();
+      attendanceDate.setHours(0, 0, 0, 0);
+
+      const record = await prisma.staffAttendance.upsert({
+        where: {
+          userId_date: {
+            userId,
+            date: attendanceDate,
+          },
+        },
+        update: {
+          status: status || 'PRESENT',
+          checkInTime: checkInTime ? new Date(checkInTime) : undefined,
+          checkOutTime: checkOutTime ? new Date(checkOutTime) : undefined,
+          notes,
+        },
+        create: {
+          propertyId: targetPropertyId,
+          userId,
+          date: attendanceDate,
+          status: status || 'PRESENT',
+          checkInTime: checkInTime ? new Date(checkInTime) : new Date(),
+          checkOutTime: checkOutTime ? new Date(checkOutTime) : undefined,
+          notes,
+        },
+      });
+
+      return sendSuccess(res, record, 'Attendance logged successfully.');
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to log attendance', 500);
+    }
+  }
+
+  static async getStaffAdvances(req: AuthRequest, res: Response): Promise<Response> {
+    try {
+      const { propertyId } = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
+      const targetPropertyId = propertyId || req.user?.propertyId;
+      if (!targetPropertyId) return sendError(res, 'Property ID required.', 400);
+
+      const advances = await prisma.staffAdvance.findMany({
+        where: { propertyId: targetPropertyId },
+        include: { user: { select: { id: true, name: true, role: true } } },
+        orderBy: { disbursedAt: 'desc' },
+      });
+
+      return sendSuccess(res, advances);
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to fetch advances', 500);
+    }
+  }
+
+  static async recordStaffAdvance(req: AuthRequest, res: Response): Promise<Response> {
+    try {
+      const { userId, amount, reason, monthYear } = req.body;
+      const { propertyId } = await OwnerController.resolvePropertyScope(req, req.body.propertyId);
+      const targetPropertyId = propertyId || req.user?.propertyId;
+
+      if (!userId || !targetPropertyId || !amount) {
+        return sendError(res, 'User, Property, and Advance Amount are required.', 400);
+      }
+
+      const advance = await prisma.staffAdvance.create({
+        data: {
+          propertyId: targetPropertyId,
+          userId,
+          amount: parseFloat(amount),
+          reason,
+          monthYear: monthYear || new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(new Date()),
+        },
+      });
+
+      return sendSuccess(res, advance, 'Salary advance disbursed.');
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to disburse advance', 500);
+    }
+  }
+
+  static async getPayrollSummary(req: AuthRequest, res: Response): Promise<Response> {
+    try {
+      const { propertyId } = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
+      const targetPropertyId = propertyId || req.user?.propertyId;
+      if (!targetPropertyId) return sendError(res, 'Property ID required.', 400);
+
+      const staffUsers: any[] = await prisma.user.findMany({
+        where: {
+          propertyId: targetPropertyId,
+          role: { in: ['MAINTENANCE', 'COOK', 'SECURITY_GUARD', 'HOUSEKEEPING', 'MANAGER'] as any },
+        },
+        include: {
+          staffAttendances: {
+            where: {
+              date: {
+                gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+              },
+            },
+          },
+          staffAdvances: {
+            where: { isDeducted: false },
+          },
+        } as any,
+      });
+
+      const payrollSheet = staffUsers.map((staff) => {
+        const baseSalary = 22000;
+        const hra = Math.round(baseSalary * 0.2);
+        const allowances = 1500;
+        const grossSalary = baseSalary + hra + allowances;
+
+        const totalDaysInMonth = 30;
+        const presentDays = staff.staffAttendances.filter((a) => a.status === 'PRESENT').length;
+        const halfDays = staff.staffAttendances.filter((a) => a.status === 'HALF_DAY').length;
+        const effectiveWorkingDays = presentDays + halfDays * 0.5;
+
+        const absentDeduction =
+          staff.staffAttendances.length > 0
+            ? Math.round((grossSalary / totalDaysInMonth) * Math.max(0, totalDaysInMonth - effectiveWorkingDays))
+            : 0;
+
+        const totalAdvances = staff.staffAdvances.reduce((acc, a) => acc + a.amount, 0);
+        const netEstimatedPayable = Math.max(0, grossSalary - absentDeduction - totalAdvances);
+
+        return {
+          id: staff.id,
+          name: staff.name,
+          role: staff.role,
+          mobile: staff.mobile,
+          components: {
+            baseSalary,
+            hra,
+            allowances,
+            grossSalary,
+            absentDeduction,
+            advancesDeducted: totalAdvances,
+            netEstimatedPayable,
+          },
+          attendanceSummary: {
+            present: presentDays,
+            halfDays,
+            absent: staff.staffAttendances.filter((a) => a.status === 'ABSENT').length,
+            leave: staff.staffAttendances.filter((a) => a.status === 'LEAVE').length,
+          },
+        };
+      });
+
+      return sendSuccess(res, {
+        month: new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(new Date()),
+        staffCount: payrollSheet.length,
+        totalGrossBudget: payrollSheet.reduce((acc, s) => acc + s.components.grossSalary, 0),
+        totalNetEstimatedPayout: payrollSheet.reduce((acc, s) => acc + s.components.netEstimatedPayable, 0),
+        payrollSheet,
+      });
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to generate payroll sheet', 500);
+    }
+  }
+
+  // ==========================================================================
+  // 20. STATUTORY COMPLIANCE & AGREEMENT TEMPLATES
+  // ==========================================================================
+  static async getComplianceRecords(req: AuthRequest, res: Response): Promise<Response> {
+    try {
+      const { propertyId } = await OwnerController.resolvePropertyScope(req, req.query.propertyId as string);
+      const targetPropertyId = propertyId || req.user?.propertyId;
+      if (!targetPropertyId) return sendError(res, 'Property ID required.', 400);
+
+      const records = await prisma.complianceRecord.findMany({
+        where: { propertyId: targetPropertyId },
+        orderBy: { validTill: 'asc' },
+      });
+
+      return sendSuccess(res, records);
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to fetch compliance certificates', 500);
+    }
+  }
+
+  static async createComplianceRecord(req: AuthRequest, res: Response): Promise<Response> {
+    try {
+      const { category, title, issuingAuthority, certificateNumber, validFrom, validTill, documentUrl, notes } = req.body;
+      const { propertyId } = await OwnerController.resolvePropertyScope(req, req.body.propertyId);
+      const targetPropertyId = propertyId || req.user?.propertyId;
+      if (!targetPropertyId || !title || !category) {
+        return sendError(res, 'Property, category, and certificate title are required.', 400);
+      }
+
+      const record = await prisma.complianceRecord.create({
+        data: {
+          propertyId: targetPropertyId,
+          category,
+          title,
+          issuingAuthority: issuingAuthority || null,
+          certificateNumber: certificateNumber || null,
+          validFrom: validFrom ? new Date(validFrom) : null,
+          validTill: validTill ? new Date(validTill) : null,
+          documentUrl: documentUrl || null,
+          notes: notes || null,
+          status: 'ACTIVE',
+        },
+      });
+
+      return sendSuccess(res, record, 'Compliance certificate registered.');
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to save compliance record', 500);
+    }
+  }
+
+  static async getAgreementTemplates(req: AuthRequest, res: Response): Promise<Response> {
+    try {
+      let templates = await prisma.agreementTemplate.findMany({
+        orderBy: { updatedAt: 'desc' },
+      });
+
+      if (templates.length === 0) {
+        const defaultTpl = await prisma.agreementTemplate.create({
+          data: {
+            title: 'Standard Urban Nest Co-Living Tenancy Agreement',
+            content: `# CO-LIVING RESIDENTIAL TENANCY AGREEMENT\n\nThis agreement is executed between **{{propertyName}}** (Operating under {{tenantName}}) and **{{residentName}}** (Mobile: {{residentMobile}}).\n\n### 1. Room & Bed Allocation\nThe Resident is allotted Bed **{{bedNumber}}** in Room **{{roomNumber}}** commencing on **{{moveInDate}}**.\n\n### 2. Rent & Security Deposit\n- **Monthly Rent**: ₹{{monthlyRent}} payable in advance by the 5th of each month.\n- **Security Deposit**: ₹{{depositAmount}} held refundable upon move-out settlement after adjusting dues/damages.\n\n### 3. House Rules & Regulations\n- Respect quiet hours between 10:00 PM and 6:00 AM.\n- Non-resident visitors must exit by 9:00 PM.\n- Minimum 30-day notice period required prior to vacation.\n\n**Tenant Signature**: Verified Digitally via Urban Nest System\n**Date**: {{agreementDate}}`,
+            version: 1,
+            isDefault: true,
+          },
+        });
+        templates = [defaultTpl];
+      }
+
+      return sendSuccess(res, templates);
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to fetch agreement templates', 500);
+    }
+  }
+
+  static async generateAgreementText(req: AuthRequest, res: Response): Promise<Response> {
+    try {
+      const { residentId, templateId } = req.body;
+      if (!residentId) return sendError(res, 'Resident ID is required.', 400);
+
+      const resident = await prisma.resident.findUnique({
+        where: { id: residentId },
+        include: {
+          bed: { include: { room: true } },
+          property: { include: { tenant: true } },
+          securityDeposits: true,
+        },
+      });
+
+      if (!resident) return sendError(res, 'Resident not found.', 404);
+
+      if (req.user?.role !== 'SUPER_ADMIN' && req.user?.tenantId && resident.property?.tenantId !== req.user.tenantId) {
+        return sendError(res, 'Unauthorized access to resident agreement.', 403);
+      }
+
+      const template = templateId
+        ? await prisma.agreementTemplate.findUnique({ where: { id: templateId } })
+        : await prisma.agreementTemplate.findFirst({ where: { isDefault: true } });
+
+      let content =
+        template?.content ||
+        `# CO-LIVING RESIDENTIAL TENANCY AGREEMENT\n\nExecuted for **{{residentName}}** at **{{propertyName}}**, Bed {{bedNumber}}.`;
+
+      const depositTotal = resident.securityDeposits.reduce((acc, d) => acc + d.amount, 0);
+
+      content = content
+        .replace(/{{tenantName}}/g, resident.property?.tenant?.name || 'Urban Nest Co-Living')
+        .replace(/{{propertyName}}/g, resident.property?.name || 'Urban Nest Property')
+        .replace(/{{residentName}}/g, resident.fullName)
+        .replace(/{{residentMobile}}/g, resident.mobile)
+        .replace(/{{roomNumber}}/g, resident.bed?.room?.number || 'TBD')
+        .replace(/{{bedNumber}}/g, resident.bed?.bedNumber || 'TBD')
+        .replace(/{{monthlyRent}}/g, resident.bed?.monthlyRent?.toString() || '8500')
+        .replace(/{{depositAmount}}/g, depositTotal.toString() || '17000')
+        .replace(/{{moveInDate}}/g, new Date(resident.joiningDate).toLocaleDateString())
+        .replace(/{{agreementDate}}/g, new Date().toLocaleDateString());
+
+      return sendSuccess(res, {
+        agreementNumber: `AGR-${Date.now().toString().slice(-6)}`,
+        interpolatedAgreement: content,
+      });
+    } catch (error: any) {
+      return sendError(res, error.message || 'Failed to generate agreement', 500);
     }
   }
 }

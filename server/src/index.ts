@@ -7,6 +7,7 @@ import { prisma } from './config/prisma';
 import apiRouter from './routes';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { apiLimiter } from './middleware/rateLimiter';
+import { authenticateToken } from './middleware/auth';
 
 const app = express();
 const PORT = config.port;
@@ -73,9 +74,9 @@ app.use(
 );
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Static file serving for local uploads directory fallback
+// Protected static file serving for local uploads directory fallback (requires valid authentication)
 const uploadsDir = path.join(__dirname, '../uploads');
-app.use('/uploads', express.static(uploadsDir));
+app.use('/uploads', authenticateToken as any, express.static(uploadsDir));
 
 // API Routes
 app.use('/api', apiRouter);

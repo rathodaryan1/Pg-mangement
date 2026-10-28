@@ -73,49 +73,95 @@ export class ResidentController {
         return sendError(res, 'Resident profile not found. Please contact PG management.', 404);
       }
 
-      const payments = await withDbRetry(() =>
-        prisma.payment.findMany({
-          where: { residentId: resident.id },
-          orderBy: { dueDate: 'desc' },
-        })
-      );
-      const deposit = await withDbRetry(() =>
-        prisma.securityDeposit.findFirst({
-          where: { residentId: resident.id },
-        })
-      );
-      const visitors = await withDbRetry(() =>
-        prisma.visitorRequest.findMany({
-          where: { residentId: resident.id, status: { in: ['APPROVED', 'PENDING', 'CHECKED_IN'] } },
-          orderBy: { visitDate: 'desc' },
-        })
-      );
-      const complaints = await withDbRetry(() =>
-        prisma.complaint.findMany({
-          where: { residentId: resident.id },
-          orderBy: { createdAt: 'desc' },
-        })
-      );
-      const leaveRequests = await withDbRetry(() =>
-        prisma.leaveRequest.findMany({
-          where: { residentId: resident.id },
-          orderBy: { appliedAt: 'desc' },
-        })
-      );
-      const notices = await withDbRetry(() =>
-        prisma.notice.findMany({
-          where: { propertyId: resident.propertyId },
-          orderBy: { publishedAt: 'desc' },
-          take: 5,
-        })
-      );
-      const notifications = await withDbRetry(() =>
-        prisma.notification.findMany({
-          where: { userId: resident.userId },
-          orderBy: { createdAt: 'desc' },
-          take: 10,
-        })
-      );
+      // Execute 7 independent queries in two bounded concurrent batches (4 + 3)
+      // to avoid connection pool starvation while eliminating 5 sequential WAN round trips.
+      const [payments, deposit, visitors, complaints] = await Promise.all([
+        withDbRetry(() =>
+          prisma.payment.findMany({
+            where: { residentId: resident.id },
+            orderBy: { dueDate: 'desc' },
+            select: { id: true, amount: true, status: true, dueDate: true },
+          })
+        ),
+        withDbRetry(() =>
+          prisma.securityDeposit.findFirst({
+            where: { residentId: resident.id },
+            select: { amount: true, status: true, paidAt: true },
+          })
+        ),
+        withDbRetry(() =>
+          prisma.visitorRequest.findMany({
+            where: { residentId: resident.id, status: { in: ['APPROVED', 'PENDING', 'CHECKED_IN'] } },
+            orderBy: { visitDate: 'desc' },
+            select: {
+              id: true,
+              visitorName: true,
+              relation: true,
+              visitDate: true,
+              expectedEntryTime: true,
+              expectedExitTime: true,
+              status: true,
+              qrPassToken: true,
+            },
+          })
+        ),
+        withDbRetry(() =>
+          prisma.complaint.findMany({
+            where: { residentId: resident.id },
+            orderBy: { createdAt: 'desc' },
+            select: {
+              id: true,
+              ticketNumber: true,
+              title: true,
+              category: true,
+              priority: true,
+              status: true,
+              createdAt: true,
+            },
+          })
+        ),
+      ]);
+
+      const [leaveRequests, notices, notifications] = await Promise.all([
+        withDbRetry(() =>
+          prisma.leaveRequest.findMany({
+            where: { residentId: resident.id },
+            orderBy: { appliedAt: 'desc' },
+            select: { id: true, fromDate: true, toDate: true, reason: true, status: true },
+          })
+        ),
+        withDbRetry(() =>
+          prisma.notice.findMany({
+            where: { propertyId: resident.propertyId },
+            orderBy: { publishedAt: 'desc' },
+            take: 5,
+            select: {
+              id: true,
+              title: true,
+              content: true,
+              category: true,
+              isImportant: true,
+              publishedAt: true,
+              publisherName: true,
+            },
+          })
+        ),
+        withDbRetry(() =>
+          prisma.notification.findMany({
+            where: { userId: resident.userId },
+            orderBy: { createdAt: 'desc' },
+            take: 10,
+            select: {
+              id: true,
+              title: true,
+              message: true,
+              type: true,
+              isRead: true,
+              createdAt: true,
+            },
+          })
+        ),
+      ]);
 
       const pendingPayments = payments.filter((p) => p.status === 'PENDING' || p.status === 'OVERDUE');
       const totalOutstanding = pendingPayments.reduce((sum, p) => sum + p.amount, 0);

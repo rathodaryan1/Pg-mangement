@@ -111,6 +111,11 @@ router.get('/health', async (req, res) => {
   });
 });
 
+import kitchenRoutes from './kitchen.routes';
+import securityRoutes from './security.routes';
+import housekeepingRoutes from './housekeeping.routes';
+import saasRoutes from './saas.routes';
+
 // Super Admin SaaS Platform Routes
 router.use('/super-admin', superAdminRoutes);
 
@@ -122,6 +127,22 @@ router.use('/resident', residentRoutes);
 
 // Owner / Admin Portal Routes
 router.use('/owner', ownerRoutes);
+
+// Kitchen & Meal Management
+router.use('/kitchen', kitchenRoutes);
+
+// Security Guard & Visitor Desk
+router.use('/security', securityRoutes);
+
+// Housekeeping Operations
+router.use('/housekeeping', housekeepingRoutes);
+
+// SaaS Extensions: Leads, Bookings, Utilities, AI Assistant
+router.use('/saas', saasRoutes);
+
+// Connected Operating System: Lifecycle, Unified Tasks, Visual Occupancy, Parcels, Assets, Command Center
+import operationsRoutes from './operations.routes';
+router.use('/operations', operationsRoutes);
 
 // Gate Verification & Security Pass Check-In / Check-Out Routes
 router.get('/gate/verify/:token', OwnerController.verifyVisitorQRByToken as any);

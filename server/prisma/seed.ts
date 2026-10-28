@@ -859,7 +859,50 @@ async function main() {
     },
   });
 
-  console.log('✅ Created Staff Accounts');
+  // Operational Staff Accounts (Deterministic & Idempotent for local testing)
+  const staffCook = await prisma.user.upsert({
+    where: { email: 'cook@pg.com' },
+    update: { role: 'COOK', tenantId: defaultTenant.id, propertyId: propNavrangpura.id },
+    create: {
+      tenantId: defaultTenant.id,
+      propertyId: propNavrangpura.id,
+      email: 'cook@pg.com',
+      passwordHash,
+      name: 'Chef Ramu (Head Cook)',
+      role: 'COOK',
+      mobile: '9876543230',
+    },
+  });
+
+  const staffGuard = await prisma.user.upsert({
+    where: { email: 'guard@pg.com' },
+    update: { role: 'SECURITY_GUARD', tenantId: defaultTenant.id, propertyId: propNavrangpura.id },
+    create: {
+      tenantId: defaultTenant.id,
+      propertyId: propNavrangpura.id,
+      email: 'guard@pg.com',
+      passwordHash,
+      name: 'Bahadur Singh (Security Guard)',
+      role: 'SECURITY_GUARD',
+      mobile: '9876543231',
+    },
+  });
+
+  const staffHousekeeping = await prisma.user.upsert({
+    where: { email: 'housekeeping@pg.com' },
+    update: { role: 'HOUSEKEEPING', tenantId: defaultTenant.id, propertyId: propNavrangpura.id },
+    create: {
+      tenantId: defaultTenant.id,
+      propertyId: propNavrangpura.id,
+      email: 'housekeeping@pg.com',
+      passwordHash,
+      name: 'Sunita Devi (Housekeeping)',
+      role: 'HOUSEKEEPING',
+      mobile: '9876543232',
+    },
+  });
+
+  console.log('✅ Created Staff Accounts (Manager, Maintenance, Receptionist, Cook, Guard, Housekeeping)');
 
   // 19. Expenses
   await prisma.expense.createMany({
@@ -1040,22 +1083,31 @@ async function main() {
   console.log('🎉 Database Seeding Finished Successfully!');
   console.log(`
 ===========================================================
-  🔑 DEMO LOGIN CREDENTIALS:
+  🔑 DEMO LOGIN CREDENTIALS (LOCAL DEV & TESTING ONLY):
   ---------------------------------------------------------
-  RESIDENT:
-    Email:    aakash.v@gmail.com
-    Password: admin123
-    Room:     101 (Single AC)
-    PG:       Urban Nest Premium PG (Navrangpura, Ahmedabad)
-
-  RESIDENT 2:
-    Email:    sneha.rao@yahoo.com
-    Password: admin123
-    Room:     103 (Double Sharing)
+  SUPER ADMIN:
+    Email:    superadmin@urbannest.io
+    Password: superadmin123
 
   OWNER / ADMIN:
     Email:    owner@pg.com
     Password: admin123
+
+  STAFF PORTALS:
+    Cook / Kitchen:       cook@pg.com / admin123
+    Security Guard:       guard@pg.com / admin123
+    Housekeeping:         housekeeping@pg.com / admin123
+    Maintenance Tech:     repair.gurgaon@pg.com / admin123
+    Front Desk / Recp:    reception.gurgaon@pg.com / admin123
+    Property Manager:     manager.gurgaon@pg.com / admin123
+
+  RESIDENTS:
+    Resident 1: aakash.v@gmail.com / admin123
+    Resident 2: sneha.rao@yahoo.com / admin123
+    Resident 3: vikram.singh@outlook.com / admin123
+
+  *Notice: All credentials above use development-only defaults.
+  Never enable or deploy these default passwords in production.
 ===========================================================
   `);
 }

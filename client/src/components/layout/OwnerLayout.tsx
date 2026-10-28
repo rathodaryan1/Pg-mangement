@@ -24,12 +24,20 @@ import {
   LifeBuoy,
   FileSpreadsheet,
   Bell,
-  FileText
+  FileText,
+  Sparkles,
+  UtensilsCrossed,
+  Zap,
+  Layers,
+  CheckSquare,
+  Scale,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { ownerApi } from '../../services/ownerApi';
 import { Button } from '../ui/Button';
 import { UrbanNestLogo, UrbanNestMark } from '../ui/UrbanNestLogo';
+import { AIAssistantModal } from '../ai/AIAssistantModal';
+import { LanguageSelector } from '../../i18n';
 
 interface NavGroup {
   groupName: string;
@@ -45,6 +53,7 @@ const OWNER_NAV_GROUPS: NavGroup[] = [
   {
     groupName: 'OVERVIEW',
     items: [
+      { label: 'Command Center', path: '/owner/command-center', icon: Sparkles },
       { label: 'Dashboard', path: '/owner/dashboard', icon: LayoutDashboard },
       { label: 'Noticeboard', path: '/owner/notices', icon: Bell }
     ]
@@ -52,16 +61,18 @@ const OWNER_NAV_GROUPS: NavGroup[] = [
   {
     groupName: 'PROPERTY',
     items: [
+      { label: 'Visual Floor Plan', path: '/owner/visual-occupancy', icon: Layers },
       { label: 'Properties & Floors', path: '/owner/properties', icon: Building2 },
       { label: 'Rooms & Beds', path: '/owner/rooms', icon: BedDouble }
     ]
   },
   {
-    groupName: 'PEOPLE',
+    groupName: 'PEOPLE & ADMISSIONS',
     items: [
+      { label: 'Lifecycle Pipeline', path: '/owner/lifecycle', icon: UserCheck },
+      { label: 'Enquiries & Leads', path: '/owner/leads', icon: Users },
       { label: 'Residents', path: '/owner/residents', icon: Users },
       { label: 'KYC Documents', path: '/owner/documents', icon: FileText },
-      { label: 'Resident Lifecycle', path: '/owner/residents/lifecycle', icon: UserCheck },
       { label: 'Staff Management', path: '/owner/staff', icon: ShieldCheck },
       { label: 'Leave Approvals', path: '/owner/leave', icon: Calendar }
     ]
@@ -70,6 +81,7 @@ const OWNER_NAV_GROUPS: NavGroup[] = [
     groupName: 'FINANCE',
     items: [
       { label: 'Rent Payments', path: '/owner/payments', icon: Receipt },
+      { label: 'Reconciliation & Split', path: '/owner/reconciliation', icon: Scale },
       { label: 'Security Deposits', path: '/owner/deposits', icon: Wallet },
       { label: 'Operating Expenses', path: '/owner/expenses', icon: BarChart3 }
     ]
@@ -77,9 +89,12 @@ const OWNER_NAV_GROUPS: NavGroup[] = [
   {
     groupName: 'OPERATIONS',
     items: [
+      { label: 'Unified Staff Tasks', path: '/owner/tasks', icon: CheckSquare },
+      { label: 'Assets & Vendors', path: '/owner/assets', icon: Box },
+      { label: 'Kitchen & Mess', path: '/owner/kitchen', icon: UtensilsCrossed },
       { label: 'Visitor Desk', path: '/owner/visitors', icon: UserCircle },
       { label: 'Maintenance & Tickets', path: '/owner/maintenance', icon: Wrench },
-      { label: 'Inventory & Assets', path: '/owner/inventory', icon: Box },
+      { label: 'Utility Sub-Meters', path: '/owner/utilities', icon: Zap },
       { label: 'Emergency & SOS', path: '/owner/emergency', icon: LifeBuoy }
     ]
   },
@@ -98,6 +113,7 @@ export const OwnerLayout: React.FC<{ children: React.ReactNode }> = ({ children 
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [aiModalOpen, setAiModalOpen] = useState(false);
   const [propertyDropdownOpen, setPropertyDropdownOpen] = useState(false);
   const [propertiesList, setPropertiesList] = useState<any[]>([]);
 
@@ -253,6 +269,7 @@ export const OwnerLayout: React.FC<{ children: React.ReactNode }> = ({ children 
 
           {/* Right Header Actions */}
           <div className="flex items-center gap-3">
+            <LanguageSelector />
             {/* User Profile & Logout */}
             <div className="flex items-center gap-2.5 pl-2 border-l border-[#DDE2DD] dark:border-slate-800">
               <div className="w-7 h-7 rounded-full bg-[#0B4036] text-white font-bold flex items-center justify-center text-xs">
@@ -312,6 +329,20 @@ export const OwnerLayout: React.FC<{ children: React.ReactNode }> = ({ children 
           </div>
         </div>
       )}
+
+      {/* Floating AI Business Assistant Button */}
+      <button
+        type="button"
+        onClick={() => setAiModalOpen(true)}
+        className="fixed bottom-6 right-6 z-40 bg-[#0B4036] hover:bg-[#083028] text-white px-4 py-2.5 rounded-full shadow-lg border border-[#C8A45D]/40 flex items-center gap-2 text-xs font-semibold hover:shadow-xl transition-all duration-200 group hover:scale-105"
+        title="Urban Nest AI Business Copilot"
+      >
+        <Sparkles className="w-4 h-4 text-[#C8A45D] animate-pulse" />
+        <span>Ask AI Copilot</span>
+      </button>
+
+      {/* AI Assistant Modal */}
+      <AIAssistantModal isOpen={aiModalOpen} onClose={() => setAiModalOpen(false)} />
       </div>
     </div>
   );

@@ -92,6 +92,9 @@ enum UserRole {
   ACCOUNTANT
   MAINTENANCE
   RESIDENT
+  COOK
+  SECURITY_GUARD
+  HOUSEKEEPING
 }
 
 model User {
@@ -109,6 +112,8 @@ model User {
   resident     Resident?
   notifications Notification[]
   auditLogs    AuditLog[]     @relation("ActorAuditLogs")
+  staffAttendances StaffAttendance[]
+  staffAdvances    StaffAdvance[]
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
 
@@ -149,7 +154,22 @@ model Property {
   expenses          Expense[]
   inventoryItems    InventoryItem[]
   tasks             OperationalTask[]
+  menus             Menu[]
+  kitchenIngredients KitchenIngredient[]
+  purchaseRequests  PurchaseRequest[]
+  leads             Lead[]
+  bookings          Booking[]
+  housekeepingTasks HousekeepingTask[]
+  utilityReadings   UtilityReading[]
   auditLogs         AuditLog[]
+  moveInChecklists  MoveInChecklist[]
+  moveOutSettlements MoveOutSettlement[]
+  parcels           Parcel[]
+  assets            Asset[]
+  vendors           Vendor[]
+  staffAttendances  StaffAttendance[]
+  staffAdvances     StaffAdvance[]
+  complianceRecords ComplianceRecord[]
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
 }
@@ -279,6 +299,10 @@ model Resident {
   documents                Document[]
   notifications            Notification[]
   sosEvents                SOSEvent[]
+  mealParticipations       MealParticipation[]
+  moveInChecklist          MoveInChecklist?
+  moveOutSettlement        MoveOutSettlement?
+  parcels                  Parcel[]
   createdAt                DateTime          @default(now())
   updatedAt                DateTime          @updatedAt
 
@@ -765,6 +789,8 @@ model OperationalTask {
   dueDate     DateTime?
   status      TaskStatus   @default(PENDING)
   notes       String?
+  sourceType  String?      // "COMPLAINT", "INSPECTION", "HOUSEKEEPING", "PREVENTIVE_MAINTENANCE", "MANUAL"
+  sourceId    String?
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
@@ -807,4 +833,534 @@ model SupportTicket {
   @@index([tenantId])
   @@index([status])
 }
+
+// -------------------------------------------------------------
+// 18. KITCHEN, MEAL PLANNING & PARTICIPATION
+// -------------------------------------------------------------
+enum MealPeriod {
+  BREAKFAST
+  LUNCH
+  SNACKS
+  DINNER
+}
+
+enum DietaryType {
+  VEG
+  NON_VEG
+  JAIN
+  VEGAN
+}
+
+enum MenuStatus {
+  DRAFT
+  PUBLISHED
+  CANCELLED
+}
+
+enum MealParticipationStatus {
+  OPTED_IN
+  OPTED_OUT
+}
+
+model Menu {
+  id             String              @id @default(uuid())
+  propertyId     String
+  property       Property            @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  date           DateTime
+  mealPeriod     MealPeriod
+  title          String              // e.g. "Sunday Royal Lunch"
+  status         MenuStatus          @default(DRAFT)
+  servingTime    String?             // e.g. "12:30 PM - 02:30 PM"
+  cutoffTime     String?             // e.g. "10:00 AM"
+  notes          String?
+  items          MenuItem[]
+  participations MealParticipation[]
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  @@unique([propertyId, date, mealPeriod])
+  @@index([propertyId])
+  @@index([date])
+}
+
+model MenuItem {
+  id          String      @id @default(uuid())
+  menuId      String
+  menu        Menu        @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  dietaryType DietaryType @default(VEG)
+  allergens   String?
+  isAvailable Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([menuId])
+}
+
+model MealParticipation {
+  id         String                  @id @default(uuid())
+  menuId     String
+  menu       Menu                    @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  residentId String
+  resident   Resident                @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  propertyId String
+  status     MealParticipationStatus @default(OPTED_IN)
+  notes      String?
+  createdAt  DateTime                @default(now())
+  updatedAt  DateTime                @updatedAt
+
+  @@unique([menuId, residentId])
+  @@index([residentId])
+  @@index([propertyId])
+}
+
+model KitchenIngredient {
+  id           String            @id @default(uuid())
+  propertyId   String
+  property     Property          @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  name         String
+  category     String            // Grains, Vegetables, Dairy, Spices, Oil
+  currentStock Float             @default(0)
+  minStock     Float             @default(5)
+  unit         String            // kg, liters, packets, units
+  costPerUnit  Float?
+  supplier     String?
+  movements    KitchenMovement[]
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  @@index([propertyId])
+}
+
+enum KitchenMovementType {
+  STOCK_IN
+  CONSUMED
+  WASTED
+}
+
+model KitchenMovement {
+  id           String              @id @default(uuid())
+  ingredientId String
+  ingredient   KitchenIngredient   @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+  propertyId   String
+  type         KitchenMovementType
+  quantity     Float
+  reason       String?
+  recordedBy   String?
+  timestamp    DateTime            @default(now())
+
+  @@index([ingredientId])
+  @@index([propertyId])
+}
+
+enum PurchaseRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PURCHASED
+}
+
+model PurchaseRequest {
+  id            String                @id @default(uuid())
+  propertyId    String
+  property      Property              @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  itemTitle     String
+  quantity      Float
+  unit          String
+  estimatedCost Float?
+  status        PurchaseRequestStatus @default(PENDING)
+  requestedBy   String
+  approvedBy    String?
+  notes         String?
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+
+  @@index([propertyId])
+}
+
+// -------------------------------------------------------------
+// 19. LEADS, ADMISSIONS & BOOKINGS
+// -------------------------------------------------------------
+enum LeadStatus {
+  NEW
+  CONTACTED
+  VISIT_SCHEDULED
+  APPLIED
+  CONVERTED
+  LOST
+}
+
+model Lead {
+  id                 String     @id @default(uuid())
+  tenantId           String
+  propertyId         String
+  property           Property   @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  name               String
+  email              String
+  phone              String
+  roomTypePreference String?
+  source             String     @default("WEBSITE")
+  status             LeadStatus @default(NEW)
+  visitDate          DateTime?
+  followUpDate       DateTime?
+  notes              String?
+  referrerName       String?
+  referrerPhone      String?
+  referralCommission Float?     @default(0)
+  commissionStatus   String?    @default("PENDING")
+  whatsappConsent    Boolean    @default(false)
+  whatsappOptOut     Boolean    @default(false)
+  lastWhatsappSentAt DateTime?
+  assignedTo         String?
+  booking            Booking?
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  @@index([tenantId])
+  @@index([propertyId])
+  @@index([status])
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+model Booking {
+  id            String        @id @default(uuid())
+  tenantId      String
+  propertyId    String
+  property      Property      @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  leadId        String?       @unique
+  lead          Lead?         @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  name          String
+  email         String
+  phone         String
+  roomId        String?
+  bedId         String?
+  depositAmount Float         @default(0)
+  isDepositPaid Boolean       @default(false)
+  status        BookingStatus @default(PENDING)
+  checkInDate   DateTime
+  token         String        @unique @default(uuid())
+  notes         String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([tenantId])
+  @@index([propertyId])
+  @@index([status])
+}
+
+// -------------------------------------------------------------
+// 20. HOUSEKEEPING TASKS & SCHEDULES
+// -------------------------------------------------------------
+enum HousekeepingArea {
+  ROOM
+  BATHROOM
+  CORRIDOR
+  KITCHEN
+  DINING
+  LOBBY
+  TERRACE
+}
+
+model HousekeepingTask {
+  id          String           @id @default(uuid())
+  propertyId  String
+  property    Property         @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  area        HousekeepingArea @default(ROOM)
+  targetName  String
+  assignedTo  String?
+  scheduledAt DateTime
+  completedAt DateTime?
+  verifiedBy  String?
+  status      TaskStatus       @default(PENDING)
+  checklist   String?
+  notes       String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([propertyId])
+  @@index([status])
+}
+
+// -------------------------------------------------------------
+// 21. UTILITY READINGS & IOT MONITORING
+// -------------------------------------------------------------
+enum UtilityType {
+  ELECTRICITY
+  WATER
+  GAS
+  INTERNET
+}
+
+model UtilityReading {
+  id              String      @id @default(uuid())
+  propertyId      String
+  property        Property    @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  type            UtilityType @default(ELECTRICITY)
+  meterNumber     String
+  previousReading Float
+  currentReading  Float
+  unitsConsumed   Float
+  unitRate        Float
+  totalAmount     Float
+  billingPeriod   String
+  readingDate     DateTime    @default(now())
+  recordedBy      String
+  notes           String?
+  createdAt       DateTime    @default(now())
+
+  @@index([propertyId])
+  @@index([type])
+}
+
+// -------------------------------------------------------------
+// 22. AI BUSINESS ASSISTANT AUDIT LOG
+// -------------------------------------------------------------
+model AIAssistantLog {
+  id           String   @id @default(uuid())
+  tenantId     String
+  propertyId   String?
+  userId       String
+  query        String
+  response     String
+  toolsInvoked String?
+  timestamp    DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([userId])
+}
+
+// -------------------------------------------------------------
+// 23. RESIDENT LIFECYCLE: MOVE-IN CHECKLIST & SETTLEMENT
+// -------------------------------------------------------------
+model MoveInChecklist {
+  id               String   @id @default(uuid())
+  residentId       String   @unique
+  resident         Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  propertyId       String
+  property         Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  keyHandedOver    Boolean  @default(false)
+  roomInspected    Boolean  @default(false)
+  bedPrepared      Boolean  @default(false)
+  acRemoteGiven    Boolean  @default(false)
+  rulesAccepted    Boolean  @default(false)
+  checklistItems   String?  // JSON string of custom items
+  inspectedBy      String?
+  residentSignedAt DateTime?
+  notes            String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([propertyId])
+}
+
+model MoveOutSettlement {
+  id                String   @id @default(uuid())
+  residentId        String   @unique
+  resident          Resident @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  propertyId        String
+  property          Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  noticeDate        DateTime
+  moveOutDate       DateTime
+  inspectionStatus  String   @default("PENDING") // PENDING, PASSED, DAMAGED
+  inspectionNotes   String?
+  depositHeld       Float
+  unpaidRent        Float    @default(0)
+  damageDeductions  Float    @default(0)
+  utilityDeductions Float    @default(0)
+  otherDeductions   Float    @default(0)
+  netRefundAmount   Float
+  refundStatus      String   @default("PENDING") // PENDING, PROCESSED, COMPLETED
+  settledBy         String?
+  settledAt         DateTime?
+  bedReleased       Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([propertyId])
+}
+
+// -------------------------------------------------------------
+// 24. PARCEL & COURIER MANAGEMENT
+// -------------------------------------------------------------
+enum ParcelStatus {
+  RECEIVED
+  NOTIFIED
+  COLLECTED
+  RETURNED
+}
+
+model Parcel {
+  id              String       @id @default(uuid())
+  propertyId      String
+  property        Property     @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  residentId      String?
+  resident        Resident?    @relation(fields: [residentId], references: [id], onDelete: SetNull)
+  recipientName   String
+  recipientRoom   String?
+  courierCompany  String       // Amazon, Flipkart, Swiggy, BlueDart, DTDC, India Post
+  trackingNumber  String?
+  pickupPin       String       // 4-digit verification code or QR token
+  status          ParcelStatus @default(RECEIVED)
+  receivedAt      DateTime     @default(now())
+  collectedAt     DateTime?
+  collectedBy     String?
+  receivedByGuard String?
+  notes           String?
+
+  @@index([propertyId])
+  @@index([residentId])
+  @@index([status])
+}
+
+// -------------------------------------------------------------
+// 25. ASSET REGISTER & PREVENTIVE MAINTENANCE
+// -------------------------------------------------------------
+enum AssetStatus {
+  OPERATIONAL
+  UNDER_MAINTENANCE
+  DECOMMISSIONED
+  REPLACED
+}
+
+model Asset {
+  id                  String      @id @default(uuid())
+  propertyId          String
+  property            Property    @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  name                String      // e.g. "Voltas 1.5T Inverter AC - Room 204"
+  category            String      // AC, RO_WATER, WATER_PUMP, GENERATOR, LIFT, GEYSER, REFRIGERATOR, WASHING_MACHINE
+  serialNumber        String?
+  location            String      // "Room 204", "Rooftop Terrace", "Basement Utility Room"
+  purchaseDate        DateTime?
+  warrantyExpiry      DateTime?
+  vendorName          String?
+  vendorContact       String?
+  status              AssetStatus @default(OPERATIONAL)
+  lastServicedAt      DateTime?
+  nextServiceDue      DateTime?
+  serviceIntervalDays Int         @default(90) // Quarterly default
+  qrTag               String      @unique @default(uuid())
+  notes               String?
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+
+  @@index([propertyId])
+  @@index([category])
+  @@index([status])
+}
+
+// -------------------------------------------------------------
+// 26. VENDOR & PROCUREMENT DIRECTORY
+// -------------------------------------------------------------
+model Vendor {
+  id             String   @id @default(uuid())
+  propertyId     String
+  property       Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  name           String   // e.g. "Ahmedabad Fresh Vegetables & Dairy"
+  category       String   // GROCERY, PLUMBING, ELECTRICAL, SECURITY, INTERNET, REPAIRS
+  contactPerson  String?
+  phone          String
+  email          String?
+  address        String?
+  gstNumber      String?
+  rating         Float?   @default(5.0)
+  isActive       Boolean  @default(true)
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([propertyId])
+  @@index([category])
+}
+
+// -------------------------------------------------------------
+// 27. WORKFORCE: SHIFTS, ATTENDANCE & SALARY ADVANCES
+// -------------------------------------------------------------
+model StaffAttendance {
+  id           String    @id @default(uuid())
+  propertyId   String
+  property     Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date         DateTime  @default(now())
+  status       String    @default("PRESENT") // PRESENT, ABSENT, HALF_DAY, LEAVE
+  checkInTime  DateTime?
+  checkOutTime DateTime?
+  notes        String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@unique([userId, date])
+  @@index([propertyId])
+  @@index([userId])
+}
+
+model StaffAdvance {
+  id          String    @id @default(uuid())
+  propertyId  String
+  property    Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount      Float
+  reason      String?
+  disbursedAt DateTime  @default(now())
+  monthYear   String    // e.g. "October 2026"
+  isDeducted  Boolean   @default(false)
+  deductedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([propertyId])
+  @@index([userId])
+  @@index([monthYear])
+}
+
+// -------------------------------------------------------------
+// 28. STATUTORY COMPLIANCE & SAFETY AUDIT
+// -------------------------------------------------------------
+model ComplianceRecord {
+  id                String    @id @default(uuid())
+  propertyId        String
+  property          Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  category          String    // FIRE_SAFETY, LIFT_FITNESS, PEST_CONTROL, HEALTH_NOC, POLICE_INTIMATION, CCTV_AUDIT
+  title             String
+  issuingAuthority  String?
+  certificateNumber String?
+  validFrom         DateTime?
+  validTill         DateTime?
+  status            String    @default("ACTIVE") // ACTIVE, EXPIRING_SOON, EXPIRED, PENDING_RENEWAL
+  documentUrl       String?
+  notes             String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([propertyId])
+  @@index([category])
+  @@index([status])
+}
+
+// -------------------------------------------------------------
+// 29. AGREEMENT TEMPLATES
+// -------------------------------------------------------------
+model AgreementTemplate {
+  id         String   @id @default(uuid())
+  propertyId String?
+  title      String   @default("Standard Co-Living Tenancy Agreement")
+  content    String   // markdown / html with {{variable}} interpolation tags
+  version    Int      @default(1)
+  isDefault  Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([propertyId])
+}
+
+
+
 
