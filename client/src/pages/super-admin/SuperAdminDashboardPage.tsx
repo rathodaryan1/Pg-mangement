@@ -150,7 +150,7 @@ export const SuperAdminDashboardPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-[#18231F] flex items-center gap-2">
-            <Sparkles className="w-6 h-6 text-[#C8A45D]" />
+            <Sparkles className="w-5 h-5 text-[#C8A45D]" />
             SaaS Multi-Tenant Control Center
           </h1>
           <p className="text-xs text-[#68736D] mt-0.5">
@@ -158,18 +158,21 @@ export const SuperAdminDashboardPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Button variant="secondary" size="sm" onClick={fetchStats} leftIcon={<RefreshCw className="w-3.5 h-3.5" />}>
-            Refresh
-          </Button>
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={() => navigate('/super-admin/tenants')}
-            leftIcon={<Plus className="w-3.5 h-3.5" />}
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={fetchStats}
+            className="px-3.5 py-1.5 rounded-lg bg-[#18231F] hover:bg-[#25332E] text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors"
           >
-            Create New PG
-          </Button>
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Refresh</span>
+          </button>
+          <button
+            onClick={() => navigate('/super-admin/tenants')}
+            className="px-3.5 py-1.5 rounded-lg bg-[#0B4036] hover:bg-[#123F36] text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Create New PG</span>
+          </button>
         </div>
       </div>
 
@@ -178,25 +181,25 @@ export const SuperAdminDashboardPage: React.FC = () => {
         {kpiCards.map((kpi, idx) => {
           const Icon = kpi.icon;
           return (
-            <Card
+            <div
               key={idx}
-              className="p-5 border-[#DDE2DD] hover:shadow-md transition-all cursor-pointer group"
+              className="p-5 border border-[#DDE2DD] rounded-2xl hover:shadow-md transition-all cursor-pointer group bg-white"
               onClick={() => navigate(kpi.link)}
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="space-y-1">
-                  <p className="text-xs font-semibold text-[#68736D]">{kpi.title}</p>
-                  <p className="text-xl font-bold text-[#18231F] tracking-tight">{kpi.value}</p>
+                  <p className="text-xs font-medium text-[#68736D]">{kpi.title}</p>
+                  <p className="text-2xl font-bold text-[#18231F] tracking-tight">{kpi.value}</p>
                 </div>
                 <div className={`p-2.5 rounded-xl ${kpi.color} shrink-0`}>
                   <Icon className="w-5 h-5" />
                 </div>
               </div>
-              <div className="mt-3 pt-3 border-t border-[#DDE2DD] flex items-center justify-between text-[11px] text-[#68736D]">
+              <div className="mt-3 pt-3 border-t border-[#F0F2F0] flex items-center justify-between text-[11px] text-[#68736D]">
                 <span>{kpi.subtext}</span>
                 <ArrowUpRight className="w-3.5 h-3.5 text-[#8A928D] group-hover:text-[#0B4036] transition-colors" />
               </div>
-            </Card>
+            </div>
           );
         })}
       </div>
@@ -204,13 +207,16 @@ export const SuperAdminDashboardPage: React.FC = () => {
       {/* Subscriptions & Recent Activity Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Plan Distribution */}
-        <Card className="p-5 border-[#DDE2DD] space-y-4">
-          <h3 className="text-sm font-bold text-[#18231F] flex items-center justify-between">
-            <span>Tenants by SaaS Plan</span>
-            <Button variant="ghost" size="xs" onClick={() => navigate('/super-admin/plans')}>
+        <div className="p-5 border border-[#DDE2DD] rounded-2xl space-y-4 bg-white">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-[#18231F]">Tenants by SaaS Plan</h3>
+            <button
+              onClick={() => navigate('/super-admin/plans')}
+              className="text-xs font-semibold text-[#0B4036] hover:underline"
+            >
               Manage Plans
-            </Button>
-          </h3>
+            </button>
+          </div>
 
           <div className="space-y-3">
             {tenantsByPlan.length === 0 ? (
@@ -236,18 +242,21 @@ export const SuperAdminDashboardPage: React.FC = () => {
               Tenants on Trial are automatically notified 3 days prior to expiration.
             </p>
           </div>
-        </Card>
+        </div>
 
         {/* Recent Platform Activity */}
-        <Card className="p-5 border-[#DDE2DD] lg:col-span-2 space-y-4">
+        <div className="p-5 border border-[#DDE2DD] rounded-2xl lg:col-span-2 space-y-4 bg-white">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-[#18231F] flex items-center gap-2">
               <Clock className="w-4 h-4 text-[#0B4036]" />
               Recent Platform Audit Trail
             </h3>
-            <Button variant="ghost" size="xs" onClick={() => navigate('/super-admin/audit-logs')}>
+            <button
+              onClick={() => navigate('/super-admin/audit-logs')}
+              className="text-xs font-semibold text-[#0B4036] hover:underline"
+            >
               View All Logs
-            </Button>
+            </button>
           </div>
 
           <div className="space-y-2.5">
@@ -277,7 +286,7 @@ export const SuperAdminDashboardPage: React.FC = () => {
               ))
             )}
           </div>
-        </Card>
+        </div>
       </div>
     </div>
   );
