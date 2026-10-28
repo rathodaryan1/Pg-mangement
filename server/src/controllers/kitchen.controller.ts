@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { prisma } from '../config/prisma';
 import { sendSuccess, sendError } from '../utils/response';
 import { AuthRequest } from '../middleware/auth';
+import { verifyPropertyAccess } from '../utils/property-auth';
 
 async function withDbRetry<T>(fn: () => Promise<T>, retries = 2): Promise<T> {
   for (let i = 0; i <= retries; i++) {
@@ -22,11 +23,11 @@ export class KitchenController {
   static async getMenus(req: AuthRequest, res: Response): Promise<Response> {
     try {
       const { propertyId, date } = req.query;
-      const targetPropertyId = (propertyId as string) || req.user?.propertyId;
-
-      if (!targetPropertyId) {
-        return sendError(res, 'Property ID is required.', 400);
+      const auth = await verifyPropertyAccess(req, propertyId as string);
+      if (!auth.authorized) {
+        return sendError(res, auth.error || 'Access denied', auth.statusCode || 403);
       }
+      const targetPropertyId = auth.propertyId!;
 
       const targetDate = date ? new Date(date as string) : new Date();
       targetDate.setHours(0, 0, 0, 0);
@@ -94,10 +95,14 @@ export class KitchenController {
   static async createOrUpdateMenu(req: AuthRequest, res: Response): Promise<Response> {
     try {
       const { propertyId, date, mealPeriod, title, servingTime, cutoffTime, notes, items } = req.body;
-      const targetPropertyId = propertyId || req.user?.propertyId;
+      const auth = await verifyPropertyAccess(req, propertyId);
+      if (!auth.authorized) {
+        return sendError(res, auth.error || 'Access denied', auth.statusCode || 403);
+      }
+      const targetPropertyId = auth.propertyId!;
 
-      if (!targetPropertyId || !date || !mealPeriod || !title) {
-        return sendError(res, 'Property, date, meal period, and title are required.', 400);
+      if (!date || !mealPeriod || !title) {
+        return sendError(res, 'Date, meal period, and title are required.', 400);
       }
 
       const menuDate = new Date(date);
@@ -184,6 +189,18 @@ export class KitchenController {
         return sendError(res, 'Menu not found.', 404);
       }
 
+      const resident = await prisma.resident.findFirst({
+        where: { OR: [{ id: residentId }, { userId: req.user?.id }] },
+      });
+
+      if (!resident) {
+        return sendError(res, 'Resident profile not found.', 404);
+      }
+
+      if (resident.propertyId !== menu.propertyId) {
+        return sendError(res, 'Access denied: You can only select meals for your assigned residence.', 403);
+      }
+
       const participation = await withDbRetry(() =>
         prisma.mealParticipation.upsert({
           where: {
@@ -218,10 +235,11 @@ export class KitchenController {
   // -------------------------------------------------------------
   static async getCookDashboard(req: AuthRequest, res: Response): Promise<Response> {
     try {
-      const propertyId = req.user?.propertyId;
-      if (!propertyId) {
-        return sendError(res, 'No property assigned to current cook.', 400);
+      const auth = await verifyPropertyAccess(req, req.query.propertyId as string);
+      if (!auth.authorized) {
+        return sendError(res, auth.error || 'Property access denied', auth.statusCode || 403);
       }
+      const propertyId = auth.propertyId!;
 
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -304,8 +322,11 @@ export class KitchenController {
   // -------------------------------------------------------------
   static async getInventory(req: AuthRequest, res: Response): Promise<Response> {
     try {
-      const propertyId = (req.query.propertyId as string) || req.user?.propertyId;
-      if (!propertyId) return sendError(res, 'Property ID is required.', 400);
+      const auth = await verifyPropertyAccess(req, req.query.propertyId as string);
+      if (!auth.authorized) {
+        return sendError(res, auth.error || 'Property access denied', auth.statusCode || 403);
+      }
+      const propertyId = auth.propertyId!;
 
       const ingredients = await withDbRetry(() =>
         prisma.kitchenIngredient.findMany({
@@ -323,7 +344,6 @@ export class KitchenController {
   static async recordStockMovement(req: AuthRequest, res: Response): Promise<Response> {
     try {
       const { ingredientId, propertyId, type, quantity, reason } = req.body;
-      const targetPropertyId = propertyId || req.user?.propertyId;
 
       if (!ingredientId || !type || !quantity) {
         return sendError(res, 'Ingredient, type, and quantity are required.', 400);
@@ -341,6 +361,12 @@ export class KitchenController {
       if (!ingredient) {
         return sendError(res, 'Ingredient not found.', 404);
       }
+
+      const auth = await verifyPropertyAccess(req, propertyId || ingredient.propertyId);
+      if (!auth.authorized) {
+        return sendError(res, auth.error || 'Access denied', auth.statusCode || 403);
+      }
+      const targetPropertyId = auth.propertyId!;
 
       // Update current stock
       let newStock = ingredient.currentStock;
@@ -376,10 +402,14 @@ export class KitchenController {
   static async createPurchaseRequest(req: AuthRequest, res: Response): Promise<Response> {
     try {
       const { propertyId, itemTitle, quantity, unit, estimatedCost, notes } = req.body;
-      const targetPropertyId = propertyId || req.user?.propertyId;
+      const auth = await verifyPropertyAccess(req, propertyId);
+      if (!auth.authorized) {
+        return sendError(res, auth.error || 'Access denied', auth.statusCode || 403);
+      }
+      const targetPropertyId = auth.propertyId!;
 
-      if (!targetPropertyId || !itemTitle || !quantity || !unit) {
-        return sendError(res, 'Property, item title, quantity, and unit are required.', 400);
+      if (!itemTitle || !quantity || !unit) {
+        return sendError(res, 'Item title, quantity, and unit are required.', 400);
       }
 
       const request = await withDbRetry(() =>

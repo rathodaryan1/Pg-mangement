@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { prisma } from '../config/prisma';
 import { sendSuccess, sendError } from '../utils/response';
 import { AuthRequest } from '../middleware/auth';
+import { verifyPropertyAccess } from '../utils/property-auth';
 
 async function withDbRetry<T>(fn: () => Promise<T>, retries = 2): Promise<T> {
   for (let i = 0; i <= retries; i++) {
@@ -18,10 +19,12 @@ async function withDbRetry<T>(fn: () => Promise<T>, retries = 2): Promise<T> {
 export class HousekeepingController {
   static async getTasks(req: AuthRequest, res: Response): Promise<Response> {
     try {
-      const propertyId = (req.query.propertyId as string) || req.user?.propertyId;
+      const auth = await verifyPropertyAccess(req, req.query.propertyId as string);
+      if (!auth.authorized) {
+        return sendError(res, auth.error || 'Property access denied.', auth.statusCode || 403);
+      }
+      const propertyId = auth.propertyId!;
       const { status } = req.query;
-
-      if (!propertyId) return sendError(res, 'Property ID is required.', 400);
 
       const whereClause: any = { propertyId };
       if (status && status !== 'ALL') {
@@ -45,10 +48,14 @@ export class HousekeepingController {
   static async createTask(req: AuthRequest, res: Response): Promise<Response> {
     try {
       const { propertyId, area, targetName, scheduledAt, checklist, notes, assignedTo } = req.body;
-      const targetPropertyId = propertyId || req.user?.propertyId;
+      const auth = await verifyPropertyAccess(req, propertyId);
+      if (!auth.authorized) {
+        return sendError(res, auth.error || 'Property access denied.', auth.statusCode || 403);
+      }
+      const targetPropertyId = auth.propertyId!;
 
-      if (!targetPropertyId || !targetName || !scheduledAt) {
-        return sendError(res, 'Property, target area name, and scheduled date are required.', 400);
+      if (!targetName || !scheduledAt) {
+        return sendError(res, 'Target area name and scheduled date are required.', 400);
       }
 
       const task = await withDbRetry(() =>
@@ -81,6 +88,16 @@ export class HousekeepingController {
         return sendError(res, 'Task ID and status are required.', 400);
       }
 
+      const existing = await prisma.housekeepingTask.findUnique({ where: { id } });
+      if (!existing) {
+        return sendError(res, 'Housekeeping task not found.', 404);
+      }
+
+      const auth = await verifyPropertyAccess(req, existing.propertyId);
+      if (!auth.authorized) {
+        return sendError(res, auth.error || 'Access denied: Task belongs to a different property/tenant.', auth.statusCode || 403);
+      }
+
       const dataToUpdate: any = { status };
       if (notes) dataToUpdate.notes = notes;
       if (status === 'COMPLETED') {
@@ -105,6 +122,16 @@ export class HousekeepingController {
       const { id } = req.params;
       const { notes } = req.body;
 
+      const existing = await prisma.housekeepingTask.findUnique({ where: { id } });
+      if (!existing) {
+        return sendError(res, 'Housekeeping task not found.', 404);
+      }
+
+      const auth = await verifyPropertyAccess(req, existing.propertyId);
+      if (!auth.authorized) {
+        return sendError(res, auth.error || 'Access denied: Task belongs to a different property/tenant.', auth.statusCode || 403);
+      }
+
       const verified = await withDbRetry(() =>
         prisma.housekeepingTask.update({
           where: { id },
@@ -123,8 +150,11 @@ export class HousekeepingController {
 
   static async getDashboard(req: AuthRequest, res: Response): Promise<Response> {
     try {
-      const propertyId = req.user?.propertyId;
-      if (!propertyId) return sendError(res, 'Property assignment required.', 400);
+      const auth = await verifyPropertyAccess(req, req.query.propertyId as string);
+      if (!auth.authorized) {
+        return sendError(res, auth.error || 'Property access denied.', auth.statusCode || 403);
+      }
+      const propertyId = auth.propertyId!;
 
       const [pendingTasks, inProgressTasks, completedToday] = await Promise.all([
         withDbRetry(() =>
@@ -165,3 +195,4 @@ export class HousekeepingController {
     }
   }
 }
+

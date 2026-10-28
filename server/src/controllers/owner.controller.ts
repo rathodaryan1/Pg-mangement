@@ -1588,22 +1588,119 @@ export class OwnerController {
 
   static async approveVisitor(req: AuthRequest, res: Response): Promise<Response> {
     try {
-      const visitor = await prisma.visitorRequest.findUnique({
-        where: { id: req.params.id },
-        include: { property: true },
-      });
-      if (!visitor) return sendError(res, 'Visitor request not found', 404);
-      if (req.user?.role !== 'SUPER_ADMIN' && visitor.property?.tenantId !== req.user?.tenantId) {
-        return sendError(res, 'Access denied: foreign tenant visitor request', 403);
+      if (!req.user) {
+        return sendError(res, 'Authentication required', 401);
       }
 
-      const updated = await prisma.visitorRequest.update({
+      const ALLOWED_APPROVER_ROLES = ['SUPER_ADMIN', 'OWNER', 'MANAGER', 'RECEPTIONIST'];
+      if (req.user.role === 'RESIDENT') {
+        return sendError(res, 'Access denied: Residents cannot approve visitor requests', 403);
+      }
+      if (!ALLOWED_APPROVER_ROLES.includes(req.user.role)) {
+        return sendError(res, 'Access denied: Insufficient permissions to approve visitor requests', 403);
+      }
+
+      const visitor = await prisma.visitorRequest.findUnique({
         where: { id: req.params.id },
-        data: {
-          status: 'APPROVED',
-          approvedBy: req.user?.name || 'Owner Approval',
+        include: {
+          property: {
+            include: { tenant: true },
+          },
+          resident: {
+            select: {
+              id: true,
+              fullName: true,
+              mobile: true,
+              propertyId: true,
+              userId: true,
+            },
+          },
         },
       });
+      if (!visitor) return sendError(res, 'Visitor request not found', 404);
+
+      // Resolve effective tenant
+      let userTenantId = req.user.tenantId;
+      if (!userTenantId && req.user.propertyId) {
+        const userProp = await prisma.property.findUnique({
+          where: { id: req.user.propertyId },
+          select: { tenantId: true },
+        });
+        userTenantId = userProp?.tenantId || null;
+      }
+
+      // Cross-tenant protection
+      if (req.user.role !== 'SUPER_ADMIN') {
+        if (!userTenantId || visitor.property?.tenantId !== userTenantId) {
+          return sendError(res, 'Access denied: foreign tenant visitor request', 403);
+        }
+
+        // Property-level scoping for property-restricted managers / receptionists
+        if (['MANAGER', 'RECEPTIONIST'].includes(req.user.role)) {
+          let isAuthorizedForProperty = req.user.propertyId === visitor.propertyId;
+          if (!isAuthorizedForProperty) {
+            const authorizedProp = await prisma.property.findFirst({
+              where: {
+                id: visitor.propertyId,
+                tenantId: userTenantId,
+                staff: { some: { id: req.user.id } },
+              },
+            });
+            if (authorizedProp) isAuthorizedForProperty = true;
+          }
+
+          if (!isAuthorizedForProperty) {
+            return sendError(res, 'Access denied: You are not authorized to manage visitor requests for this property', 403);
+          }
+        }
+      }
+
+      // State transition validation
+      if (visitor.status === 'APPROVED') {
+        return sendError(res, 'Visitor request has already been approved', 400);
+      }
+      if (['CHECKED_IN', 'CHECKED_OUT'].includes(visitor.status)) {
+        return sendError(res, `Cannot approve visitor: visitor is already ${visitor.status.toLowerCase()}`, 400);
+      }
+      if (['CANCELLED', 'EXPIRED'].includes(visitor.status)) {
+        return sendError(res, `Cannot approve a ${visitor.status.toLowerCase()} visitor request`, 400);
+      }
+
+      // Preserve / ensure valid cryptographically secure QR pass token
+      const qrPassToken = visitor.qrPassToken && visitor.qrPassToken.length > 5
+        ? visitor.qrPassToken
+        : `VPASS-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+
+      const [updated] = await prisma.$transaction([
+        prisma.visitorRequest.update({
+          where: { id: visitor.id },
+          data: {
+            status: 'APPROVED',
+            approvedBy: req.user.name || req.user.email || 'Authorized Manager',
+            qrPassToken,
+          },
+          include: {
+            property: true,
+            resident: {
+              include: { bed: { include: { room: true } } },
+            },
+          },
+        }),
+        prisma.auditLog.create({
+          data: {
+            tenantId: visitor.property?.tenantId || userTenantId,
+            propertyId: visitor.propertyId,
+            actorId: req.user.id,
+            actorName: req.user.name || req.user.email,
+            actorRole: req.user.role,
+            action: 'UPDATE',
+            entity: 'VisitorRequest',
+            entityId: visitor.id,
+            details: `Approved visitor request for ${visitor.visitorName} (Pass Token: ${qrPassToken})`,
+          },
+        }),
+      ]);
+
       return sendSuccess(res, updated, 'Visitor request approved');
     } catch (error: any) {
       return sendError(res, error.message || 'Failed to approve visitor', 500);
@@ -1612,19 +1709,113 @@ export class OwnerController {
 
   static async rejectVisitor(req: AuthRequest, res: Response): Promise<Response> {
     try {
-      const visitor = await prisma.visitorRequest.findUnique({
-        where: { id: req.params.id },
-        include: { property: true },
-      });
-      if (!visitor) return sendError(res, 'Visitor request not found', 404);
-      if (req.user?.role !== 'SUPER_ADMIN' && visitor.property?.tenantId !== req.user?.tenantId) {
-        return sendError(res, 'Access denied: foreign tenant visitor request', 403);
+      if (!req.user) {
+        return sendError(res, 'Authentication required', 401);
       }
 
-      const updated = await prisma.visitorRequest.update({
+      const ALLOWED_APPROVER_ROLES = ['SUPER_ADMIN', 'OWNER', 'MANAGER', 'RECEPTIONIST'];
+      if (req.user.role === 'RESIDENT') {
+        return sendError(res, 'Access denied: Residents cannot reject visitor requests', 403);
+      }
+      if (!ALLOWED_APPROVER_ROLES.includes(req.user.role)) {
+        return sendError(res, 'Access denied: Insufficient permissions to reject visitor requests', 403);
+      }
+
+      const visitor = await prisma.visitorRequest.findUnique({
         where: { id: req.params.id },
-        data: { status: 'REJECTED' },
+        include: {
+          property: {
+            include: { tenant: true },
+          },
+          resident: {
+            select: {
+              id: true,
+              fullName: true,
+              mobile: true,
+              propertyId: true,
+              userId: true,
+            },
+          },
+        },
       });
+      if (!visitor) return sendError(res, 'Visitor request not found', 404);
+
+      // Resolve effective tenant
+      let userTenantId = req.user.tenantId;
+      if (!userTenantId && req.user.propertyId) {
+        const userProp = await prisma.property.findUnique({
+          where: { id: req.user.propertyId },
+          select: { tenantId: true },
+        });
+        userTenantId = userProp?.tenantId || null;
+      }
+
+      // Cross-tenant protection
+      if (req.user.role !== 'SUPER_ADMIN') {
+        if (!userTenantId || visitor.property?.tenantId !== userTenantId) {
+          return sendError(res, 'Access denied: foreign tenant visitor request', 403);
+        }
+
+        // Property-level scoping for property-restricted managers / receptionists
+        if (['MANAGER', 'RECEPTIONIST'].includes(req.user.role)) {
+          let isAuthorizedForProperty = req.user.propertyId === visitor.propertyId;
+          if (!isAuthorizedForProperty) {
+            const authorizedProp = await prisma.property.findFirst({
+              where: {
+                id: visitor.propertyId,
+                tenantId: userTenantId,
+                staff: { some: { id: req.user.id } },
+              },
+            });
+            if (authorizedProp) isAuthorizedForProperty = true;
+          }
+
+          if (!isAuthorizedForProperty) {
+            return sendError(res, 'Access denied: You are not authorized to manage visitor requests for this property', 403);
+          }
+        }
+      }
+
+      // State transition validation
+      if (visitor.status === 'REJECTED') {
+        return sendError(res, 'Visitor request has already been rejected', 400);
+      }
+      if (['CHECKED_IN', 'CHECKED_OUT'].includes(visitor.status)) {
+        return sendError(res, `Cannot reject visitor: visitor is already ${visitor.status.toLowerCase()}`, 400);
+      }
+      if (['CANCELLED'].includes(visitor.status)) {
+        return sendError(res, `Cannot reject a cancelled visitor request`, 400);
+      }
+
+      const [updated] = await prisma.$transaction([
+        prisma.visitorRequest.update({
+          where: { id: visitor.id },
+          data: {
+            status: 'REJECTED',
+            approvedBy: `${req.user.name || req.user.email} (Rejected)`,
+          },
+          include: {
+            property: true,
+            resident: {
+              include: { bed: { include: { room: true } } },
+            },
+          },
+        }),
+        prisma.auditLog.create({
+          data: {
+            tenantId: visitor.property?.tenantId || userTenantId,
+            propertyId: visitor.propertyId,
+            actorId: req.user.id,
+            actorName: req.user.name || req.user.email,
+            actorRole: req.user.role,
+            action: 'UPDATE',
+            entity: 'VisitorRequest',
+            entityId: visitor.id,
+            details: `Rejected visitor request for ${visitor.visitorName}`,
+          },
+        }),
+      ]);
+
       return sendSuccess(res, updated, 'Visitor request rejected');
     } catch (error: any) {
       return sendError(res, error.message || 'Failed to reject visitor', 500);

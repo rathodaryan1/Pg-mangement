@@ -12,7 +12,9 @@ import {
 } from 'lucide-react';
 import { saasApi } from '../../services/saasApi';
 import { Card } from '../../components/ui/Card';
-import { Button } from '../../components/ui/Button';
+import { StatCard } from '../../components/ui/StatCard';
+import { Button, PrimaryButton, SecondaryButton } from '../../components/ui/Button';
+import { PageHeader } from '../../components/ui/PageHeader';
 import { Modal } from '../../components/ui/Modal';
 import { toast } from '../../context/ToastContext';
 
@@ -90,52 +92,50 @@ export const HousekeepingPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#FBF9F5] p-4 sm:p-6 lg:p-8 text-slate-900">
-      {/* Top Header */}
-      <div className="max-w-7xl mx-auto mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="p-1.5 rounded-lg bg-teal-100 text-teal-800 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5" /> Housekeeping & Sanitization Desk
-            </span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Daily Cleaning Schedules & Checklists
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Track daily room cleanings, bathroom deep-cleans, common area sanitization, and supervisor audits.
-          </p>
-        </div>
+    <div className="space-y-6 animate-fade-in">
+      <PageHeader
+        title="Housekeeping & Sanitization Desk"
+        description="Daily room cleaning schedules, bed turnover tracking, common area deep-cleaning, and supervisor audits."
+        breadcrumbs={[
+          { label: 'Operations', href: '/staff/housekeeping' },
+          { label: 'Housekeeping Desk' },
+        ]}
+      >
+        <SecondaryButton size="sm" onClick={fetchHousekeeping} leftIcon={<RefreshCw className="w-3.5 h-3.5" />}>
+          Refresh
+        </SecondaryButton>
+        <PrimaryButton
+          size="sm"
+          onClick={() => setCreateModalOpen(true)}
+          leftIcon={<Plus className="w-3.5 h-3.5" />}
+        >
+          Schedule Cleaning
+        </PrimaryButton>
+      </PageHeader>
 
-        <div className="flex items-center gap-2.5">
-          <Button variant="outline" size="sm" onClick={fetchHousekeeping} className="gap-1.5 bg-white border-slate-200">
-            <RefreshCw className="w-3.5 h-3.5" /> Refresh
-          </Button>
-          <Button size="sm" onClick={() => setCreateModalOpen(true)} className="gap-1.5 bg-teal-700 hover:bg-teal-800 text-white">
-            <Plus className="w-3.5 h-3.5" /> Schedule Cleaning
-          </Button>
-        </div>
-      </div>
-
-      {/* KPI Cards */}
-      <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <Card className="p-5 border border-slate-200 bg-white shadow-xs">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Pending Cleanings</p>
-          <p className="text-3xl font-black text-amber-600">{stats?.pending || 0}</p>
-          <p className="text-[11px] text-slate-400 mt-1">Scheduled for today</p>
-        </Card>
-
-        <Card className="p-5 border border-slate-200 bg-white shadow-xs">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">In Progress</p>
-          <p className="text-3xl font-black text-sky-600">{stats?.inProgress || 0}</p>
-          <p className="text-[11px] text-slate-400 mt-1">Currently being cleaned</p>
-        </Card>
-
-        <Card className="p-5 border border-slate-200 bg-white shadow-xs">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Completed & Verified</p>
-          <p className="text-3xl font-black text-emerald-700">{stats?.completed || 0}</p>
-          <p className="text-[11px] text-slate-400 mt-1">Cleaned and inspected</p>
-        </Card>
+      {/* KPI Stat Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <StatCard
+          title="Pending Cleanings"
+          value={stats?.pending || 0}
+          subtitle="Scheduled for today"
+          icon={Clock}
+          color="amber"
+        />
+        <StatCard
+          title="In Progress"
+          value={stats?.inProgress || 0}
+          subtitle="Currently being cleaned"
+          icon={Sparkles}
+          color="forest"
+        />
+        <StatCard
+          title="Completed & Verified"
+          value={stats?.completed || 0}
+          subtitle="Cleaned and inspected"
+          icon={CheckCircle}
+          color="emerald"
+        />
       </div>
 
       {/* Tasks Grid */}

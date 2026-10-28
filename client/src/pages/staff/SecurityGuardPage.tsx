@@ -5,29 +5,36 @@ import {
   LogIn,
   LogOut,
   UserPlus,
-  Search,
   AlertOctagon,
   Clock,
-  CheckCircle,
   Truck,
   RefreshCw,
   Camera,
-  Scan,
   AlertCircle,
   XCircle,
   CheckCircle2,
   UserCheck,
   Key,
+  Building2,
+  Calendar,
+  CheckCircle
 } from 'lucide-react';
 import { saasApi } from '../../services/saasApi';
 import { operationsApi } from '../../services/operationsApi';
+import { useAuth } from '../../context/AuthContext';
 import { Card } from '../../components/ui/Card';
-import { Button } from '../../components/ui/Button';
+import { StatCard } from '../../components/ui/StatCard';
+import { Button, PrimaryButton, SecondaryButton } from '../../components/ui/Button';
+import { StatusBadge } from '../../components/ui/Badge';
 import { Modal } from '../../components/ui/Modal';
 import { QrCameraScanner } from '../../components/ui/QrCameraScanner';
+import { PageHeader } from '../../components/ui/PageHeader';
+import { FilterBar } from '../../components/ui/FilterBar';
+import { FormField } from '../../components/ui/FormField';
 import { toast } from '../../context/ToastContext';
 
 export const SecurityGuardPage: React.FC = () => {
+  const { activeProperty } = useAuth();
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'visitors' | 'parcels'>('visitors');
   const [visitors, setVisitors] = useState<any[]>([]);
@@ -98,13 +105,13 @@ export const SecurityGuardPage: React.FC = () => {
       const res = await saasApi.verifyPass({ token: cleanToken });
       if (res.data) {
         setVerifiedPass(res.data);
-        setCameraScannerOpen(false);
         setVerifyModalOpen(true);
+        if (cameraScannerOpen) setCameraScannerOpen(false);
       } else {
-        toast.error('Invalid pass verification response from server');
+        toast.error('Pass verification returned no record');
       }
     } catch (err: any) {
-      toast.error(err.message || 'Pass verification failed');
+      toast.error(err.message || 'Failed to verify visitor QR pass');
     } finally {
       setIsVerifying(false);
     }
@@ -113,64 +120,45 @@ export const SecurityGuardPage: React.FC = () => {
   const handleConfirmCheckIn = async (passIdOrToken: string) => {
     setIsProcessingAction(true);
     try {
-      const res = await saasApi.checkInVisitor({ token: passIdOrToken });
-      toast.success(res.message || 'Visitor admitted and checked in!');
+      await saasApi.checkInVisitor({ token: passIdOrToken, visitorId: passIdOrToken });
+      toast.success('Visitor gate check-in confirmed successfully');
       setVerifyModalOpen(false);
       setVerifiedPass(null);
       setQrToken('');
       fetchGuardDesk();
     } catch (err: any) {
-      toast.error(err.message || 'Check-in failed');
+      toast.error(err.message || 'Failed to check in visitor');
     } finally {
       setIsProcessingAction(false);
     }
   };
 
-  const handleConfirmCheckOut = async (passIdOrToken: string) => {
+  const handleConfirmCheckOut = async (visitorId: string) => {
     setIsProcessingAction(true);
     try {
-      const res = await saasApi.checkOutVisitor({ token: passIdOrToken });
-      toast.success(res.message || 'Visitor checkout recorded!');
+      await saasApi.checkOutVisitor({ visitorId });
+      toast.success('Visitor departure logged — Gate pass completed');
       setVerifyModalOpen(false);
       setVerifiedPass(null);
       setQrToken('');
       fetchGuardDesk();
     } catch (err: any) {
-      toast.error(err.message || 'Check-out failed');
+      toast.error(err.message || 'Failed to check out visitor');
     } finally {
       setIsProcessingAction(false);
     }
   };
 
-  const handleDirectCheckIn = async (vId: string) => {
-    try {
-      await saasApi.checkInVisitor({ visitorId: vId });
-      toast.success('Visitor marked as Checked In');
-      fetchGuardDesk();
-    } catch (err: any) {
-      toast.error(err.message || 'Check-in failed');
-    }
-  };
-
-  const handleDirectCheckOut = async (vId: string) => {
-    try {
-      await saasApi.checkOutVisitor({ visitorId: vId });
-      toast.success('Visitor marked as Checked Out');
-      fetchGuardDesk();
-    } catch (err: any) {
-      toast.error(err.message || 'Check-out failed');
-    }
-  };
-
-  const handleRegisterWalkIn = async (e: React.FormEvent) => {
+  const handleDirectWalkIn = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await saasApi.registerDirectEntry({
+      const res = await saasApi.registerDirectEntry({
         visitorName,
         visitorMobile,
-        purpose: `${purpose}${residentRoom ? ` - Room ${residentRoom}` : ''}`,
+        purpose,
+        propertyId: activeProperty?.id,
       });
-      toast.success('Walk-in entry logged and admitted!');
+      toast.success('Walk-in visitor entry recorded');
       setWalkInModalOpen(false);
       setVisitorName('');
       setVisitorMobile('');
@@ -190,7 +178,7 @@ export const SecurityGuardPage: React.FC = () => {
         courierCompany,
         trackingNumber,
       });
-      toast.success(res.message || 'Parcel registered successfully');
+      toast.success(res.message || 'Inward parcel registered successfully');
       setParcelModalOpen(false);
       setRecipientName('');
       setRecipientRoom('');
@@ -255,554 +243,530 @@ export const SecurityGuardPage: React.FC = () => {
   });
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] p-4 sm:p-6 lg:p-8 text-slate-900">
-      {/* Top Header */}
-      <div className="max-w-7xl mx-auto mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="p-1.5 rounded-lg bg-indigo-100 text-indigo-800 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
-              <ShieldCheck className="w-3.5 h-3.5" /> Security & Gate Desk Portal
+    <div className="space-y-6 animate-fade-in">
+      {/* ========================================================
+          1. PAGE HEADER
+         ======================================================== */}
+      <PageHeader
+        title="Security & Gate Desk"
+        description="Real-time camera QR scanning, visitor gate passes, courier parcel management, and emergency response."
+        breadcrumbs={[
+          { label: 'Operations', href: '/staff/security' },
+          { label: 'Security & Gate Desk' },
+        ]}
+        badge={
+          activeProperty && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FAF5EB] text-[#B9954E] border border-[#C8A45D]/40 text-xs font-bold">
+              <Building2 className="w-3.5 h-3.5 text-[#0B4036]" />
+              {activeProperty.name}
             </span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Main Gate Visitor Pass & Delivery Desk
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Integrated camera QR verification, resident visitor gate access, courier management, and emergency alerts.
-          </p>
-        </div>
+          )
+        }
+      >
+        <SecondaryButton size="sm" onClick={fetchGuardDesk} leftIcon={<RefreshCw className="w-3.5 h-3.5" />}>
+          Refresh Desk
+        </SecondaryButton>
+        <PrimaryButton
+          size="sm"
+          onClick={() => setCameraScannerOpen(true)}
+          leftIcon={<Camera className="w-3.5 h-3.5 text-[#C8A45D]" />}
+          className="bg-[#0B4036] hover:bg-[#123F36] text-white shadow-xs"
+        >
+          Scan QR Camera
+        </PrimaryButton>
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => setWalkInModalOpen(true)}
+          leftIcon={<UserPlus className="w-3.5 h-3.5" />}
+        >
+          Log Walk-In
+        </Button>
+        <Button
+          size="sm"
+          variant="gold"
+          onClick={() => setParcelModalOpen(true)}
+          leftIcon={<Truck className="w-3.5 h-3.5" />}
+        >
+          Inward Parcel
+        </Button>
+      </PageHeader>
 
-        <div className="flex items-center gap-2.5">
-          <Button variant="outline" size="sm" onClick={fetchGuardDesk} className="gap-1.5 bg-white border-slate-200">
-            <RefreshCw className="w-3.5 h-3.5" /> Refresh
-          </Button>
-          <Button
-            size="sm"
-            onClick={() => setCameraScannerOpen(true)}
-            className="gap-1.5 bg-indigo-700 hover:bg-indigo-800 text-white shadow-xs"
-          >
-            <Camera className="w-3.5 h-3.5" /> Scan QR Camera
-          </Button>
-          <Button size="sm" onClick={() => setWalkInModalOpen(true)} className="gap-1.5 bg-slate-800 hover:bg-slate-900 text-white">
-            <UserPlus className="w-3.5 h-3.5" /> Log Walk-in
-          </Button>
-          <Button size="sm" onClick={() => setParcelModalOpen(true)} className="gap-1.5 bg-emerald-700 hover:bg-emerald-800 text-white">
-            <Truck className="w-3.5 h-3.5" /> Inward Parcel
-          </Button>
-        </div>
-      </div>
-
-      {/* Emergency SOS Banner (If Active) */}
+      {/* ========================================================
+          2. CRITICAL EMERGENCY SOS BANNER (Only when active)
+         ======================================================== */}
       {stats?.activeSOS && stats.activeSOS.length > 0 && (
-        <div className="max-w-7xl mx-auto mb-6 p-4 rounded-xl bg-rose-600 text-white shadow-lg animate-pulse flex items-center justify-between">
+        <div className="p-4 rounded-xl bg-rose-600 text-white shadow-md flex items-center justify-between animate-pulse">
           <div className="flex items-center gap-3">
-            <AlertOctagon className="w-7 h-7 text-white shrink-0" />
+            <AlertOctagon className="w-8 h-8 text-white shrink-0" />
             <div>
-              <p className="font-extrabold text-base">CRITICAL EMERGENCY SOS ACTIVE</p>
-              <p className="text-xs text-rose-100">
-                Triggered by: {stats.activeSOS[0]?.resident?.fullName} (Room {stats.activeSOS[0]?.resident?.bed?.room?.number || 'N/A'}) - Tel: {stats.activeSOS[0]?.resident?.mobile}
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-extrabold uppercase tracking-wider px-2 py-0.5 rounded bg-white text-rose-700">
+                  CRITICAL EMERGENCY ALARM
+                </span>
+                <span className="text-xs font-mono opacity-90">
+                  {stats.activeSOS.length} ACTIVE INCIDENT(S)
+                </span>
+              </div>
+              <p className="mt-1 text-sm font-semibold text-rose-100">
+                {stats.activeSOS[0].location || 'Resident Wing'} • {stats.activeSOS[0].message || 'Resident triggered SOS'}
               </p>
             </div>
           </div>
-          <span className="px-3 py-1 rounded bg-white text-rose-700 text-xs font-bold uppercase">
-            Respond Immediately
-          </span>
+          <Button
+            size="sm"
+            onClick={fetchGuardDesk}
+            className="bg-white text-rose-700 hover:bg-rose-50 font-bold border border-rose-200"
+          >
+            Acknowledge & Dispatch
+          </Button>
         </div>
       )}
 
-      {/* Quick QR Scanner & Metric Cards */}
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
-        {/* QR Pass Box */}
-        <Card className="lg:col-span-2 p-5 border border-indigo-200/80 shadow-xs bg-indigo-50/40">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="font-bold text-sm text-indigo-950 flex items-center gap-2">
-              <QrCode className="w-4 h-4 text-indigo-600" /> Gate QR Pass Verification
-            </h3>
-            <button
-              onClick={() => setCameraScannerOpen(true)}
-              className="text-xs font-bold text-indigo-700 hover:text-indigo-900 flex items-center gap-1 bg-white px-2.5 py-1 rounded-md border border-indigo-200"
-            >
-              <Camera className="w-3.5 h-3.5" /> Open Camera Scanner
-            </button>
-          </div>
-          <p className="text-xs text-slate-500 mb-3">
-            Scan via camera or enter visitor QR token/UUID to verify pass details:
-          </p>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              placeholder="e.g. 8d39c08a-493a-44c1-..."
-              value={qrToken}
-              onChange={(e) => setQrToken(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleVerifyPassToken(qrToken);
-              }}
-              className="flex-1 px-3 py-2 text-xs font-mono rounded-lg border border-indigo-300 bg-white focus:ring-2 focus:ring-indigo-500"
-            />
-            <Button
-              size="sm"
-              isLoading={isVerifying}
-              onClick={() => handleVerifyPassToken(qrToken)}
-              className="bg-indigo-700 hover:bg-indigo-800 text-white gap-1 text-xs"
-            >
-              <Scan className="w-3.5 h-3.5" /> Verify Pass
-            </Button>
-          </div>
-        </Card>
-
-        {/* Currently Inside */}
-        <Card
+      {/* ========================================================
+          3. SUMMARY METRIC CARDS
+         ======================================================== */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          title="Visitors Inside Now"
+          value={stats?.insideCount || 0}
+          subtitle="Currently inside property"
+          icon={UserCheck}
+          color="forest"
           onClick={() => {
             setActiveTab('visitors');
             setVisitorFilter('CHECKED_IN');
           }}
-          className={`p-5 border shadow-xs cursor-pointer transition-all ${
-            visitorFilter === 'CHECKED_IN' ? 'border-indigo-500 ring-2 ring-indigo-200 bg-indigo-50/20' : 'border-slate-200 bg-white'
-          }`}
-        >
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Currently Inside</p>
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          </div>
-          <p className="text-3xl font-black text-indigo-700 mt-1">{stats?.currentlyInside || 0}</p>
-          <p className="text-[11px] text-slate-400 mt-1">Visitors active on premises</p>
-        </Card>
-
-        {/* Overdue Alert Card */}
-        <Card
+        />
+        <StatCard
+          title="Approved & Expected"
+          value={stats?.expectedCount || 0}
+          subtitle="Valid passes awaiting arrival"
+          icon={Clock}
+          color="gold"
+          onClick={() => {
+            setActiveTab('visitors');
+            setVisitorFilter('APPROVED');
+          }}
+        />
+        <StatCard
+          title="Overdue Exits"
+          value={stats?.overdueCount || 0}
+          subtitle="Exceeded 8h or visit date"
+          icon={AlertCircle}
+          color="rose"
           onClick={() => {
             setActiveTab('visitors');
             setVisitorFilter('OVERDUE');
           }}
-          className={`p-5 border shadow-xs cursor-pointer transition-all ${
-            stats?.overdueCount > 0
-              ? 'border-amber-300 bg-amber-50/40'
-              : 'border-slate-200 bg-white'
-          } ${visitorFilter === 'OVERDUE' ? 'ring-2 ring-amber-400' : ''}`}
-        >
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Overdue Exits</p>
-            {stats?.overdueCount > 0 && <Clock className="w-3.5 h-3.5 text-amber-600" />}
-          </div>
-          <p className={`text-3xl font-black mt-1 ${stats?.overdueCount > 0 ? 'text-amber-700' : 'text-slate-400'}`}>
-            {stats?.overdueCount || 0}
-          </p>
-          <p className="text-[11px] text-slate-400 mt-1">Visitors beyond visit limit</p>
-        </Card>
+        />
+        <StatCard
+          title="Pending Parcels"
+          value={parcels.filter((p) => p.status === 'RECEIVED').length}
+          subtitle="Awaiting resident pickup"
+          icon={Truck}
+          color="slate"
+          onClick={() => setActiveTab('parcels')}
+        />
       </div>
 
-      {/* Tab Switcher */}
-      <div className="max-w-7xl mx-auto flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setActiveTab('visitors')}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${
-              activeTab === 'visitors'
-                ? 'bg-indigo-700 text-white shadow-xs'
-                : 'text-slate-600 hover:bg-slate-100'
-            }`}
-          >
-            <Clock className="w-3.5 h-3.5" /> Visitor Desk ({visitors.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('parcels')}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 ${
-              activeTab === 'parcels'
-                ? 'bg-emerald-700 text-white shadow-xs'
-                : 'text-slate-600 hover:bg-slate-100'
-            }`}
-          >
-            <Truck className="w-3.5 h-3.5" /> Parcel & Courier Desk ({parcels.length})
-          </button>
-        </div>
-
-        {activeTab === 'visitors' && (
-          <div className="flex items-center gap-1.5 text-xs">
-            <button
-              onClick={() => setVisitorFilter('ALL')}
-              className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors ${
-                visitorFilter === 'ALL' ? 'bg-slate-800 text-white' : 'text-slate-600 hover:bg-slate-100'
-              }`}
-            >
-              All ({visitors.length})
-            </button>
-            <button
-              onClick={() => setVisitorFilter('CHECKED_IN')}
-              className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors ${
-                visitorFilter === 'CHECKED_IN' ? 'bg-emerald-700 text-white' : 'text-slate-600 hover:bg-slate-100'
-              }`}
-            >
-              Inside ({visitors.filter((v) => v.status === 'CHECKED_IN').length})
-            </button>
-            <button
-              onClick={() => setVisitorFilter('APPROVED')}
-              className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors ${
-                visitorFilter === 'APPROVED' ? 'bg-sky-700 text-white' : 'text-slate-600 hover:bg-slate-100'
-              }`}
-            >
-              Approved ({visitors.filter((v) => v.status === 'APPROVED').length})
-            </button>
-            <button
-              onClick={() => setVisitorFilter('OVERDUE')}
-              className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-colors ${
-                visitorFilter === 'OVERDUE' ? 'bg-amber-700 text-white' : 'text-slate-600 hover:bg-slate-100'
-              }`}
-            >
-              Overdue ({visitors.filter(isVisitorOverdue).length})
-            </button>
+      {/* ========================================================
+          4. QR VERIFICATION & PASS LOOKUP PANEL
+         ======================================================== */}
+      <Card className="p-5 border border-[#DDE2DD] bg-white">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="space-y-1">
+            <h3 className="text-sm font-bold text-[#18231F] flex items-center gap-2">
+              <QrCode className="w-4 h-4 text-[#0B4036]" /> Quick Pass Verification & Gate Scanner
+            </h3>
+            <p className="text-xs text-[#68736D]">
+              Scan visitor QR code via camera or enter alphanumeric pass token (e.g. VPASS-XXXXXXXX).
+            </p>
           </div>
-        )}
-      </div>
 
-      {/* Visitor Log Table */}
-      {activeTab === 'visitors' && (
-        <div className="max-w-7xl mx-auto space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-              <Clock className="w-4 h-4 text-slate-500" /> Visitor & Gate Pass Register
-            </h2>
+          <div className="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setCameraScannerOpen(true)}
+              leftIcon={<Camera className="w-3.5 h-3.5 text-[#0B4036]" />}
+              className="w-full sm:w-auto border-[#0B4036]/30 text-[#0B4036] bg-[#EAF2EE]/50 hover:bg-[#EAF2EE]"
+            >
+              Open Camera Scanner
+            </Button>
 
-            <div className="relative w-full sm:w-80">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleVerifyPassToken(qrToken);
+              }}
+              className="flex items-center gap-1.5 w-full sm:w-auto"
+            >
               <input
                 type="text"
-                placeholder="Search visitor, phone, room, token..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-slate-200 bg-white focus:ring-2 focus:ring-indigo-500"
+                placeholder="Enter pass token..."
+                value={qrToken}
+                onChange={(e) => setQrToken(e.target.value.toUpperCase())}
+                className="w-full sm:w-52 px-3 py-1.5 text-xs bg-[#F8F7F3] border border-[#DDE2DD] rounded-lg text-[#18231F] font-mono uppercase focus:ring-2 focus:ring-[#0B4036]/20 focus:border-[#0B4036]"
               />
-            </div>
+              <PrimaryButton
+                type="submit"
+                size="sm"
+                isLoading={isVerifying}
+                className="shrink-0"
+              >
+                Verify
+              </PrimaryButton>
+            </form>
           </div>
-
-          <Card className="border border-slate-200 shadow-xs bg-white overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
-                  <tr>
-                    <th className="py-3 px-4">Visitor / Contact</th>
-                    <th className="py-3 px-4">Resident & Room</th>
-                    <th className="py-3 px-4">Purpose & Window</th>
-                    <th className="py-3 px-4">Status</th>
-                    <th className="py-3 px-4">Check-In / Out</th>
-                    <th className="py-3 px-4 text-right">Gate Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-700">
-                  {filteredVisitors.length > 0 ? (
-                    filteredVisitors.map((v) => {
-                      const overdue = isVisitorOverdue(v);
-                      return (
-                        <tr key={v.id} className={`hover:bg-slate-50/60 transition-colors ${overdue ? 'bg-amber-50/30' : ''}`}>
-                          <td className="py-3 px-4">
-                            <div className="flex items-center gap-2">
-                              <div>
-                                <p className="font-bold text-slate-900">{v.visitorName}</p>
-                                <p className="text-[11px] text-slate-400">{v.visitorMobile}</p>
-                              </div>
-                              {overdue && (
-                                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-800 uppercase tracking-wider">
-                                  Overdue
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="py-3 px-4">
-                            <p className="font-medium text-slate-900">{v.residentName}</p>
-                            <p className="text-[10px] text-slate-500">Room {v.residentRoom} ({v.residentBed})</p>
-                          </td>
-                          <td className="py-3 px-4">
-                            <p className="font-medium text-slate-800">{v.purpose}</p>
-                            <p className="text-[10px] text-slate-400">
-                              {v.expectedEntryTime || 'TBD'} {v.expectedExitTime ? `– ${v.expectedExitTime}` : ''}
-                            </p>
-                          </td>
-                          <td className="py-3 px-4">
-                            <span
-                              className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
-                                v.status === 'CHECKED_IN'
-                                  ? 'bg-emerald-100 text-emerald-800'
-                                  : v.status === 'CHECKED_OUT'
-                                  ? 'bg-slate-100 text-slate-600'
-                                  : v.status === 'APPROVED'
-                                  ? 'bg-sky-100 text-sky-800'
-                                  : v.status === 'REJECTED'
-                                  ? 'bg-rose-100 text-rose-800'
-                                  : 'bg-amber-100 text-amber-800'
-                              }`}
-                            >
-                              {v.status}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4 text-[11px] text-slate-500">
-                            {v.checkInTime ? (
-                              <p className="text-emerald-700 font-medium">
-                                In: {new Date(v.checkInTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                              </p>
-                            ) : (
-                              <p className="text-slate-400">Not checked in</p>
-                            )}
-                            {v.checkOutTime && (
-                              <p className="text-slate-400">
-                                Out: {new Date(v.checkOutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                              </p>
-                            )}
-                          </td>
-                          <td className="py-3 px-4 text-right">
-                            {v.status === 'APPROVED' ? (
-                              <Button
-                                size="xs"
-                                onClick={() => handleDirectCheckIn(v.id)}
-                                className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs"
-                              >
-                                <LogIn className="w-3 h-3 mr-1" /> Check In
-                              </Button>
-                            ) : v.status === 'CHECKED_IN' ? (
-                              <Button
-                                size="xs"
-                                onClick={() => handleDirectCheckOut(v.id)}
-                                className="bg-rose-600 hover:bg-rose-700 text-white shadow-xs"
-                              >
-                                <LogOut className="w-3 h-3 mr-1" /> Check Out
-                              </Button>
-                            ) : v.status === 'PENDING' ? (
-                              <span className="px-2 py-1 rounded bg-amber-50 text-amber-700 font-semibold text-[10px] border border-amber-200">
-                                Awaiting Approval
-                              </span>
-                            ) : (
-                              <span className="text-[11px] text-slate-400 italic">Completed</span>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })
-                  ) : (
-                    <tr>
-                      <td colSpan={6} className="py-8 text-center text-slate-400 italic">
-                        No visitors match your search filter.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </Card>
         </div>
-      )}
+      </Card>
 
-      {/* Parcel Desk Table */}
-      {activeTab === 'parcels' && (
-        <div className="max-w-7xl mx-auto space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-              <Truck className="w-4 h-4 text-emerald-600" /> Inward Parcels & Courier Register
-            </h2>
-            <Button size="sm" onClick={() => setParcelModalOpen(true)} className="bg-emerald-700 hover:bg-emerald-800 text-white gap-1">
-              <Truck className="w-3.5 h-3.5" /> Log Inward Parcel
-            </Button>
-          </div>
+      {/* ========================================================
+          5. OPERATIONAL TABS
+         ======================================================== */}
+      <div className="flex items-center gap-2 border-b border-[#DDE2DD] pb-1">
+        <button
+          type="button"
+          onClick={() => setActiveTab('visitors')}
+          className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-lg transition-all ${
+            activeTab === 'visitors'
+              ? 'bg-[#0B4036] text-white shadow-xs'
+              : 'text-[#68736D] hover:bg-[#EAF2EE] hover:text-[#0B4036]'
+          }`}
+        >
+          <UserCheck className="w-4 h-4" />
+          Visitor & Gate Pass Register
+          <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${activeTab === 'visitors' ? 'bg-white/20' : 'bg-[#DDE2DD]'}`}>
+            {visitors.length}
+          </span>
+        </button>
 
-          <Card className="border border-slate-200 shadow-xs bg-white overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+        <button
+          type="button"
+          onClick={() => setActiveTab('parcels')}
+          className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-lg transition-all ${
+            activeTab === 'parcels'
+              ? 'bg-[#0B4036] text-white shadow-xs'
+              : 'text-[#68736D] hover:bg-[#EAF2EE] hover:text-[#0B4036]'
+          }`}
+        >
+          <Truck className="w-4 h-4" />
+          Courier & Parcel Desk
+          <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${activeTab === 'parcels' ? 'bg-white/20' : 'bg-[#DDE2DD]'}`}>
+            {parcels.length}
+          </span>
+        </button>
+      </div>
+
+      {/* ========================================================
+          6. TAB CONTENT: VISITOR REGISTER
+         ======================================================== */}
+      {activeTab === 'visitors' && (
+        <div className="space-y-4">
+          <FilterBar
+            search={{
+              value: search,
+              onChange: setSearch,
+              placeholder: 'Search visitor, mobile, room, token...',
+            }}
+            filterPills={{
+              active: visitorFilter,
+              onChange: (v: any) => setVisitorFilter(v),
+              options: [
+                { label: 'All Passes', value: 'ALL', count: visitors.length },
+                { label: 'Inside Now', value: 'CHECKED_IN', count: visitors.filter((v) => v.status === 'CHECKED_IN').length },
+                { label: 'Approved', value: 'APPROVED', count: visitors.filter((v) => v.status === 'APPROVED').length },
+                { label: 'Overdue', value: 'OVERDUE', count: visitors.filter(isVisitorOverdue).length },
+              ],
+            }}
+          />
+
+          <div className="w-full overflow-x-auto rounded-xl border border-[#DDE2DD] bg-white shadow-xs">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead className="bg-[#F8F7F3] border-b border-[#DDE2DD]">
+                <tr>
+                  <th className="px-4 py-3 font-semibold text-[#68736D] uppercase tracking-wider text-[11px]">Visitor Name</th>
+                  <th className="px-4 py-3 font-semibold text-[#68736D] uppercase tracking-wider text-[11px]">Resident & Room</th>
+                  <th className="px-4 py-3 font-semibold text-[#68736D] uppercase tracking-wider text-[11px]">Purpose / Relation</th>
+                  <th className="px-4 py-3 font-semibold text-[#68736D] uppercase tracking-wider text-[11px]">Visit Window</th>
+                  <th className="px-4 py-3 font-semibold text-[#68736D] uppercase tracking-wider text-[11px]">Check-In / Out</th>
+                  <th className="px-4 py-3 font-semibold text-[#68736D] uppercase tracking-wider text-[11px]">Status</th>
+                  <th className="px-4 py-3 font-semibold text-[#68736D] uppercase tracking-wider text-[11px] text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredVisitors.length === 0 ? (
                   <tr>
-                    <th className="py-3 px-4">Recipient & Room</th>
-                    <th className="py-3 px-4">Courier / Tracking</th>
-                    <th className="py-3 px-4">Received Time</th>
-                    <th className="py-3 px-4">Status</th>
-                    <th className="py-3 px-4">Pickup PIN</th>
-                    <th className="py-3 px-4 text-right">Handover Action</th>
+                    <td colSpan={7} className="px-4 py-10 text-center text-[#8A928D]">
+                      No visitor records matching current filter.
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-700">
-                  {parcels.length > 0 ? (
-                    parcels.map((p) => (
-                      <tr key={p.id} className="hover:bg-slate-50/60 transition-colors">
-                        <td className="py-3 px-4">
-                          <p className="font-bold text-slate-900">{p.resident?.fullName || p.recipientName}</p>
-                          <p className="text-[11px] text-slate-500">
-                            Room {p.resident?.bed?.room?.number || p.recipientRoom || 'N/A'}
-                          </p>
+                ) : (
+                  filteredVisitors.map((v) => {
+                    const overdue = isVisitorOverdue(v);
+                    return (
+                      <tr key={v.id} className={`hover:bg-[#F8F7F3]/80 transition-colors ${overdue ? 'bg-rose-50/40' : ''}`}>
+                        <td className="px-4 py-3 font-bold text-[#18231F]">
+                          <div className="flex items-center gap-2">
+                            <span>{v.visitorName}</span>
+                            {overdue && (
+                              <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-rose-100 text-rose-800 border border-rose-200">
+                                Overdue
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[11px] font-mono text-[#8A928D] block">{v.visitorMobile}</span>
                         </td>
-                        <td className="py-3 px-4">
-                          <p className="font-medium text-slate-900">{p.courierCompany}</p>
-                          <p className="text-[10px] font-mono text-slate-400">{p.trackingNumber || 'No tracking ID'}</p>
+
+                        <td className="px-4 py-3">
+                          <span className="font-semibold text-[#18231F] block">{v.residentName || 'Resident Host'}</span>
+                          <span className="text-[11px] text-[#0B4036] font-bold">Room {v.residentRoom || 'N/A'}</span>
                         </td>
-                        <td className="py-3 px-4 text-[11px] text-slate-500">
-                          {new Date(p.receivedAt).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+
+                        <td className="px-4 py-3 text-[#68736D]">
+                          <span className="block font-medium">{v.purpose || 'Visit'}</span>
+                          <span className="text-[11px] text-[#8A928D]">{v.relation || 'Guest'}</span>
                         </td>
-                        <td className="py-3 px-4">
-                          <span
-                            className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
-                              p.status === 'COLLECTED'
-                                ? 'bg-emerald-100 text-emerald-800'
-                                : p.status === 'NOTIFIED'
-                                ? 'bg-sky-100 text-sky-800'
-                                : 'bg-amber-100 text-amber-800'
-                            }`}
-                          >
-                            {p.status}
+
+                        <td className="px-4 py-3 text-[#68736D] whitespace-nowrap">
+                          <span className="font-medium block">
+                            {typeof v.visitDate === 'string' ? v.visitDate.split('T')[0] : 'Today'}
+                          </span>
+                          <span className="text-[11px] text-[#8A928D]">
+                            {v.expectedEntryTime || '10:00 AM'} - {v.expectedExitTime || '08:00 PM'}
                           </span>
                         </td>
-                        <td className="py-3 px-4 font-mono font-bold text-slate-700 text-xs">
-                          {p.status === 'COLLECTED' ? '••••' : p.pickupPin || 'N/A'}
-                        </td>
-                        <td className="py-3 px-4 text-right">
-                          {p.status !== 'COLLECTED' ? (
-                            <Button size="xs" onClick={() => openCollectModal(p)} className="bg-emerald-600 hover:bg-emerald-700 text-white">
-                              Verify PIN Handover
-                            </Button>
+
+                        <td className="px-4 py-3 text-[#68736D] whitespace-nowrap">
+                          {v.checkInTime ? (
+                            <span className="text-[11px] text-[#0B4036] font-semibold block">
+                              In: {new Date(v.checkInTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
                           ) : (
-                            <span className="text-[11px] text-emerald-700 font-semibold flex items-center justify-end gap-1">
-                              <CheckCircle className="w-3.5 h-3.5" /> Collected
+                            <span className="text-[11px] text-[#8A928D] block">In: —</span>
+                          )}
+                          {v.checkOutTime ? (
+                            <span className="text-[11px] text-slate-500 font-semibold block">
+                              Out: {new Date(v.checkOutTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          ) : null}
+                        </td>
+
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <StatusBadge status={v.status} />
+                        </td>
+
+                        <td className="px-4 py-3 text-right whitespace-nowrap">
+                          {v.status === 'APPROVED' && (
+                            <PrimaryButton
+                              size="xs"
+                              onClick={() => handleConfirmCheckIn(v.qrPassToken || v.id)}
+                              leftIcon={<LogIn className="w-3 h-3" />}
+                            >
+                              Check In
+                            </PrimaryButton>
+                          )}
+                          {v.status === 'CHECKED_IN' && (
+                            <Button
+                              size="xs"
+                              variant="secondary"
+                              onClick={() => handleConfirmCheckOut(v.id)}
+                              leftIcon={<LogOut className="w-3 h-3 text-[#C8A45D]" />}
+                            >
+                              Check Out
+                            </Button>
+                          )}
+                          {v.status === 'PENDING' && (
+                            <span className="text-[11px] font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                              Awaiting Approval
+                            </span>
+                          )}
+                          {v.status === 'CHECKED_OUT' && (
+                            <span className="text-[11px] font-medium text-[#8A928D]">
+                              Completed
                             </span>
                           )}
                         </td>
                       </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={6} className="py-8 text-center text-slate-400 italic">
-                        No parcels currently registered.
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================
+          7. TAB CONTENT: PARCELS & COURIER DESK
+         ======================================================== */}
+      {activeTab === 'parcels' && (
+        <div className="space-y-4">
+          <FilterBar
+            search={{
+              value: search,
+              onChange: setSearch,
+              placeholder: 'Search parcel by recipient or tracking...',
+            }}
+          >
+            <Button
+              size="sm"
+              variant="primary"
+              onClick={() => setParcelModalOpen(true)}
+              leftIcon={<Truck className="w-3.5 h-3.5 text-[#C8A45D]" />}
+            >
+              Inward New Parcel
+            </Button>
+          </FilterBar>
+
+          <div className="w-full overflow-x-auto rounded-xl border border-[#DDE2DD] bg-white shadow-xs">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead className="bg-[#F8F7F3] border-b border-[#DDE2DD]">
+                <tr>
+                  <th className="px-4 py-3 font-semibold text-[#68736D] uppercase tracking-wider text-[11px]">Courier / Partner</th>
+                  <th className="px-4 py-3 font-semibold text-[#68736D] uppercase tracking-wider text-[11px]">Recipient & Room</th>
+                  <th className="px-4 py-3 font-semibold text-[#68736D] uppercase tracking-wider text-[11px]">Tracking #</th>
+                  <th className="px-4 py-3 font-semibold text-[#68736D] uppercase tracking-wider text-[11px]">Received At</th>
+                  <th className="px-4 py-3 font-semibold text-[#68736D] uppercase tracking-wider text-[11px]">Status</th>
+                  <th className="px-4 py-3 font-semibold text-[#68736D] uppercase tracking-wider text-[11px] text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {parcels.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-10 text-center text-[#8A928D]">
+                      No inward parcels logged yet.
+                    </td>
+                  </tr>
+                ) : (
+                  parcels.map((p) => (
+                    <tr key={p.id} className="hover:bg-[#F8F7F3]/80 transition-colors">
+                      <td className="px-4 py-3 font-bold text-[#18231F] flex items-center gap-2">
+                        <div className="w-6 h-6 rounded bg-[#EAF2EE] text-[#0B4036] flex items-center justify-center font-bold text-[10px]">
+                          {p.courierCompany?.[0] || 'C'}
+                        </div>
+                        {p.courierCompany || 'Courier'}
+                      </td>
+
+                      <td className="px-4 py-3">
+                        <span className="font-semibold text-[#18231F] block">{p.recipientName}</span>
+                        <span className="text-[11px] text-[#0B4036] font-bold">Room {p.recipientRoom || 'N/A'}</span>
+                      </td>
+
+                      <td className="px-4 py-3 font-mono text-[11px] text-[#68736D]">
+                        {p.trackingNumber || 'N/A'}
+                      </td>
+
+                      <td className="px-4 py-3 text-[#68736D] whitespace-nowrap">
+                        {new Date(p.createdAt || Date.now()).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      </td>
+
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <StatusBadge status={p.status} />
+                      </td>
+
+                      <td className="px-4 py-3 text-right whitespace-nowrap">
+                        {p.status === 'RECEIVED' ? (
+                          <PrimaryButton
+                            size="xs"
+                            onClick={() => openCollectModal(p)}
+                            leftIcon={<Key className="w-3 h-3 text-[#C8A45D]" />}
+                          >
+                            Verify Handover
+                          </PrimaryButton>
+                        ) : (
+                          <span className="text-[11px] text-emerald-700 font-semibold flex items-center justify-end gap-1">
+                            <CheckCircle className="w-3.5 h-3.5" /> Collected
+                          </span>
+                        )}
                       </td>
                     </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </Card>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
       {/* ========================================================
           MODAL: CAMERA QR SCANNER
          ======================================================== */}
-      <Modal
-        isOpen={cameraScannerOpen}
-        onClose={() => setCameraScannerOpen(false)}
-        title="Scan Visitor Gate QR Pass"
-      >
-        <div className="space-y-4 text-center">
-          <p className="text-xs text-slate-500">
-            Hold the visitor's mobile QR gate pass steady in front of the device camera:
-          </p>
-          <div className="p-2 bg-slate-900 rounded-xl overflow-hidden max-w-sm mx-auto">
+      {cameraScannerOpen && (
+        <Modal
+          isOpen={cameraScannerOpen}
+          onClose={() => setCameraScannerOpen(false)}
+          title="Scan Visitor Gate Pass QR"
+          maxWidth="md"
+        >
+          <div className="space-y-4">
+            <p className="text-xs text-[#68736D]">
+              Position the resident's dynamic visitor QR pass in front of your camera to auto-scan.
+            </p>
             <QrCameraScanner
-              onScan={(token) => handleVerifyPassToken(token)}
+              onScan={(detectedToken) => {
+                handleVerifyPassToken(detectedToken);
+              }}
               onClose={() => setCameraScannerOpen(false)}
-              scannerId="security-gate-qr-scanner"
             />
           </div>
-          <div className="pt-2 text-[11px] text-slate-400">
-            Alternatively, enter the pass token or visitor mobile number manually in the lookup field.
-          </div>
-        </div>
-      </Modal>
+        </Modal>
+      )}
 
       {/* ========================================================
-          MODAL: PASS VERIFICATION CARD & GATE ACTION
+          MODAL: PASS VERIFICATION PREVIEW MODAL
          ======================================================== */}
-      <Modal
-        isOpen={verifyModalOpen}
-        onClose={() => {
-          setVerifyModalOpen(false);
-          setVerifiedPass(null);
-        }}
-        title="Visitor Gate Pass Verification"
-      >
-        {verifiedPass && verifiedPass.pass ? (
-          <div className="space-y-4 text-left text-xs">
-            {/* Status Header Banner */}
-            <div
-              className={`p-3.5 rounded-xl border flex items-center justify-between ${
-                verifiedPass.pass.status === 'APPROVED'
-                  ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
-                  : verifiedPass.pass.status === 'CHECKED_IN'
-                  ? 'bg-sky-50 border-sky-200 text-sky-900'
-                  : verifiedPass.pass.status === 'PENDING'
-                  ? 'bg-amber-50 border-amber-200 text-amber-900'
-                  : 'bg-rose-50 border-rose-200 text-rose-900'
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                {verifiedPass.pass.status === 'APPROVED' ? (
-                  <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                ) : verifiedPass.pass.status === 'CHECKED_IN' ? (
-                  <UserCheck className="w-5 h-5 text-sky-600" />
-                ) : (
-                  <AlertCircle className="w-5 h-5 text-rose-600" />
-                )}
-                <div>
-                  <p className="font-bold text-sm">
-                    {verifiedPass.pass.status === 'APPROVED'
-                      ? 'Approved Visitor Pass'
-                      : verifiedPass.pass.status === 'CHECKED_IN'
-                      ? 'Visitor Currently Inside'
-                      : `Pass Status: ${verifiedPass.pass.status}`}
-                  </p>
-                  <p className="text-[11px] opacity-80">{verifiedPass.message}</p>
-                </div>
-              </div>
-              <span className="px-2.5 py-1 rounded text-xs font-black uppercase tracking-wider bg-white shadow-xs">
-                {verifiedPass.pass.status}
-              </span>
-            </div>
-
-            {/* Visitor & Host Resident Details */}
-            <div className="grid grid-cols-2 gap-3 p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+      {verifyModalOpen && verifiedPass && (
+        <Modal
+          isOpen={verifyModalOpen}
+          onClose={() => {
+            setVerifyModalOpen(false);
+            setVerifiedPass(null);
+          }}
+          title="Verified Gate Pass Preview"
+          maxWidth="md"
+        >
+          <div className="space-y-4">
+            <div className={`p-4 rounded-xl border flex items-start justify-between ${
+              verifiedPass.isValid ? 'bg-[#EAF2EE]/60 border-[#0B4036]/20' : 'bg-rose-50 border-rose-200'
+            }`}>
               <div>
-                <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Visitor Name</p>
-                <p className="font-bold text-slate-900 text-sm mt-0.5">{verifiedPass.pass.visitorName}</p>
-                <p className="text-[11px] text-slate-500">{verifiedPass.pass.visitorMobile}</p>
-              </div>
-              <div>
-                <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Host Resident</p>
-                <p className="font-bold text-slate-900 text-sm mt-0.5">{verifiedPass.pass.residentName}</p>
-                <p className="text-[11px] text-slate-500">
-                  Room {verifiedPass.pass.residentRoom} (Bed {verifiedPass.pass.residentBed})
-                </p>
-              </div>
-            </div>
-
-            {/* Visit Details */}
-            <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-1.5 text-[11px]">
-              <div className="flex justify-between">
-                <span className="text-slate-500">Purpose / Relation:</span>
-                <span className="font-semibold text-slate-800">
-                  {verifiedPass.pass.purpose} ({verifiedPass.pass.relation})
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Visit Date:</span>
-                <span className="font-semibold text-slate-800">
-                  {new Date(verifiedPass.pass.visitDate).toLocaleDateString([], {
-                    weekday: 'short',
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                  })}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Expected Time Window:</span>
-                <span className="font-semibold text-slate-800">
-                  {verifiedPass.pass.expectedEntryTime} – {verifiedPass.pass.expectedExitTime || 'End of Day'}
-                </span>
-              </div>
-              {verifiedPass.pass.checkInTime && (
-                <div className="flex justify-between text-emerald-700">
-                  <span>Gate Entry Recorded:</span>
-                  <span className="font-bold">
-                    {new Date(verifiedPass.pass.checkInTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono font-bold text-[#0B4036] bg-white px-2 py-0.5 rounded border border-[#DDE2DD]">
+                    {verifiedPass.qrPassToken || verifiedPass.id}
                   </span>
+                  <StatusBadge status={verifiedPass.status} />
                 </div>
-              )}
+                <h3 className="mt-2 text-base font-extrabold text-[#18231F]">{verifiedPass.visitorName}</h3>
+                <p className="text-xs text-[#68736D] font-mono">{verifiedPass.visitorMobile}</p>
+              </div>
+
+              <div className="text-right">
+                <span className="text-[11px] font-semibold text-[#8A928D] block">Host Resident</span>
+                <span className="text-xs font-bold text-[#18231F] block">{verifiedPass.residentName}</span>
+                <span className="text-xs font-black text-[#0B4036]">Room {verifiedPass.residentRoom || 'N/A'}</span>
+              </div>
             </div>
 
-            {/* Gate Action Buttons */}
-            <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
-              <Button
-                variant="outline"
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div className="p-3 bg-[#F8F7F3] rounded-lg border border-[#DDE2DD]">
+                <span className="text-[10px] font-bold text-[#8A928D] uppercase block">Relation / Purpose</span>
+                <span className="font-semibold text-[#18231F] mt-0.5 block">
+                  {verifiedPass.relation || 'Guest'} • {verifiedPass.purpose || 'Visit'}
+                </span>
+              </div>
+              <div className="p-3 bg-[#F8F7F3] rounded-lg border border-[#DDE2DD]">
+                <span className="text-[10px] font-bold text-[#8A928D] uppercase block">Visit Window</span>
+                <span className="font-semibold text-[#18231F] mt-0.5 block">
+                  {verifiedPass.expectedEntryTime || '10:00 AM'} - {verifiedPass.expectedExitTime || '08:00 PM'}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#DDE2DD]">
+              <SecondaryButton
                 size="sm"
                 onClick={() => {
                   setVerifyModalOpen(false);
@@ -810,194 +774,220 @@ export const SecurityGuardPage: React.FC = () => {
                 }}
               >
                 Close
-              </Button>
+              </SecondaryButton>
 
               {verifiedPass.canCheckIn && (
-                <Button
+                <PrimaryButton
                   size="sm"
+                  onClick={() => handleConfirmCheckIn(verifiedPass.qrPassToken || verifiedPass.id)}
                   isLoading={isProcessingAction}
-                  onClick={() => handleConfirmCheckIn(verifiedPass.pass.qrPassToken || verifiedPass.pass.id)}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-1 shadow-xs"
+                  leftIcon={<LogIn className="w-3.5 h-3.5" />}
                 >
-                  <LogIn className="w-3.5 h-3.5" /> Confirm Gate Check-In
-                </Button>
+                  Confirm Gate Check-In
+                </PrimaryButton>
               )}
 
               {verifiedPass.canCheckOut && (
                 <Button
                   size="sm"
+                  variant="secondary"
+                  onClick={() => handleConfirmCheckOut(verifiedPass.id)}
                   isLoading={isProcessingAction}
-                  onClick={() => handleConfirmCheckOut(verifiedPass.pass.qrPassToken || verifiedPass.pass.id)}
-                  className="bg-rose-600 hover:bg-rose-700 text-white font-bold gap-1 shadow-xs"
+                  leftIcon={<LogOut className="w-3.5 h-3.5 text-[#C8A45D]" />}
                 >
-                  <LogOut className="w-3.5 h-3.5" /> Confirm Gate Check-Out
+                  Confirm Gate Check-Out
                 </Button>
               )}
             </div>
           </div>
-        ) : (
-          <div className="p-6 text-center text-rose-600 space-y-2">
-            <XCircle className="w-8 h-8 mx-auto" />
-            <p className="font-bold text-sm">Pass Verification Failed</p>
-            <p className="text-xs text-slate-500">
-              The scanned token is invalid, expired, or does not exist in the property registry.
-            </p>
-          </div>
-        )}
-      </Modal>
+        </Modal>
+      )}
 
-      {/* Walk-in Modal */}
-      <Modal isOpen={walkInModalOpen} onClose={() => setWalkInModalOpen(false)} title="Log Direct Gate Entry (Delivery / Walk-in)">
-        <form onSubmit={handleRegisterWalkIn} className="space-y-4 text-xs text-left">
-          <div>
-            <label className="font-semibold block mb-1">Visitor Full Name</label>
-            <input
-              type="text"
-              required
-              placeholder="e.g. Swiggy Delivery Agent"
-              value={visitorName}
-              onChange={(e) => setVisitorName(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
-          <div>
-            <label className="font-semibold block mb-1">Visitor Contact Mobile</label>
-            <input
-              type="tel"
-              required
-              placeholder="e.g. 9876543210"
-              value={visitorMobile}
-              onChange={(e) => setVisitorMobile(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="font-semibold block mb-1">Entry Reason</label>
+      {/* ========================================================
+          MODAL: LOG DIRECT WALK-IN VISITOR
+         ======================================================== */}
+      {walkInModalOpen && (
+        <Modal
+          isOpen={walkInModalOpen}
+          onClose={() => setWalkInModalOpen(false)}
+          title="Log Direct Walk-in Entry"
+          maxWidth="md"
+        >
+          <form onSubmit={handleDirectWalkIn} className="space-y-4">
+            <FormField label="Visitor Full Name" required>
+              <input
+                type="text"
+                required
+                placeholder="e.g. Rahul Sharma"
+                value={visitorName}
+                onChange={(e) => setVisitorName(e.target.value)}
+                className="w-full px-3 py-2 text-xs bg-[#F8F7F3] border border-[#DDE2DD] rounded-lg"
+              />
+            </FormField>
+
+            <FormField label="Visitor Mobile Number" required>
+              <input
+                type="tel"
+                required
+                placeholder="10-digit mobile"
+                value={visitorMobile}
+                onChange={(e) => setVisitorMobile(e.target.value)}
+                className="w-full px-3 py-2 text-xs bg-[#F8F7F3] border border-[#DDE2DD] rounded-lg font-mono"
+              />
+            </FormField>
+
+            <FormField label="Host Resident Room Number" required>
+              <input
+                type="text"
+                required
+                placeholder="e.g. 101 or Common Area"
+                value={residentRoom}
+                onChange={(e) => setResidentRoom(e.target.value)}
+                className="w-full px-3 py-2 text-xs bg-[#F8F7F3] border border-[#DDE2DD] rounded-lg"
+              />
+            </FormField>
+
+            <FormField label="Purpose of Entry" required>
               <select
                 value={purpose}
                 onChange={(e) => setPurpose(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 text-xs bg-[#F8F7F3] border border-[#DDE2DD] rounded-lg"
               >
-                <option value="Delivery (Swiggy/Zomato/Amazon)">Food / E-Commerce Delivery</option>
+                <option value="Delivery (Swiggy/Zomato/Amazon)">Delivery (Swiggy/Zomato/Amazon)</option>
+                <option value="Personal Guest / Friend">Personal Guest / Friend</option>
+                <option value="Parent / Family Member">Parent / Family Member</option>
                 <option value="Maintenance / Service Tech">Maintenance / Service Tech</option>
-                <option value="Guest / Casual Visit">Guest / Casual Visit</option>
-                <option value="Other">Other Business</option>
+                <option value="Other Official Visit">Other Official Visit</option>
               </select>
+            </FormField>
+
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#DDE2DD]">
+              <SecondaryButton size="sm" type="button" onClick={() => setWalkInModalOpen(false)}>
+                Cancel
+              </SecondaryButton>
+              <PrimaryButton size="sm" type="submit">
+                Log Gate Entry
+              </PrimaryButton>
             </div>
-            <div>
-              <label className="font-semibold block mb-1">Visiting Room Number</label>
+          </form>
+        </Modal>
+      )}
+
+      {/* ========================================================
+          MODAL: INWARD PARCEL REGISTRATION
+         ======================================================== */}
+      {parcelModalOpen && (
+        <Modal
+          isOpen={parcelModalOpen}
+          onClose={() => setParcelModalOpen(false)}
+          title="Inward New Courier Parcel"
+          maxWidth="md"
+        >
+          <form onSubmit={handleRegisterParcel} className="space-y-4">
+            <FormField label="Recipient Resident Full Name" required>
               <input
                 type="text"
-                placeholder="e.g. 101"
-                value={residentRoom}
-                onChange={(e) => setResidentRoom(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-indigo-500"
+                required
+                placeholder="e.g. Aakash Verma"
+                value={recipientName}
+                onChange={(e) => setRecipientName(e.target.value)}
+                className="w-full px-3 py-2 text-xs bg-[#F8F7F3] border border-[#DDE2DD] rounded-lg"
               />
-            </div>
-          </div>
-          <div className="pt-2 flex justify-end gap-2">
-            <Button size="sm" variant="outline" type="button" onClick={() => setWalkInModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button size="sm" type="submit" className="bg-slate-900 text-white">
-              Log & Check In
-            </Button>
-          </div>
-        </form>
-      </Modal>
+            </FormField>
 
-      {/* Parcel Inward Modal */}
-      <Modal isOpen={parcelModalOpen} onClose={() => setParcelModalOpen(false)} title="Log Received Courier / Parcel">
-        <form onSubmit={handleRegisterParcel} className="space-y-4 text-xs text-left">
-          <div>
-            <label className="font-semibold block mb-1">Recipient Resident Full Name</label>
-            <input
-              type="text"
-              required
-              placeholder="e.g. Aakash Verma"
-              value={recipientName}
-              onChange={(e) => setRecipientName(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-emerald-500"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="font-semibold block mb-1">Room Number</label>
+            <FormField label="Recipient Room Number" required>
               <input
                 type="text"
                 required
                 placeholder="e.g. 101"
                 value={recipientRoom}
                 onChange={(e) => setRecipientRoom(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-emerald-500"
+                className="w-full px-3 py-2 text-xs bg-[#F8F7F3] border border-[#DDE2DD] rounded-lg"
               />
-            </div>
-            <div>
-              <label className="font-semibold block mb-1">Courier Service</label>
+            </FormField>
+
+            <FormField label="Courier Company / Delivery Partner" required>
               <select
                 value={courierCompany}
                 onChange={(e) => setCourierCompany(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-emerald-500"
+                className="w-full px-3 py-2 text-xs bg-[#F8F7F3] border border-[#DDE2DD] rounded-lg"
               >
                 <option value="Amazon">Amazon</option>
                 <option value="Flipkart">Flipkart</option>
                 <option value="BlueDart">BlueDart</option>
                 <option value="Delhivery">Delhivery</option>
                 <option value="DTDC">DTDC</option>
-                <option value="SpeedPost">India Post</option>
-                <option value="Other">Other</option>
+                <option value="Speed Post">India Post (Speed Post)</option>
+                <option value="Other Courier">Other Courier</option>
               </select>
-            </div>
-          </div>
-          <div>
-            <label className="font-semibold block mb-1">Tracking Number / AWB (Optional)</label>
-            <input
-              type="text"
-              placeholder="e.g. 12948274920"
-              value={trackingNumber}
-              onChange={(e) => setTrackingNumber(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs font-mono focus:ring-2 focus:ring-emerald-500"
-            />
-          </div>
-          <div className="pt-2 flex justify-end gap-2">
-            <Button size="sm" variant="outline" type="button" onClick={() => setParcelModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button size="sm" type="submit" className="bg-emerald-700 text-white">
-              Log Parcel & Issue PIN
-            </Button>
-          </div>
-        </form>
-      </Modal>
+            </FormField>
 
-      {/* Collect Modal */}
-      <Modal isOpen={collectModalOpen} onClose={() => setCollectModalOpen(false)} title="Verify Parcel Handover via Resident PIN">
-        <form onSubmit={handleConfirmPickup} className="space-y-4 text-xs text-left">
-          <p className="text-slate-500">
-            Ask resident <strong>{selectedParcel?.recipientName}</strong> (Room {selectedParcel?.recipientRoom}) for their 4-digit pickup PIN:
-          </p>
-          <div>
-            <input
-              type="text"
-              required
-              maxLength={6}
-              placeholder="Enter 4-digit PIN"
-              value={pickupPinInput}
-              onChange={(e) => setPickupPinInput(e.target.value)}
-              className="w-full px-4 py-3 rounded-lg border border-slate-300 text-center font-mono text-xl tracking-widest font-bold focus:ring-2 focus:ring-emerald-500"
-            />
-          </div>
-          <div className="pt-2 flex justify-end gap-2">
-            <Button size="sm" variant="outline" type="button" onClick={() => setCollectModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button size="sm" type="submit" className="bg-emerald-700 text-white">
-              Verify & Release
-            </Button>
-          </div>
-        </form>
-      </Modal>
+            <FormField label="Tracking / Waybill Number (Optional)">
+              <input
+                type="text"
+                placeholder="Waybill / AWB code"
+                value={trackingNumber}
+                onChange={(e) => setTrackingNumber(e.target.value)}
+                className="w-full px-3 py-2 text-xs bg-[#F8F7F3] border border-[#DDE2DD] rounded-lg font-mono"
+              />
+            </FormField>
+
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#DDE2DD]">
+              <SecondaryButton size="sm" type="button" onClick={() => setParcelModalOpen(false)}>
+                Cancel
+              </SecondaryButton>
+              <PrimaryButton size="sm" type="submit">
+                Register Inward Parcel
+              </PrimaryButton>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* ========================================================
+          MODAL: PARCEL HANDOVER VERIFICATION WITH PIN
+         ======================================================== */}
+      {collectModalOpen && selectedParcel && (
+        <Modal
+          isOpen={collectModalOpen}
+          onClose={() => setCollectModalOpen(false)}
+          title="Verify Resident Parcel Handover"
+          maxWidth="sm"
+        >
+          <form onSubmit={handleConfirmPickup} className="space-y-4">
+            <div className="p-3 bg-[#F8F7F3] rounded-lg border border-[#DDE2DD]">
+              <span className="text-[10px] font-bold text-[#8A928D] uppercase block">Parcel For</span>
+              <p className="text-xs font-bold text-[#18231F] mt-0.5">
+                {selectedParcel.recipientName} • Room {selectedParcel.recipientRoom}
+              </p>
+              <p className="text-[11px] text-[#68736D] mt-0.5">
+                {selectedParcel.courierCompany} ({selectedParcel.trackingNumber || 'No AWB'})
+              </p>
+            </div>
+
+            <FormField label="Resident Collection PIN" required helperText="Ask the resident for the 4-digit PIN sent to their app">
+              <input
+                type="text"
+                required
+                maxLength={6}
+                placeholder="Enter PIN..."
+                value={pickupPinInput}
+                onChange={(e) => setPickupPinInput(e.target.value)}
+                className="w-full px-3 py-2 text-center text-lg font-mono tracking-widest bg-[#F8F7F3] border border-[#DDE2DD] rounded-lg text-[#0B4036] font-bold"
+              />
+            </FormField>
+
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#DDE2DD]">
+              <SecondaryButton size="sm" type="button" onClick={() => setCollectModalOpen(false)}>
+                Cancel
+              </SecondaryButton>
+              <PrimaryButton size="sm" type="submit">
+                Confirm Handover
+              </PrimaryButton>
+            </div>
+          </form>
+        </Modal>
+      )}
     </div>
   );
 };

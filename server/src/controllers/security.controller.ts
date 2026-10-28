@@ -3,6 +3,7 @@ import { prisma } from '../config/prisma';
 import { sendSuccess, sendError } from '../utils/response';
 import { AuthRequest } from '../middleware/auth';
 import { AuditService } from '../services/audit.service';
+import { verifyPropertyAccess } from '../utils/property-auth';
 
 async function withDbRetry<T>(fn: () => Promise<T>, retries = 2): Promise<T> {
   for (let i = 0; i <= retries; i++) {
@@ -22,10 +23,12 @@ export class SecurityController {
   // -------------------------------------------------------------
   static async getVisitorLog(req: AuthRequest, res: Response): Promise<Response> {
     try {
-      const propertyId = (req.query.propertyId as string) || req.user?.propertyId;
+      const auth = await verifyPropertyAccess(req, req.query.propertyId as string);
+      if (!auth.authorized) {
+        return sendError(res, auth.error || 'Access denied', auth.statusCode || 403);
+      }
+      const propertyId = auth.propertyId!;
       const { status, date } = req.query;
-
-      if (!propertyId) return sendError(res, 'Property ID is required.', 400);
 
       const whereClause: any = { propertyId };
 
@@ -140,8 +143,13 @@ export class SecurityController {
 
       // Tenant / Property isolation check
       const isSuperAdmin = req.user?.role === 'SUPER_ADMIN';
-      if (!isSuperAdmin && req.user?.propertyId && req.user.propertyId !== visitor.propertyId) {
-        return sendError(res, 'Access denied: Visitor pass belongs to a different property.', 403, 'FORBIDDEN_PROPERTY');
+      if (!isSuperAdmin) {
+        if (req.user?.tenantId && visitor.property?.tenantId && visitor.property.tenantId !== req.user.tenantId) {
+          return sendError(res, 'Access denied: Visitor pass belongs to a different tenant.', 403, 'FORBIDDEN_TENANT');
+        }
+        if (req.user?.propertyId && req.user.propertyId !== visitor.propertyId) {
+          return sendError(res, 'Access denied: Visitor pass belongs to a different property.', 403, 'FORBIDDEN_PROPERTY');
+        }
       }
 
       const canCheckIn = visitor.status === 'APPROVED';
@@ -219,10 +227,15 @@ export class SecurityController {
         return sendError(res, 'Invalid QR Pass or Visitor not found.', 404, 'PASS_NOT_FOUND');
       }
 
-      // Property isolation check
+      // Property and Tenant isolation check
       const isSuperAdmin = req.user?.role === 'SUPER_ADMIN';
-      if (!isSuperAdmin && req.user?.propertyId && req.user.propertyId !== visitor.propertyId) {
-        return sendError(res, 'Access denied: Visitor pass belongs to another property.', 403, 'FORBIDDEN_PROPERTY');
+      if (!isSuperAdmin) {
+        if (req.user?.tenantId && visitor.property?.tenantId && visitor.property.tenantId !== req.user.tenantId) {
+          return sendError(res, 'Access denied: Visitor pass belongs to another tenant organization.', 403, 'FORBIDDEN_TENANT');
+        }
+        if (req.user?.propertyId && req.user.propertyId !== visitor.propertyId) {
+          return sendError(res, 'Access denied: Visitor pass belongs to another property.', 403, 'FORBIDDEN_PROPERTY');
+        }
       }
 
       // Strict state machine validation
@@ -332,10 +345,15 @@ export class SecurityController {
         return sendError(res, 'Visitor pass not found.', 404, 'PASS_NOT_FOUND');
       }
 
-      // Property isolation check
+      // Property and Tenant isolation check
       const isSuperAdmin = req.user?.role === 'SUPER_ADMIN';
-      if (!isSuperAdmin && req.user?.propertyId && req.user.propertyId !== visitor.propertyId) {
-        return sendError(res, 'Access denied: Visitor pass belongs to another property.', 403, 'FORBIDDEN_PROPERTY');
+      if (!isSuperAdmin) {
+        if (req.user?.tenantId && visitor.property?.tenantId && visitor.property.tenantId !== req.user.tenantId) {
+          return sendError(res, 'Access denied: Visitor pass belongs to another tenant organization.', 403, 'FORBIDDEN_TENANT');
+        }
+        if (req.user?.propertyId && req.user.propertyId !== visitor.propertyId) {
+          return sendError(res, 'Access denied: Visitor pass belongs to another property.', 403, 'FORBIDDEN_PROPERTY');
+        }
       }
 
       // State machine validation
@@ -405,10 +423,14 @@ export class SecurityController {
   static async registerDirectEntry(req: AuthRequest, res: Response): Promise<Response> {
     try {
       const { propertyId, visitorName, visitorMobile, purpose, residentId, expectedExitTime } = req.body;
-      const targetPropertyId = propertyId || req.user?.propertyId;
+      const auth = await verifyPropertyAccess(req, propertyId);
+      if (!auth.authorized) {
+        return sendError(res, auth.error || 'Access denied', auth.statusCode || 403);
+      }
+      const targetPropertyId = auth.propertyId!;
 
-      if (!targetPropertyId || !visitorName || !visitorMobile) {
-        return sendError(res, 'Property, visitor name, and mobile are required.', 400);
+      if (!visitorName || !visitorMobile) {
+        return sendError(res, 'Visitor name and mobile are required.', 400);
       }
 
       const entry = await withDbRetry(() =>
@@ -441,8 +463,11 @@ export class SecurityController {
   // -------------------------------------------------------------
   static async getGuardDashboard(req: AuthRequest, res: Response): Promise<Response> {
     try {
-      const propertyId = req.user?.propertyId;
-      if (!propertyId) return sendError(res, 'Property assignment required.', 400);
+      const auth = await verifyPropertyAccess(req, req.query.propertyId as string);
+      if (!auth.authorized) {
+        return sendError(res, auth.error || 'Property access denied.', auth.statusCode || 403);
+      }
+      const propertyId = auth.propertyId!;
 
       const today = new Date();
       today.setHours(0, 0, 0, 0);

@@ -3,6 +3,7 @@ import { prisma } from '../config/prisma';
 import { sendSuccess, sendError } from '../utils/response';
 import { AuthRequest } from '../middleware/auth';
 import { withDbRetry } from '../tests/db-helper';
+import { verifyPropertyAccess } from '../utils/property-auth';
 import bcrypt from 'bcryptjs';
 
 export class OperationsController {
@@ -15,8 +16,11 @@ export class OperationsController {
    */
   static async getLifecyclePipeline(req: AuthRequest, res: Response): Promise<Response> {
     try {
-      const propertyId = (req.query.propertyId as string) || req.user?.propertyId;
-      if (!propertyId) return sendError(res, 'Property ID is required.', 400);
+      const auth = await verifyPropertyAccess(req, req.query.propertyId as string);
+      if (!auth.authorized) {
+        return sendError(res, auth.error || 'Property access denied.', auth.statusCode || 403);
+      }
+      const propertyId = auth.propertyId!;
 
       const [leads, bookings, pendingMoveIns, activeResidents, noticePeriodResidents, settlements] =
         await Promise.all([
@@ -113,9 +117,14 @@ export class OperationsController {
         emergencyContactRelation,
       } = req.body;
 
-      const targetPropertyId = propertyId || req.user?.propertyId;
-      if (!targetPropertyId || !fullName || !email || !mobile || !bedId) {
-        return sendError(res, 'Property, bed, full name, email, and mobile are required for admission.', 400);
+      const auth = await verifyPropertyAccess(req, propertyId);
+      if (!auth.authorized) {
+        return sendError(res, auth.error || 'Property access denied.', auth.statusCode || 403);
+      }
+      const targetPropertyId = auth.propertyId!;
+
+      if (!fullName || !email || !mobile || !bedId) {
+        return sendError(res, 'Bed, full name, email, and mobile are required for admission.', 400);
       }
 
       // Check Bed status
@@ -265,6 +274,17 @@ export class OperationsController {
 
       if (!residentId) return sendError(res, 'Resident ID required.', 400);
 
+      const residentCheck = await prisma.resident.findUnique({
+        where: { id: residentId },
+        select: { id: true, propertyId: true },
+      });
+      if (!residentCheck) return sendError(res, 'Resident not found.', 404);
+
+      const auth = await verifyPropertyAccess(req, residentCheck.propertyId);
+      if (!auth.authorized) {
+        return sendError(res, auth.error || 'Access denied: Resident belongs to a different property.', auth.statusCode || 403);
+      }
+
       const checklist = await withDbRetry(() =>
         prisma.moveInChecklist.upsert({
           where: { residentId },
@@ -321,6 +341,11 @@ export class OperationsController {
         include: { securityDeposits: true, bed: true },
       });
       if (!resident) return sendError(res, 'Resident not found.', 404);
+
+      const auth = await verifyPropertyAccess(req, resident.propertyId);
+      if (!auth.authorized) {
+        return sendError(res, auth.error || 'Access denied: Resident belongs to a different property.', auth.statusCode || 403);
+      }
 
       const depositHeld = resident.securityDeposits.reduce((acc, d) => acc + d.amount, 0);
 

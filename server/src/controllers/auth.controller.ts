@@ -162,6 +162,22 @@ export class AuthController {
                 plan: true,
               },
             },
+            property: {
+              select: {
+                id: true,
+                name: true,
+                tenantId: true,
+                tenant: {
+                  select: {
+                    id: true,
+                    name: true,
+                    slug: true,
+                    status: true,
+                    plan: true,
+                  },
+                },
+              },
+            },
             resident: {
               select: {
                 id: true,
@@ -171,7 +187,18 @@ export class AuthController {
                 propertyId: true,
                 property: {
                   select: {
+                    id: true,
                     name: true,
+                    tenantId: true,
+                    tenant: {
+                      select: {
+                        id: true,
+                        name: true,
+                        slug: true,
+                        status: true,
+                        plan: true,
+                      },
+                    },
                   },
                 },
                 bed: {
@@ -209,8 +236,11 @@ export class AuthController {
         return sendError(res, 'Invalid email or password.', 401, 'INVALID_CREDENTIALS');
       }
 
+      const resolvedTenant = user.tenant || user.property?.tenant || user.resident?.property?.tenant;
+      const effectiveTenantId = user.tenantId || user.property?.tenantId || user.resident?.property?.tenantId || null;
+
       // Check tenant suspension for non-Super-Admin users
-      if (user.role !== 'SUPER_ADMIN' && user.tenant?.status === 'SUSPENDED') {
+      if (user.role !== 'SUPER_ADMIN' && resolvedTenant?.status === 'SUSPENDED') {
         return sendError(
           res,
           'Your PG Tenant account has been suspended by platform administration. Please contact support.',
@@ -225,7 +255,7 @@ export class AuthController {
           email: user.email,
           role: user.role,
           name: user.name,
-          tenantId: user.tenantId,
+          tenantId: effectiveTenantId,
           propertyId: user.propertyId || user.resident?.propertyId || null,
           residentId: user.resident?.id,
         },
@@ -236,7 +266,7 @@ export class AuthController {
       // Log login event asynchronously in background so auth response is not delayed by WAN latency
       prisma.auditLog.create({
         data: {
-          tenantId: user.tenantId,
+          tenantId: effectiveTenantId,
           propertyId: user.propertyId || user.resident?.propertyId || null,
           actorId: user.id,
           actorName: user.name,
@@ -260,8 +290,8 @@ export class AuthController {
             role: user.role,
             mobile: user.mobile,
             avatarUrl: user.avatarUrl,
-            tenantId: user.tenantId,
-            tenant: user.tenant,
+            tenantId: effectiveTenantId,
+            tenant: resolvedTenant,
             propertyId: user.propertyId || user.resident?.propertyId || null,
             residentId: user.resident?.id,
             residentDetails: user.resident

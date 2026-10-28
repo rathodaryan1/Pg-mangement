@@ -14,7 +14,9 @@ import {
 } from 'lucide-react';
 import { saasApi } from '../../services/saasApi';
 import { Card } from '../../components/ui/Card';
-import { Button } from '../../components/ui/Button';
+import { StatCard } from '../../components/ui/StatCard';
+import { Button, PrimaryButton, SecondaryButton } from '../../components/ui/Button';
+import { PageHeader } from '../../components/ui/PageHeader';
 import { Modal } from '../../components/ui/Modal';
 import { toast } from '../../context/ToastContext';
 
@@ -136,45 +138,44 @@ export const CookDashboardPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FCFBF8] flex flex-col items-center justify-center p-8">
-        <div className="w-8 h-8 border-4 border-amber-600/20 border-t-amber-600 rounded-full animate-spin" />
+      <div className="flex flex-col items-center justify-center p-12">
+        <div className="w-8 h-8 border-4 border-[#0B4036]/20 border-t-[#0B4036] rounded-full animate-spin" />
         <p className="text-xs text-slate-500 mt-3 font-medium">Loading Kitchen & Mess Portal...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#FBF9F5] p-4 sm:p-6 lg:p-8 text-slate-900">
-      {/* Top Header */}
-      <div className="max-w-7xl mx-auto mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="p-1.5 rounded-lg bg-amber-100 text-amber-800 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
-              <UtensilsCrossed className="w-3.5 h-3.5" /> Kitchen & Mess Staff Desk
-            </span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#111A16] tracking-tight">
-            Daily Meal Planning & Kitchen Ops
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Manage menus, live resident meal counts, ingredient inventory, and supplies.
-          </p>
-        </div>
+    <div className="space-y-6 animate-fade-in">
+      <PageHeader
+        title="Kitchen & Mess Operations"
+        description="Daily meal menu planning, real-time headcount forecasting, ingredient inventory, and resident dietary preferences."
+        breadcrumbs={[
+          { label: 'Operations', href: '/staff/kitchen' },
+          { label: 'Kitchen & Mess' },
+        ]}
+      >
+        <SecondaryButton size="sm" onClick={fetchDashboard} leftIcon={<RefreshCw className="w-3.5 h-3.5" />}>
+          Refresh
+        </SecondaryButton>
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => setStockModalOpen(true)}
+          leftIcon={<PackageCheck className="w-3.5 h-3.5 text-[#C8A45D]" />}
+        >
+          Log Stock
+        </Button>
+        <PrimaryButton
+          size="sm"
+          onClick={() => setMenuModalOpen(true)}
+          leftIcon={<Plus className="w-3.5 h-3.5" />}
+        >
+          Publish Menu
+        </PrimaryButton>
+      </PageHeader>
 
-        <div className="flex items-center gap-2.5">
-          <Button variant="outline" size="sm" onClick={fetchDashboard} className="gap-1.5 bg-white border-slate-200">
-            <RefreshCw className="w-3.5 h-3.5" /> Refresh
-          </Button>
-          <Button size="sm" onClick={() => setStockModalOpen(true)} className="gap-1.5 bg-emerald-700 hover:bg-emerald-800 text-white">
-            <PackageCheck className="w-3.5 h-3.5" /> Log Stock
-          </Button>
-          <Button size="sm" onClick={() => setMenuModalOpen(true)} className="gap-1.5 bg-amber-600 hover:bg-amber-700 text-white">
-            <Plus className="w-3.5 h-3.5" /> Publish Menu
-          </Button>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: Today's Meal Schedules */}
         <div className="lg:col-span-2 space-y-6">
           <div className="flex items-center justify-between">

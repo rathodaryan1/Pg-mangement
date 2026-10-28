@@ -828,6 +828,7 @@ async function main() {
   // 18. Staff Users
   const staffManager = await prisma.user.create({
     data: {
+      tenantId: defaultTenant.id,
       email: 'manager.gurgaon@pg.com',
       passwordHash,
       name: 'Rohan Mehta (Manager)',
@@ -839,6 +840,7 @@ async function main() {
 
   const staffTech = await prisma.user.create({
     data: {
+      tenantId: defaultTenant.id,
       email: 'repair.gurgaon@pg.com',
       passwordHash,
       name: 'Kamal Electrician',
@@ -850,6 +852,7 @@ async function main() {
 
   const staffReception = await prisma.user.create({
     data: {
+      tenantId: defaultTenant.id,
       email: 'reception.gurgaon@pg.com',
       passwordHash,
       name: 'Sneha Sharma (Receptionist)',

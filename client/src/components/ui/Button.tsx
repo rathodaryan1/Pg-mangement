@@ -65,3 +65,7 @@ export const Button: React.FC<ButtonProps> = ({
     </button>
   );
 };
+
+export const PrimaryButton: React.FC<ButtonProps> = (props) => <Button variant="primary" {...props} />;
+export const SecondaryButton: React.FC<ButtonProps> = (props) => <Button variant="outline" {...props} />;
+

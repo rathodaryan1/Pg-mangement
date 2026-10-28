@@ -2,6 +2,7 @@ import { Response } from 'express';
 import { prisma } from '../config/prisma';
 import { sendSuccess, sendError } from '../utils/response';
 import { AuthRequest } from '../middleware/auth';
+import { verifyPropertyAccess } from '../utils/property-auth';
 
 async function withDbRetry<T>(fn: () => Promise<T>, retries = 2): Promise<T> {
   for (let i = 0; i <= retries; i++) {
@@ -21,10 +22,12 @@ export class UtilityAIController {
   // -------------------------------------------------------------
   static async getUtilityReadings(req: AuthRequest, res: Response): Promise<Response> {
     try {
-      const propertyId = (req.query.propertyId as string) || req.user?.propertyId;
+      const auth = await verifyPropertyAccess(req, req.query.propertyId as string);
+      if (!auth.authorized) {
+        return sendError(res, auth.error || 'Property access denied.', auth.statusCode || 403);
+      }
+      const propertyId = auth.propertyId!;
       const { type } = req.query;
-
-      if (!propertyId) return sendError(res, 'Property ID is required.', 400);
 
       const whereClause: any = { propertyId };
       if (type && type !== 'ALL') {
@@ -48,10 +51,14 @@ export class UtilityAIController {
   static async recordUtilityReading(req: AuthRequest, res: Response): Promise<Response> {
     try {
       const { propertyId, type, meterNumber, previousReading, currentReading, unitRate, billingPeriod, notes } = req.body;
-      const targetPropertyId = propertyId || req.user?.propertyId;
+      const auth = await verifyPropertyAccess(req, propertyId);
+      if (!auth.authorized) {
+        return sendError(res, auth.error || 'Property access denied.', auth.statusCode || 403);
+      }
+      const targetPropertyId = auth.propertyId!;
 
-      if (!targetPropertyId || !meterNumber || currentReading === undefined || !unitRate || !billingPeriod) {
-        return sendError(res, 'Property, meter number, current reading, unit rate, and billing period are required.', 400);
+      if (!meterNumber || currentReading === undefined || !unitRate || !billingPeriod) {
+        return sendError(res, 'Meter number, current reading, unit rate, and billing period are required.', 400);
       }
 
       const prev = parseFloat(previousReading) || 0;
@@ -90,7 +97,11 @@ export class UtilityAIController {
   static async askAIAssistant(req: AuthRequest, res: Response): Promise<Response> {
     try {
       const { query, propertyId } = req.body;
-      const targetPropertyId = propertyId || req.user?.propertyId;
+      const auth = await verifyPropertyAccess(req, propertyId);
+      if (!auth.authorized) {
+        return sendError(res, auth.error || 'Property access denied.', auth.statusCode || 403);
+      }
+      const targetPropertyId = auth.propertyId;
       const tenantId = req.user?.tenantId;
 
       if (!query || typeof query !== 'string') {

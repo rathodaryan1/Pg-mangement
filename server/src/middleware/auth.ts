@@ -55,67 +55,86 @@ export const authenticateToken = async (
 
     const targetUserId = decoded.id || decoded.userId;
 
+    const userSelectInclude = {
+      tenant: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          status: true,
+          plan: true,
+        },
+      },
+      property: {
+        select: {
+          id: true,
+          name: true,
+          tenantId: true,
+          tenant: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              status: true,
+              plan: true,
+            },
+          },
+        },
+      },
+      resident: {
+        select: {
+          id: true,
+          propertyId: true,
+          bedId: true,
+          status: true,
+          property: {
+            select: {
+              id: true,
+              name: true,
+              tenantId: true,
+              tenant: {
+                select: {
+                  id: true,
+                  name: true,
+                  slug: true,
+                  status: true,
+                  plan: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    };
+
     let user = null;
     try {
       if (targetUserId) {
         user = await prisma.user.findUnique({
           where: { id: targetUserId },
-          include: {
-            tenant: {
-              select: {
-                id: true,
-                name: true,
-                slug: true,
-                status: true,
-                plan: true,
-              },
-            },
-            resident: {
-              select: {
-                id: true,
-                propertyId: true,
-                bedId: true,
-                status: true,
-              },
-            },
-          },
+          include: userSelectInclude,
         });
       } else if (decoded.email) {
         user = await prisma.user.findUnique({
           where: { email: decoded.email },
-          include: {
-            tenant: {
-              select: {
-                id: true,
-                name: true,
-                slug: true,
-                status: true,
-                plan: true,
-              },
-            },
-            resident: {
-              select: {
-                id: true,
-                propertyId: true,
-                bedId: true,
-                status: true,
-              },
-            },
-          },
+          include: userSelectInclude,
         });
       }
     } catch (dbErr: any) {
       console.warn('[auth.middleware] Database user lookup failed, using verified token claims:', dbErr.message);
     }
 
+    const resolvedTenant = user?.tenant || user?.property?.tenant || user?.resident?.property?.tenant;
+    const effectiveTenantId = user?.tenantId || user?.property?.tenantId || user?.resident?.property?.tenantId || decoded.tenantId || null;
+
     const authUser: AuthenticatedUser = {
       id: user?.id || targetUserId || '',
       email: user?.email || decoded.email,
       name: user?.name || decoded.name || (decoded.role === 'OWNER' ? 'Owner' : 'Resident'),
       role: (user?.role as string) || decoded.role,
-      tenantId: user?.tenantId || decoded.tenantId || null,
-      tenantName: user?.tenant?.name,
-      tenantStatus: user?.tenant?.status,
+      tenantId: effectiveTenantId,
+      tenantName: resolvedTenant?.name,
+      tenantStatus: resolvedTenant?.status,
       propertyId: user?.propertyId || user?.resident?.propertyId || decoded.propertyId || null,
       residentId: user?.resident?.id || decoded.residentId,
       bedId: user?.resident?.bedId || null,

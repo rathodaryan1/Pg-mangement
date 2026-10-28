@@ -42,6 +42,7 @@ export const VisitorsPage: React.FC = () => {
   const [qrVerificationResult, setQrVerificationResult] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
   // Form for direct visitor logging
   const [visitorForm, setVisitorForm] = useState({
@@ -115,42 +116,58 @@ export const VisitorsPage: React.FC = () => {
   };
 
   const handleApprove = async (id: string) => {
+    if (actionLoadingId) return;
     try {
+      setActionLoadingId(id);
       await ownerApi.approveVisitor(id);
       showToast('Visitor request approved! QR pass generated.');
-      fetchData();
+      await fetchData();
     } catch (err: any) {
       toast.error(err.message || 'Failed to approve visitor');
+    } finally {
+      setActionLoadingId(null);
     }
   };
 
   const handleReject = async (id: string) => {
+    if (actionLoadingId) return;
     try {
+      setActionLoadingId(id);
       await ownerApi.rejectVisitor(id);
       showToast('Visitor request rejected.');
-      fetchData();
+      await fetchData();
     } catch (err: any) {
       toast.error(err.message || 'Failed to reject visitor');
+    } finally {
+      setActionLoadingId(null);
     }
   };
 
   const handleCheckIn = async (id: string) => {
+    if (actionLoadingId) return;
     try {
+      setActionLoadingId(id);
       await ownerApi.checkInVisitor(id);
       showToast('Visitor checked in at security gate.');
-      fetchData();
+      await fetchData();
     } catch (err: any) {
       toast.error(err.message || 'Failed to check in');
+    } finally {
+      setActionLoadingId(null);
     }
   };
 
   const handleCheckOut = async (id: string) => {
+    if (actionLoadingId) return;
     try {
+      setActionLoadingId(id);
       await ownerApi.checkOutVisitor(id);
       showToast('Visitor marked as checked out.');
-      fetchData();
+      await fetchData();
     } catch (err: any) {
       toast.error(err.message || 'Failed to check out');
+    } finally {
+      setActionLoadingId(null);
     }
   };
 
@@ -233,10 +250,21 @@ export const VisitorsPage: React.FC = () => {
         <div className="flex items-center gap-2">
           {row.status === 'PENDING' && (
             <>
-              <Button variant="success" size="sm" onClick={() => handleApprove(row.id)}>
+              <Button
+                variant="success"
+                size="sm"
+                disabled={actionLoadingId !== null}
+                isLoading={actionLoadingId === row.id}
+                onClick={() => handleApprove(row.id)}
+              >
                 Approve
               </Button>
-              <Button variant="danger" size="sm" onClick={() => handleReject(row.id)}>
+              <Button
+                variant="danger"
+                size="sm"
+                disabled={actionLoadingId !== null}
+                onClick={() => handleReject(row.id)}
+              >
                 Reject
               </Button>
             </>
@@ -247,6 +275,7 @@ export const VisitorsPage: React.FC = () => {
               <Button
                 variant="outline"
                 size="sm"
+                disabled={actionLoadingId !== null}
                 onClick={() => {
                   setSelectedVisitor(row);
                   setQrModalOpen(true);
@@ -255,14 +284,26 @@ export const VisitorsPage: React.FC = () => {
               >
                 QR Pass
               </Button>
-              <Button variant="primary" size="sm" onClick={() => handleCheckIn(row.id)}>
+              <Button
+                variant="primary"
+                size="sm"
+                disabled={actionLoadingId !== null}
+                isLoading={actionLoadingId === row.id}
+                onClick={() => handleCheckIn(row.id)}
+              >
                 Check-In
               </Button>
             </>
           )}
 
           {row.status === 'CHECKED_IN' && (
-            <Button variant="outline" size="sm" onClick={() => handleCheckOut(row.id)}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={actionLoadingId !== null}
+              isLoading={actionLoadingId === row.id}
+              onClick={() => handleCheckOut(row.id)}
+            >
               Mark Exit
             </Button>
           )}
